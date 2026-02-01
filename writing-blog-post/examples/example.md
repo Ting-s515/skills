@@ -102,3 +102,8 @@ dispatch({ type: 'INCREMENT' });
 |------|----------|
 | **useState** | 簡單狀態、獨立狀態、快速原型 |
 | **useReducer** | 複雜狀態邏輯、多種更新模式、需要可測試性 |
+
+## 延伸閱讀
+
+- [React 官方文件 - useState](https://react.dev/reference/react/useState)
+- [React 官方文件 - useReducer](https://react.dev/reference/react/useReducer)
