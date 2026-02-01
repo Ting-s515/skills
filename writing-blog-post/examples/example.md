@@ -8,12 +8,6 @@ categories: 前端開發
 
 # React 狀態管理：從 useState 到 useReducer
 
-## 前言
-
-在開發 React 應用時，狀態管理是最常遇到的課題之一。React 提供了 `useState` 和 `useReducer` 兩種 Hooks 來處理元件狀態，但許多開發者不確定何時該用哪一個。
-
-本文將透過實際案例，幫助你理解兩者的差異與適用場景。
-
 ## 核心概念
 
 ### useState vs useReducer 比較
@@ -108,5 +102,3 @@ dispatch({ type: 'INCREMENT' });
 |------|----------|
 | **useState** | 簡單狀態、獨立狀態、快速原型 |
 | **useReducer** | 複雜狀態邏輯、多種更新模式、需要可測試性 |
-
-記住：沒有絕對的對錯，選擇讓你的程式碼更清晰、更容易維護的方式即可。
