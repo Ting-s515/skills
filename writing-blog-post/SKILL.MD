@@ -26,8 +26,8 @@ argument-hint: "[輸出檔案路徑]"
 ---
 title: 文章標題
 excerpt: "文章摘要，簡述文章重點"
-date: 2025-01-31 10:00:00
-tags: [標籤1, 標籤2]
+date: YYYY-MM-DD HH:mm:ss+08:00 # 必須加上時區，避免日期偏移
+tags: [標籤1, 標籤2] # 可為字串或陣列
 categories: 分類名稱
 ---
 ```
@@ -36,7 +36,7 @@ categories: 分類名稱
 |------|------|------|
 | `title` | ✅ | 文章標題 |
 | `excerpt` | ✅ | 文章摘要，用於卡片預覽 |
-| `date` | ✅ | 發布日期，格式 `YYYY-MM-DD HH:MM:SS` |
+| `date` | ✅ | 發布日期，格式 `YYYY-MM-DD HH:mm:ss+08:00` |
 | `tags` | ✅ | 標籤陣列，用於分類篩選 |
 | `categories` | ⚠️ | 主分類（可選） |
 
