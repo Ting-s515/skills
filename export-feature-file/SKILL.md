@@ -172,9 +172,25 @@ Feature: 購物車管理
 
 產出 Feature File 後，開發者需依據所使用的測試框架撰寫對應的 Step Definitions。
 
+### Scope 綁定規範
+
+Step Definitions **必須**透過 Scope 機制明確綁定至對應的 Feature，避免跨 Feature 的步驟定義衝突。
+
+| 框架 | Scope 語法 | 範例 |
+|------|-----------|------|
+| .NET (Reqnroll) | `[Scope(Feature = "Feature 名稱")]` | `[Scope(Feature = "用戶登入")]` |
+| Java (Cucumber-JVM) | 不支援 Scope，透過 Glue 路徑區隔 | `@CucumberOptions(glue = "steps.login")` |
+| JavaScript/TypeScript | 不支援 Scope，透過模組目錄區隔 | `features/login/step_definitions/` |
+| Python (Behave) | 不支援 Scope，透過 steps 目錄區隔 | `features/steps/login_steps.py` |
+
+> Scope 的 Feature 名稱需與 `.feature` 檔案中的 `Feature:` 標題**完全一致**。
+
 ### .NET (Reqnroll)
 
 ```csharp
+// Why: [Scope] 將 Step Definitions 綁定至指定 Feature，避免跨 Feature 的步驟定義衝突
+// Syntax: Feature 名稱需與 .feature 檔案中的 Feature 標題完全一致
+[Scope(Feature = "用戶登入")]
 [Binding]
 public class LoginSteps
 {
