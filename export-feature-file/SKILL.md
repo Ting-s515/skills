@@ -24,8 +24,6 @@ description: 當我呼叫此技能時，依照我提供的 Gherkin 文檔或業�
 ## 格式定義
 
 ```gherkin
-# language: zh-TW
-
 Feature: 功能名稱
   功能描述（說明這個功能的目的）
 
@@ -47,7 +45,6 @@ Feature: 功能名稱
 
 | 關鍵字 | 用途 | 範例 |
 |--------|------|------|
-| **# language:** | 語言聲明，讓測試框架支援非英文語系 | `# language: zh-TW` |
 | **Feature** | 功能名稱與描述 | `Feature: 用戶登入` |
 | **Scenario** | 單一固定測試案例 | `Scenario: 用戶成功登入` |
 | **Scenario Outline** | 參數化測試案例，搭配 Examples | `Scenario Outline: 登入驗證` |
@@ -69,8 +66,6 @@ Feature: 功能名稱
 
 **輸出（Feature File）：**
 ```gherkin
-# language: zh-TW
-
 Feature: 用戶登入
   用戶透過帳號密碼進行身份驗證，以存取系統功能
 
@@ -107,8 +102,6 @@ Feature: 用戶登入
 
 **輸出（Feature File）：**
 ```gherkin
-# language: zh-TW
-
 Feature: 購物車管理
   用戶可以管理購物車內的商品，並在結帳時套用優惠
 
@@ -143,25 +136,24 @@ Feature: 購物車管理
 
 ## 輸出規範
 
-1. **必須包含語言聲明**：檔案開頭加上 `# language: zh-TW`
-2. **必須包含 Feature**：每個輸出都以 Feature 開頭，說明功能名稱與目的
-3. **相關 Scenario 歸屬同一 Feature**：將相關的測試情境組織在同一個 Feature 下
-4. 每個 Scenario 聚焦於**單一行為**
-5. **專注在有價值的行為**：不求詳盡，只描述最關鍵的業務規則
-6. 使用**業務語言**，但可提及 API、DB 等技術元素作為測試驗證點
-7. Given/When/Then 各自獨立成行，保持可讀性
-8. And 為可選，僅當條件或結果有多項時才使用
-9.  **使用具體數值**：提供實際的測試資料，不使用抽象變數
-10. **參數化測試使用 Scenario Outline**：
+1. **必須包含 Feature**：每個輸出都以 Feature 開頭，說明功能名稱與目的
+2. **相關 Scenario 歸屬同一 Feature**：將相關的測試情境組織在同一個 Feature 下
+3. 每個 Scenario 聚焦於**單一行為**
+4. **專注在有價值的行為**：不求詳盡，只描述最關鍵的業務規則
+5. 使用**業務語言**，但可提及 API、DB 等技術元素作為測試驗證點
+6. Given/When/Then 各自獨立成行，保持可讀性
+7. And 為可選，僅當條件或結果有多項時才使用
+8.  **使用具體數值**：提供實際的測試資料，不使用抽象變數
+9.  **參數化測試使用 Scenario Outline**：
     - 當同一行為需要多組測試資料時，使用 `Scenario Outline` + `Examples`
     - 參數使用 `<參數名稱>` 格式
     - Examples 表格提供具體測試資料
-11. **字串參數用雙引號包覆**：如 `"test@example.com"`、`"SAVE10"`
-12. **沙漏原則 - When 最小化**：
+10. **字串參數用雙引號包覆**：如 `"test@example.com"`、`"SAVE10"`
+11. **沙漏原則 - When 最小化**：
     - When 越小越好，理想情況只有一行
     - 將操作步驟移至 Given
     - When 只保留最關鍵的觸發點
-13. **輸出後更新指定文檔**：將產出的內容寫入用戶指定的 `.feature` 檔案
+12. **輸出後更新指定文檔**：將產出的內容寫入用戶指定的 `.feature` 檔案
 
 ## Step Definitions 對應提示
 
