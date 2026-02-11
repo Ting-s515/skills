@@ -11,15 +11,14 @@ description: 當我呼叫此技能時，依照我提供的 Gherkin 文檔或業�
 
 ## 支援的測試框架
 
-| 語言/平台 | 測試框架 |
-|-----------|----------|
-| .NET | SpecFlow, Reqnroll |
-| Java | Cucumber-JVM |
-| JavaScript/TypeScript | Cucumber.js |
-| Python | Behave, pytest-bdd |
-| Ruby | Cucumber |
-| Go | Godog |
-| PHP | Behat |
+| 語言/平台 | 測試框架 | Cucumber Expression `{}` |
+|-----------|----------|:---:|
+| .NET | Reqnroll | ✅ 原生支援 |
+| Java | Cucumber-JVM | ✅ 原生支援 |
+| JavaScript/TypeScript | Cucumber.js | ✅ 原生支援 |
+| Python | Behave | ❌ 使用框架原生語法 |
+| Ruby | Cucumber | ✅ 原生支援 |
+| Go | Godog | ✅ 原生支援 |
 
 ## 格式定義
 
@@ -155,23 +154,40 @@ Feature: 購物車管理
     - When 只保留最關鍵的觸發點
 12. **輸出後更新指定文檔**：將產出的內容寫入用戶指定的 `.feature` 檔案
 
+## Step Definitions 風格規範
+
+### Cucumber Expression（統一使用 `{}` 格式）
+
+框架**原生支援** Cucumber Expression 時，使用 `{string}`、`{int}` 等 `{}` 格式。
+框架**不原生支援**時（如 Python Behave、PHP Behat），使用該框架的原生參數語法，不勉強套用。
+
+| 比較項目 | Regex 格式（禁用） | Cucumber Expression 格式（採用） |
+|----------|-------------------|-------------------------------|
+| 字串參數 | `@"帳號 ""(.*)"""` | `"帳號 {string}"` |
+| 整數參數 | `@"共 (\d+) 筆"` | `"共 {int} 筆"` |
+| 浮點數參數 | `@"金額 ([\d.]+)"` | `"金額 {float}"` |
+| 無參數 | `@"用戶點擊登入"` | `"用戶點擊登入"` |
+
 ## Step Definitions 對應提示
 
 產出 Feature File 後，開發者需依據所使用的測試框架撰寫對應的 Step Definitions。
 
-### .NET (SpecFlow / Reqnroll)
+### .NET (Reqnroll)
 
 ```csharp
 [Binding]
 public class LoginSteps
 {
-    [Given(@"用戶已註冊帳號 ""(.*)""")]
+    [Given("用戶已註冊帳號 {string}")]
     public void Given用戶已註冊帳號(string email) { /* 準備測試資料 */ }
 
-    [When(@"用戶輸入正確的帳號密碼")]
+    [When("用戶輸入正確的帳號密碼")]
     public void When用戶輸入正確的帳號密碼() { /* 執行登入 */ }
 
-    [Then(@"系統導向至首頁")]
+    [Then("待發送清單應包含 {int} 筆資料")]
+    public void Then待發送清單應包含N筆資料(int expectedCount) { /* 驗證筆數 */ }
+
+    [Then("系統導向至首頁")]
     public void Then系統導向至首頁() { /* 驗證導向 */ }
 }
 ```
@@ -186,6 +202,9 @@ public class LoginSteps {
     @When("用戶輸入正確的帳號密碼")
     public void 用戶輸入正確的帳號密碼() { /* 執行登入 */ }
 
+    @Then("待發送清單應包含 {int} 筆資料")
+    public void 待發送清單應包含N筆資料(int expectedCount) { /* 驗證筆數 */ }
+
     @Then("系統導向至首頁")
     public void 系統導向至首頁() { /* 驗證導向 */ }
 }
@@ -198,19 +217,25 @@ import { Given, When, Then } from '@cucumber/cucumber';
 
 Given('用戶已註冊帳號 {string}', function (email: string) { /* 準備測試資料 */ });
 When('用戶輸入正確的帳號密碼', function () { /* 執行登入 */ });
+Then('待發送清單應包含 {int} 筆資料', function (expectedCount: number) { /* 驗證筆數 */ });
 Then('系統導向至首頁', function () { /* 驗證導向 */ });
 ```
 
-### Python (Behave)
+### Python (Behave) — 使用框架原生語法
 
 ```python
 from behave import given, when, then
 
+# Why: Behave 不原生支援 Cucumber Expression，使用框架自有的參數語法
+# Syntax: 字串參數用 "{param}" 雙引號包覆，整數參數用 {param:d} 加型別後綴
 @given('用戶已註冊帳號 "{email}"')
 def step_impl(context, email): pass  # 準備測試資料
 
 @when('用戶輸入正確的帳號密碼')
 def step_impl(context): pass  # 執行登入
+
+@then('待發送清單應包含 {expected_count:d} 筆資料')
+def step_impl(context, expected_count): pass  # 驗證筆數
 
 @then('系統導向至首頁')
 def step_impl(context): pass  # 驗證導向
