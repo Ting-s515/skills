@@ -1,6 +1,11 @@
 ---
 name: export-gherkin
-description: 當我呼叫此技能時，依照我提供的複數檔案或文檔，將「業務邏輯與行為」轉換為 Gherkin（Given / When / Then）格式，用於與非技術人員對齊需求與驗證行為。
+description: >
+  當使用者提供程式碼、業務邏輯說明或需求文檔，並要求將行為或需求轉換為 Gherkin（Given / When / Then）格式時，必須載入此技能。
+  目的是產出人類可讀的規格文件，用於與 PM、QA、客戶等非技術人員對齊需求、確認驗收條件，而非直接執行的測試框架檔案。
+  觸發情境包含但不限於：「幫我轉成 Gherkin」、「把這個邏輯寫成 Given When Then」、「export gherkin」、「把需求整理成 Gherkin 格式」、「幫我對齊需求規格」。
+  即使使用者只說「幫我寫 Given When Then」或「用 BDD 格式描述這個功能」，只要有提供程式碼或業務邏輯，也應載入此技能。
+  注意：若使用者要求產出「可被測試框架執行的 .feature 檔案」，應使用 export-feature-file 技能而非此技能。
 ---
 
 # Export Gherkin

@@ -1,6 +1,10 @@
 ---
 name: writing-blog-post
-description: 當我需要撰寫blog文章或需要整理現有的文章時，你會協助我以清晰且結構化的方式編寫Markdown文件。
+description: >
+  當使用者明確提到「blog」關鍵字，並要求撰寫或整理 blog 文章時，才載入此技能。
+  協助以清晰、結構化的方式撰寫 Markdown 格式的 blog 文章，包含 YAML Front Matter（title、excerpt、date、tags、categories）。
+  觸發情境包含但不限於：「寫一篇 blog」、「幫我寫 blog 文章」、「整理成 blog 文章」、「整理 blog md」。
+  注意：沒有明確提到「blog」時，不應載入此技能；一般技術文件請使用 writing-markdown 技能。
 argument-hint: "[輸出檔案路徑]"
 ---
 
