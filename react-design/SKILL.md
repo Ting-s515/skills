@@ -1,6 +1,10 @@
 ---
 name: react-design
-description: 當我需要撰寫或設計react相關實作架構，請參考下方文件架構說明
+description: >
+  當使用者需要撰寫、設計、重構任何 React 相關實作時，必須參考此技能。
+  觸發時機包含但不限於：建立或修改 React 組件（component）、自訂 Hook（custom hook）、服務層（service）、Context、
+  討論資料夾結構與模組分層、重構現有 React 程式碼、設計 hooks 間的職責與解耦、處理 useEffect 與 setState 的使用方式，
+  即使使用者只說「幫我寫一個組件」、「用 hook 管理狀態」、「怎麼設計這個功能的架構」，也應載入此技能作為設計依據。
 ---
 
 ## 資料夾路徑說明

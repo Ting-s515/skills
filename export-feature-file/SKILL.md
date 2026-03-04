@@ -1,6 +1,12 @@
 ---
 name: export-feature-file
-description: 當我呼叫此技能時，依照我提供的 Gherkin 文檔或業務邏輯，轉換為可被測試框架執行的 Feature File 格式（.feature），支援各種 BDD 測試框架。
+description: >
+  當使用者提供 Gherkin 文檔、業務邏輯說明或需求規格，並要求產出可被測試框架執行的 Feature File 時，必須載入此技能。
+  支援 .NET (Reqnroll)、Java (Cucumber-JVM)、JavaScript/TypeScript (Cucumber.js)、Python (Behave) 等框架，
+  產出符合框架規範的 .feature 檔案，包含 Scenario、Scenario Outline、Examples 等結構。
+  觸發情境包含但不限於：「幫我產出 feature file」、「把這個轉成 .feature」、「export feature file」、
+  「根據業務邏輯寫 feature」、「建立測試案例檔」。
+  即使使用者只說「輸出 feature」或「新增 .feature 檔」，只要有提供業務邏輯或 Gherkin 內容，也應載入此技能。
 ---
 
 # Export Feature File

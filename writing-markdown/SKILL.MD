@@ -1,6 +1,11 @@
 ---
 name: writing-markdown
-description: 當我需要整理文件或撰寫技術文件或依據當前對話紀錄輸出文件時，你會協助我以清晰且結構化的方式編寫Markdown文件。
+description: >
+  協助撰寫、整理、輸出結構清晰的 Markdown 技術文件，包含流程圖、表格、架構圖等視覺化元素。
+  當使用者提出以下任何需求時必須載入此技能：「幫我整理成文件」、「把這個寫成 md」、「輸出技術文件」、
+  「寫一份設計文件」、「整理成 Markdown」、「幫我產出文件」、「write a technical doc」，
+  或任何需要將對話內容、技術討論、架構設計、流程說明整理成結構化 Markdown 文件的情境。
+  注意：此技能專注於技術文件撰寫（含 Mermaid 圖表、ASCII 架構圖），不涉及對話匯出（請用 export-conversation）。
 argument-hint: "[輸出檔案路徑]"
 ---
 

@@ -1,6 +1,10 @@
 ---
 name: remove-nul
-description: 刪除 Windows 環境下因誤操作產生的 nul 保留裝置名稱檔案，使用 Git Bash 的 rm -f 指令繞過 Windows 限制。
+description: >
+  在 Windows 環境下刪除無法正常移除的保留裝置名稱檔案（如 nul、con、aux、prn、com1~com9、lpt1~lpt9）。
+  當使用者遇到以下情境時必須載入此技能：git status 顯示有 nul 檔案、想刪除 nul 但 del/PowerShell/git rm 都失敗、
+  看到 "Permission denied" 錯誤無法刪除某個奇怪的檔案、詢問「remove nul file」、「怎麼刪除 nul 檔」、
+  「nul 檔案刪不掉」、「Windows 保留裝置名稱怎麼清除」等相關問題。
 ---
 
 # 刪除 nul 檔案

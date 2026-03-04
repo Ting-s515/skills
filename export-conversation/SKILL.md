@@ -1,6 +1,9 @@
 ---
 name: export-conversation
-description: 當我需要將本次對話的完整內容匯出 Markdown 檔案，以便其他AI MODEL繼續任務，請協助我完成這項任務。
+description: >
+  將本次對話的完整內容整理並匯出為結構化的 Markdown 檔案，方便其他 AI model 或下一個對話視窗接續任務。
+  當使用者說以下任何一種情境時必須載入此技能：「匯出對話」、「輸出對話紀錄」、「把這次對話存成 md」、
+  、「export conversation」，或任何需要保留本次對話內容、切換 AI 模型、跨對話傳遞任務進度的情境。
 argument-hint: "[輸出檔案路徑]"
 ---
 
