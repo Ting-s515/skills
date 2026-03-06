@@ -76,7 +76,7 @@ sequenceDiagram
 
 ## 範例參考
 
-參考 `examples/technical-design-example.md` 作為文件撰寫範本
+參考 `references/technical-design-example.md` 作為文件撰寫範本
 
 ## 輸出位置
 

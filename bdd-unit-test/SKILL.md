@@ -38,11 +38,11 @@ description: >
 
 | 副檔名 | 語言 | 載入範例 |
 |--------|------|----------|
-| `.ts`, `.tsx` | TypeScript | `examples/typescript-example.test.ts` |
-| `.js`, `.jsx` | JavaScript | `examples/typescript-example.test.ts` |
-| `.cs` | C# | `examples/csharp-example-test.cs` |
-| `.java` | Java | `examples/java-example-test.java` |
-| `.py` | Python | `examples/python-example-test.py` |
+| `.ts`, `.tsx` | TypeScript | `references/typescript-example.test.ts` |
+| `.js`, `.jsx` | JavaScript | `references/typescript-example.test.ts` |
+| `.cs` | C# | `references/csharp-example-test.cs` |
+| `.java` | Java | `references/java-example-test.java` |
+| `.py` | Python | `references/python-example-test.py` |
 
 **執行步驟：**
 1. 取得目標檔案的副檔名
@@ -260,9 +260,9 @@ class TestUserService:
 
 根據判別的語言，讀取對應的範例檔案：
 
-- **TypeScript/JavaScript**: `examples/typescript-example.test.ts`
-- **C#**: `examples/csharp-example-test.cs`
-- **Java**: `examples/java-example-test.java`
-- **Python**: `examples/python-example-test.py`
+- **TypeScript/JavaScript**: `references/typescript-example.test.ts`
+- **C#**: `references/csharp-example-test.cs`
+- **Java**: `references/java-example-test.java`
+- **Python**: `references/python-example-test.py`
 
 **注意**：撰寫測試前必須先讀取對應語言的範例，確保遵循一致的風格與結構。

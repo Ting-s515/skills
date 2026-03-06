@@ -61,7 +61,7 @@ find user skill skill-name
 skills/
 └── [skill-name]/
     ├── SKILL.md          # 必要：skill 定義與說明
-    └── examples/         # 可選：範例檔案
+    └── references/         # 可選：範例檔案
 ```
 
 ### SKILL.md 格式
