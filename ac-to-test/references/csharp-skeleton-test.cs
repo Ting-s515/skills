@@ -1,4 +1,4 @@
-// {FeatureName}Tests.cs
+// {FeatureName}Test.cs
 // 此測試骨架由 AC-{feature-name}.md 自動產出
 // 實作完成後，將 TODO 替換為實際呼叫與斷言
 

@@ -39,7 +39,7 @@ description: >
 | 語言 | 載入 Reference | 輸出位置 | 檔案命名 |
 |------|--------------|---------|---------|
 | TypeScript | `references/typescript-skeleton.test.ts` | 同目錄的 `__tests__/` | `{feature-name}.test.ts` |
-| C# | `references/csharp-skeleton-test.cs` | 對應的 `.Tests` 專案資料夾 | `{FeatureName}Tests.cs` |
+| C# | `references/csharp-skeleton-test.cs` | 對應的 `.Tests` 專案資料夾 | `{FeatureName}Test.cs` |
 | Java | `references/java-skeleton-test.java` | `src/test/java/` 對應套件路徑 | `{FeatureName}Test.java` |
 | Python | `references/python-skeleton-test.py` | `tests/` 資料夾，保持與 src 相同結構 | `test_{feature_name}.py` |
 
@@ -53,7 +53,7 @@ description: >
 
 | 輸入 AC 檔 | TypeScript | C# | Java | Python |
 |-----------|-----------|-----|------|--------|
-| `AC-coupon-apply.md` | `coupon-apply.test.ts` | `CouponApplyTests.cs` | `CouponApplyTest.java` | `test_coupon_apply.py` |
+| `AC-coupon-apply.md` | `coupon-apply.test.ts` | `CouponApplyTest.cs` | `CouponApplyTest.java` | `test_coupon_apply.py` |
 
 ## 測試命名規則
 
