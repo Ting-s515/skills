@@ -51,7 +51,7 @@ docs/propose/<feature-name>/
 5. 使用 Agent tool 開啟 subagent 執行 code review（每個單一任務完成後立即執行）：
    - 規格文檔路徑：`docs/propose/<feature-name>/`（含三份文檔）
    - use `code-reviewer` skill 執行審查
-6. code review 完成後，將 `03-tasks.md` 中該任務的 `[x]` 更新為 `[x][cr]`，作為 code review 已完成的持久記錄
+6. subagent 回傳結果後，**立即** 用 Edit tool 將 `03-tasks.md` 中該任務的 `[x]` 改為 `[x][cr]`，作為 code review 已完成的持久記錄。這一步不可遺漏——subagent 完成不等於 checkbox 已更新，必須主動執行 Edit。
 7. 告知使用者該任務完成，等待確認後繼續下一個
 
 若任務有依賴關係（`依賴 Tx`），必須先確認依賴任務已完成（`[x]` 或 `[x][cr]`）再執行。
@@ -78,6 +78,6 @@ docs/propose/<feature-name>/
 
 - 讀取 `03-tasks.md`，依任務狀態決定行動：
   - `[x][cr]`：實作與 code review 皆完成，完全跳過
-  - `[x]`：實作完成但 code review 未執行，**直接補跑 code review**，完成後更新為 `[x][cr]`
+  - `[x]`：實作完成但 code review 未執行，**直接補跑 code review**，subagent 回傳後立即用 Edit tool 更新為 `[x][cr]`
   - `[ ]`：從此任務開始實作
 - 告知使用者目前進度，例如：「T1 已完成（含 code review），T2 實作完成但 code review 未執行，從補跑 T2 code review 開始」
