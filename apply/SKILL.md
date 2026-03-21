@@ -32,9 +32,13 @@ docs/propose/<feature-name>/
 ### 1. 載入 context
 
 讀取三份文檔：
+
 - `01-flow.md`：了解業務邏輯與邊界
 - `02-gherkin.md`：了解每個任務的完成標準
-- `03-tasks.md`：取得待實作任務清單（`[ ]` 為未完成）
+- `03-tasks.md`：取得任務清單，依以下格式判斷狀態：
+  - `- [ ] Tx:` → 未開始
+  - `- [x] Tx:` → 實作完成，code review 尚未執行
+  - `- [x][cr] Tx:` → 實作 + code review 全部完成，跳過
 
 ### 2. 逐任務實作
 
@@ -43,13 +47,19 @@ docs/propose/<feature-name>/
 1. 告知使用者目前執行哪個任務（`T1: <描述>`）
 2. 實作該任務，依照 `01-flow.md` 的邏輯與 `02-gherkin.md` 的驗收條件
 3. 實作完成後，將 `03-tasks.md` 中該任務的 `[ ]` 更新為 `[x]`
-4. 告知使用者該任務完成，等待確認後繼續下一個
+4. 產生該任務的 commit message（格式：`<type>: <description>`）
+5. 使用 Agent tool 開啟 subagent 執行 code review（每個單一任務完成後立即執行）：
+   - 規格文檔路徑：`docs/propose/<feature-name>/`（含三份文檔）
+   - use `code-reviewer` skill 執行審查
+6. code review 完成後，將 `03-tasks.md` 中該任務的 `[x]` 更新為 `[x][cr]`，作為 code review 已完成的持久記錄
+7. 告知使用者該任務完成，等待確認後繼續下一個
 
-若任務有依賴關係（`依賴 Tx`），必須先確認依賴任務已完成（`[x]`）再執行。
+若任務有依賴關係（`依賴 Tx`），必須先確認依賴任務已完成（`[x]` 或 `[x][cr]`）再執行。
 
 ### 3. 實作規範
 
 遵循專案 `CLAUDE.md` 的規範：
+
 - 禁止三元嵌套
 - 需要加註解的地方：後端業務邏輯、前端邏輯判斷、hook 邏輯、工具函式邏輯
 - 不加註解：純 UI 樣式、簡單賦值
@@ -58,18 +68,16 @@ docs/propose/<feature-name>/
 
 ## 全部完成後
 
-所有任務（`[x]`）完成後：
-
-1. 產生 commit message（格式：`<type>: <description>`）
-2. 使用 Agent tool 開啟 subagent 執行 code review：
-   - 規格文檔路徑：`docs/propose/<feature-name>/`（含三份文檔）
-   - use `code-reviewer` skill 執行審查
+所有任務（`[x]`）完成後，告知使用者所有任務已完成。
 
 ---
 
 ## 中途繼續
 
 若使用者在任務進行到一半時重新開啟對話：
-- 讀取 `03-tasks.md`，找出已完成（`[x]`）與未完成（`[ ]`）的任務
-- 從第一個未完成任務繼續，不重複已完成的部分
-- 告知使用者：「目前進度：Tx 已完成，從 Ty 繼續」
+
+- 讀取 `03-tasks.md`，依任務狀態決定行動：
+  - `[x][cr]`：實作與 code review 皆完成，完全跳過
+  - `[x]`：實作完成但 code review 未執行，**直接補跑 code review**，完成後更新為 `[x][cr]`
+  - `[ ]`：從此任務開始實作
+- 告知使用者目前進度，例如：「T1 已完成（含 code review），T2 實作完成但 code review 未執行，從補跑 T2 code review 開始」
