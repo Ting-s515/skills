@@ -1,0 +1,20 @@
+{
+  "expectations": [
+    {
+      "text": "spec.md 的 bug fix list 下方包含 propose 回寫標記",
+      "passed": true,
+      "evidence": "第 7 行插入 fix-order-notification 的 > propose: 標記，第 9 行插入 fix-stock-buy-button 的 > propose: 標記，格式正確"
+    },
+    {
+      "text": "quick-fix 項目不產生回寫標記",
+      "passed": true,
+      "evidence": "Safari 按鈕 bug（第 5 行）附近無任何 > propose: 標記插入"
+    }
+  ],
+  "summary": {
+    "pass_rate": 1.0,
+    "passed": 2,
+    "failed": 0,
+    "total": 2
+  }
+}

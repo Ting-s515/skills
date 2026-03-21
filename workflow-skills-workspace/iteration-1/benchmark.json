@@ -1,0 +1,588 @@
+{
+  "metadata": {
+    "skill_name": "propose-apply-sync-workflow",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-03-21T14:58:42Z",
+    "evals_run": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 118.3,
+        "tokens": 21420,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u5efa\u7acb user-management \u8cc7\u6599\u593e\u4e09\u4efd\u6587\u6a94",
+          "passed": true,
+          "evidence": "summary \u660e\u78ba\u5217\u51fa docs/propose/user-management/01-flow.md\u300102-gherkin.md\u300103-tasks.md \u5747\u5df2\u5efa\u7acb"
+        },
+        {
+          "text": "\u5efa\u7acb product-management \u8cc7\u6599\u593e\u4e09\u4efd\u6587\u6a94",
+          "passed": true,
+          "evidence": "summary \u660e\u78ba\u5217\u51fa docs/propose/product-management/ \u4e0b\u4e09\u4efd\u6587\u6a94\u5747\u5df2\u5efa\u7acb"
+        },
+        {
+          "text": "03-tasks.md \u5305\u542b\u672a\u5b8c\u6210\u7684\u4efb\u52d9 checkbox",
+          "passed": true,
+          "evidence": "summary \u63d0\u53ca T1\u2013T9 \u8207 T1\u2013T11 \u4efb\u52d9\u6e05\u55ae\uff0c\u542b\u4f9d\u8cf4\u95dc\u4fc2\u6a19\u793a\uff0c\u683c\u5f0f\u61c9\u70ba - [ ] Tx:"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 154.3,
+        "tokens": 25437,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "[quick-fix] \u9805\u76ee\u4e0d\u5efa\u7acb propose \u8cc7\u6599\u593e",
+          "passed": true,
+          "evidence": "Safari \u6309\u9215 bug \u88ab\u5217\u5165\u76f4\u63a5\u5be6\u4f5c\u6e05\u55ae\uff0c\u672a\u5efa\u7acb\u4efb\u4f55 docs/propose/fix- \u8cc7\u6599\u593e"
+        },
+        {
+          "text": "[propose] \u9805\u76ee\u5efa\u7acb fix- \u8cc7\u6599\u593e",
+          "passed": true,
+          "evidence": "docs/propose/fix-order-notification-flow/ \u5df2\u5efa\u7acb\u5b8c\u6574\u4e09\u4efd\u6587\u6a94"
+        },
+        {
+          "text": "\u7121\u6a19\u8a18\u9805\u76ee\u6709\u660e\u78ba\u5206\u6d41\u7d50\u679c",
+          "passed": true,
+          "evidence": "\u5eab\u5b58\u6309\u9215 bug \u88ab\u5224\u65b7\u70ba [propose]\uff0c\u7406\u7531\uff1a\u8de8\u591a\u6a94\u6848\u5354\u8abf\uff0b\u6d89\u53ca\u72c0\u614b\u7ba1\u7406\u8cc7\u6599\u6d41\uff0c\u5efa\u7acb\u4e86 fix-product-stock-button-state/ \u8cc7\u6599\u593e"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 126.5,
+        "tokens": 20949,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "spec.md \u5305\u542b user-management \u56de\u5beb\u6a19\u8a18",
+          "passed": true,
+          "evidence": "summary \u6307\u51fa spec.md \u7b2c 9 \u884c\u5df2\u63d2\u5165 > propose: `docs/propose/user-management/` \u6a19\u8a18"
+        },
+        {
+          "text": "spec.md \u5305\u542b product-management \u56de\u5beb\u6a19\u8a18",
+          "passed": true,
+          "evidence": "summary \u6307\u51fa spec.md \u7b2c 17 \u884c\u5df2\u63d2\u5165 > propose: `docs/propose/product-management/` \u6a19\u8a18"
+        },
+        {
+          "text": "\u6a19\u8a18\u4f4d\u65bc\u5c0d\u61c9\u529f\u80fd\u6bb5\u843d\u4e0b\u65b9",
+          "passed": true,
+          "evidence": "\u7b2c 9 \u884c\uff08\u4f7f\u7528\u8005\u7ba1\u7406\u6bb5\u843d\u4e0b\u65b9\uff09\u8207\u7b2c 17 \u884c\uff08\u5546\u54c1\u7ba1\u7406\u6bb5\u843d\u4e0b\u65b9\uff09\uff0c\u4e14\u56de\u5beb\u52d5\u4f5c\u5728\u78ba\u8a8d\u5f8c\u7acb\u5373\u57f7\u884c\uff0c\u5728\u4e09\u4efd\u6587\u6a94\u7522\u51fa\u4e4b\u524d\u5b8c\u6210"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 4,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 2,
+        "failed": 0,
+        "total": 2,
+        "time_seconds": 114.2,
+        "tokens": 21072,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "spec.md \u7684 bug fix list \u4e0b\u65b9\u5305\u542b propose \u56de\u5beb\u6a19\u8a18",
+          "passed": true,
+          "evidence": "\u7b2c 7 \u884c\u63d2\u5165 fix-order-notification \u7684 > propose: \u6a19\u8a18\uff0c\u7b2c 9 \u884c\u63d2\u5165 fix-stock-buy-button \u7684 > propose: \u6a19\u8a18\uff0c\u683c\u5f0f\u6b63\u78ba"
+        },
+        {
+          "text": "quick-fix \u9805\u76ee\u4e0d\u7522\u751f\u56de\u5beb\u6a19\u8a18",
+          "passed": true,
+          "evidence": "Safari \u6309\u9215 bug\uff08\u7b2c 5 \u884c\uff09\u9644\u8fd1\u7121\u4efb\u4f55 > propose: \u6a19\u8a18\u63d2\u5165"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 5,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 2,
+        "failed": 0,
+        "total": 2,
+        "time_seconds": 203.4,
+        "tokens": 23136,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u6240\u6709\u4efb\u52d9 checkbox \u66f4\u65b0\u70ba [x][cr]",
+          "passed": true,
+          "evidence": "summary \u660e\u78ba\u5217\u51fa T1\u3001T2\u3001T3 \u5168\u90e8\u70ba [x][cr]\uff0c\u6bcf\u500b\u4efb\u52d9\u5be6\u4f5c\u5f8c\u7acb\u5373\u66f4\u65b0 [x]\uff0ccode review \u5f8c\u7acb\u5373\u66f4\u65b0 [x][cr]"
+        },
+        {
+          "text": "\u6309\u4f9d\u8cf4\u9806\u5e8f\u57f7\u884c",
+          "passed": true,
+          "evidence": "T1 \u7121\u4f9d\u8cf4\u9996\u5148\u57f7\u884c\uff0cT2 \u7b49\u5f85 T1 \u70ba [x][cr] \u5f8c\u624d\u57f7\u884c\uff0cT3 \u7b49\u5f85 T2 \u70ba [x][cr] \u5f8c\u624d\u57f7\u884c\uff0c\u5b8c\u5168\u7b26\u5408\u4f9d\u8cf4\u95dc\u4fc2"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 6,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 131.2,
+        "tokens": 22606,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "T1 \u72c0\u614b\u4e0d\u8b8a\uff08\u4ecd\u70ba [x][cr]\uff09",
+          "passed": true,
+          "evidence": "summary \u660e\u78ba\u6307\u51fa T1 \u5df2\u5b8c\u6210\u542b code review\uff0c\u672a\u91cd\u65b0\u57f7\u884c\uff0c\u72c0\u614b\u4fdd\u6301 [x][cr]"
+        },
+        {
+          "text": "T2 \u5f9e [x] \u66f4\u65b0\u70ba [x][cr]",
+          "passed": true,
+          "evidence": "\u88dc\u8dd1 T2 code review \u5f8c\uff0c\u7acb\u5373\u7528 Edit tool \u5c07 T2 \u66f4\u65b0\u70ba [x][cr]"
+        },
+        {
+          "text": "T3 \u5f9e [ ] \u66f4\u65b0\u70ba [x][cr]",
+          "passed": true,
+          "evidence": "\u5be6\u4f5c T3 \u5f8c\u66f4\u65b0\u70ba [x]\uff0ccode review \u5f8c\u66f4\u65b0\u70ba [x][cr]\uff0c\u6700\u7d42\u4e09\u500b\u4efb\u52d9\u5168\u90e8 [x][cr]"
+        },
+        {
+          "text": "\u8f38\u51fa\u8aaa\u660e\u88dc\u8dd1 T2 code review",
+          "passed": true,
+          "evidence": "summary \u7b2c 2 \u9ede\uff1a\u544a\u77e5\u4f7f\u7528\u8005 T1 \u5df2\u5b8c\u6210\u542b code review\uff0cT2 \u50c5\u5be6\u4f5c\u5b8c\u6210\uff0c\u5f9e\u88dc\u8dd1 T2 code review \u958b\u59cb"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 7,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 57.5,
+        "tokens": 15303,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "spec.md \u5305\u542b ## \u5df2\u5b8c\u6210 \u5340\u584a",
+          "passed": true,
+          "evidence": "summary \u78ba\u8a8d\u5728 spec.md \u9802\u90e8\u63d2\u5165\u4e86 ## \u5df2\u5b8c\u6210 \u5340\u584a"
+        },
+        {
+          "text": "user-management \u51fa\u73fe\u5728\u5df2\u5b8c\u6210\u8868\u683c",
+          "passed": true,
+          "evidence": "\u4f7f\u7528\u8005\u7ba1\u7406\uff08docs/propose/user-management/\uff09\u5df2\u5217\u5165 ## \u5df2\u5b8c\u6210 \u8868\u683c"
+        },
+        {
+          "text": "notification-fix \u51fa\u73fe\u5728\u5df2\u5b8c\u6210\u8868\u683c",
+          "passed": true,
+          "evidence": "Bug Fix\uff1a\u901a\u77e5\u4fe1\u4fee\u5fa9\uff08docs/propose/notification-fix/\uff09\u5df2\u5217\u5165 ## \u5df2\u5b8c\u6210 \u8868\u683c"
+        },
+        {
+          "text": "product-management \u4e0d\u51fa\u73fe\u5728\u5df2\u5b8c\u6210\u8868\u683c",
+          "passed": true,
+          "evidence": "product-management \u56e0 T2\u3001T3 \u70ba [ ]\uff0c\u6b63\u78ba\u88ab\u6392\u9664\u5728 ## \u5df2\u5b8c\u6210 \u8868\u683c\u4e4b\u5916"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 8,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 2,
+        "failed": 0,
+        "total": 2,
+        "time_seconds": 53.2,
+        "tokens": 13910,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "spec.md \u9802\u90e8\u63d2\u5165 ## \u5df2\u5b8c\u6210 \u5340\u584a",
+          "passed": true,
+          "evidence": "## \u5df2\u5b8c\u6210 \u63d2\u5165\u5728\u6587\u6a94\u7b2c\u4e00\u884c\uff08H1 \u6a19\u984c\u4e4b\u524d\uff09\uff0c\u70ba\u6587\u6a94\u6700\u9802\u90e8"
+        },
+        {
+          "text": "\u5df2\u5b8c\u6210\u8868\u683c\u5305\u542b user-management",
+          "passed": true,
+          "evidence": "\u4f7f\u7528\u8005\u7ba1\u7406\uff08docs/propose/user-management/\uff09\u5df2\u5217\u5165 ## \u5df2\u5b8c\u6210 \u8868\u683c"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.0,
+        "passed": 0,
+        "failed": 3,
+        "total": 3,
+        "time_seconds": 43.3,
+        "tokens": 12542,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u5efa\u7acb user-management \u8cc7\u6599\u593e\u4e09\u4efd\u6587\u6a94",
+          "passed": false,
+          "evidence": "baseline \u53ea\u5efa\u7acb\u4e86\u55ae\u4e00 proposals/implementation-plan.md\uff0c\u6c92\u6709\u5efa\u7acb docs/propose/user-management/ \u8cc7\u6599\u593e\u7d50\u69cb"
+        },
+        {
+          "text": "\u5efa\u7acb product-management \u8cc7\u6599\u593e\u4e09\u4efd\u6587\u6a94",
+          "passed": false,
+          "evidence": "\u540c\u4e0a\uff0c\u7121\u4efb\u4f55 docs/propose/ \u5b50\u8cc7\u6599\u593e"
+        },
+        {
+          "text": "03-tasks.md \u5305\u542b\u672a\u5b8c\u6210\u7684\u4efb\u52d9 checkbox",
+          "passed": false,
+          "evidence": "\u6c92\u6709\u5efa\u7acb\u4efb\u4f55 03-tasks.md\uff0c\u53ea\u6709\u4e00\u4efd\u6574\u5408\u7684 implementation-plan.md"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.3333,
+        "passed": 1,
+        "failed": 2,
+        "total": 3,
+        "time_seconds": 75.9,
+        "tokens": 13393,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "[quick-fix] \u9805\u76ee\u4e0d\u5efa\u7acb propose \u8cc7\u6599\u593e",
+          "passed": true,
+          "evidence": "baseline \u6c92\u6709\u5efa\u7acb\u4efb\u4f55 docs/propose/ \u8cc7\u6599\u593e\uff0cSafari bug \u88ab\u6574\u5408\u5728 implementation-plan.md \u4e2d\u76f4\u63a5\u63cf\u8ff0\u4fee\u5fa9\u6b65\u9a5f"
+        },
+        {
+          "text": "[propose] \u9805\u76ee\u5efa\u7acb fix- \u8cc7\u6599\u593e",
+          "passed": false,
+          "evidence": "\u6240\u6709 bug \u6574\u5408\u5728\u4e00\u4efd implementation-plan.md\uff0c\u6c92\u6709\u5efa\u7acb fix- \u8cc7\u6599\u593e\u7d50\u69cb"
+        },
+        {
+          "text": "\u7121\u6a19\u8a18\u9805\u76ee\u6709\u660e\u78ba\u5206\u6d41\u7d50\u679c",
+          "passed": false,
+          "evidence": "\u5eab\u5b58 bug \u88ab\u8996\u70ba quick-fix \u7b49\u7d1a\u76f4\u63a5\u4fee\u5fa9\uff0c\u96d6\u6709\u5224\u65b7\u4f46\u975e\u7cfb\u7d71\u6027\u7684\u6a19\u7c64\u9a45\u52d5\u5206\u6d41\uff1b\u4e14\u6c92\u6709\u5efa\u7acb\u5c0d\u61c9\u8cc7\u6599\u593e"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.0,
+        "passed": 0,
+        "failed": 3,
+        "total": 3,
+        "time_seconds": 43.6,
+        "tokens": 12140,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "spec.md \u5305\u542b user-management \u56de\u5beb\u6a19\u8a18",
+          "passed": false,
+          "evidence": "baseline \u6c92\u6709\u5728 spec.md \u4e2d\u63d2\u5165\u4efb\u4f55\u6a19\u8a18\uff0c\u76f4\u63a5\u5728\u5c0d\u8a71\u4e2d\u8f38\u51fa\u898f\u5283\u65b9\u6848"
+        },
+        {
+          "text": "spec.md \u5305\u542b product-management \u56de\u5beb\u6a19\u8a18",
+          "passed": false,
+          "evidence": "\u540c\u4e0a\uff0cspec.md \u4fdd\u6301\u539f\u59cb\u5167\u5bb9\u4e0d\u8b8a"
+        },
+        {
+          "text": "\u6a19\u8a18\u4f4d\u65bc\u5c0d\u61c9\u529f\u80fd\u6bb5\u843d\u4e0b\u65b9",
+          "passed": false,
+          "evidence": "\u7121\u4efb\u4f55\u6a19\u8a18\u63d2\u5165\uff0c\u6b64\u65b7\u8a00\u7121\u5f9e\u9a57\u8b49"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 4,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.5,
+        "passed": 1,
+        "failed": 1,
+        "total": 2,
+        "time_seconds": 53.7,
+        "tokens": 12429,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "spec.md \u7684 bug fix list \u4e0b\u65b9\u5305\u542b propose \u56de\u5beb\u6a19\u8a18",
+          "passed": false,
+          "evidence": "baseline \u63d2\u5165\u4e86 [confirmed: \u65b9\u6848A - \u4e8b\u4ef6\u9a45\u52d5\u975e\u540c\u6b65\u901a\u77e5\u4f47\u5217] \u683c\u5f0f\u7684\u6a19\u8a18\uff0c\u975e\u898f\u7bc4\u7684 > propose: `docs/propose/fix-<slug>/` \u683c\u5f0f"
+        },
+        {
+          "text": "quick-fix \u9805\u76ee\u4e0d\u7522\u751f\u56de\u5beb\u6a19\u8a18",
+          "passed": true,
+          "evidence": "Safari \u6309\u9215 bug \u6c92\u6709\u6536\u5230\u4efb\u4f55\u6a19\u8a18\uff08\u96d6\u7136\u6574\u9ad4\u683c\u5f0f\u4e0d\u7b26\u898f\u7bc4\uff09"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 5,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.5,
+        "passed": 1,
+        "failed": 1,
+        "total": 2,
+        "time_seconds": 86.0,
+        "tokens": 16442,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "\u6240\u6709\u4efb\u52d9 checkbox \u66f4\u65b0\u70ba [x][cr]",
+          "passed": false,
+          "evidence": "baseline \u53ea\u5c07 checkbox \u66f4\u65b0\u70ba [x]\uff0c\u6c92\u6709\u57f7\u884c code review \u6b65\u9a5f\uff0c\u56e0\u6b64\u6c92\u6709 [x][cr]"
+        },
+        {
+          "text": "\u6309\u4f9d\u8cf4\u9806\u5e8f\u57f7\u884c",
+          "passed": true,
+          "evidence": "T1\u2192T2\u2192T3 \u9806\u5e8f\u6b63\u78ba\uff0c\u6709\u4f9d\u7167 01-flow.md \u7684\u4f9d\u8cf4\u95dc\u4fc2\u57f7\u884c"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 6,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.25,
+        "passed": 1,
+        "failed": 3,
+        "total": 4,
+        "time_seconds": 91.0,
+        "tokens": 14464,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "T1 \u72c0\u614b\u4e0d\u8b8a\uff08\u4ecd\u70ba [x][cr]\uff09",
+          "passed": true,
+          "evidence": "summary \u6307\u51fa T1 [x][cr] \u5df2\u5b8c\u6210\uff0c\u76f4\u63a5\u8df3\u904e\uff0c\u72c0\u614b\u672a\u88ab\u4fee\u6539"
+        },
+        {
+          "text": "T2 \u5f9e [x] \u66f4\u65b0\u70ba [x][cr]",
+          "passed": false,
+          "evidence": "baseline \u5c07 T2 \u8996\u70ba\u5df2\u5b8c\u6210\u76f4\u63a5\u8df3\u904e\uff0c\u6c92\u6709\u88dc\u8dd1 code review\uff0cT2 \u505c\u7559\u5728 [x] \u72c0\u614b"
+        },
+        {
+          "text": "T3 \u5f9e [ ] \u66f4\u65b0\u70ba [x][cr]",
+          "passed": false,
+          "evidence": "T3 \u5be6\u4f5c\u5f8c\u53ea\u66f4\u65b0\u70ba [x]\uff0c\u6c92\u6709\u57f7\u884c code review \u6b65\u9a5f\uff0c\u6c92\u6709 [x][cr]"
+        },
+        {
+          "text": "\u8f38\u51fa\u8aaa\u660e\u88dc\u8dd1 T2 code review",
+          "passed": false,
+          "evidence": "baseline \u5b8c\u5168\u6c92\u6709\u63d0\u53ca\u88dc\u8dd1 T2 code review \u7684\u6982\u5ff5\uff0c\u76f4\u63a5\u8df3\u904e T2 \u5be6\u4f5c T3"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 7,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 70.6,
+        "tokens": 13623,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "spec.md \u5305\u542b ## \u5df2\u5b8c\u6210 \u5340\u584a",
+          "passed": true,
+          "evidence": "baseline \u5728 spec.md \u672b\u5c3e\u65b0\u589e\u4e86 ## \u5df2\u5b8c\u6210 \u5340\u584a\uff08\u6ce8\u610f\uff1askill \u8981\u6c42\u5728\u9802\u90e8\uff0cbaseline \u653e\u5728\u672b\u5c3e\uff09"
+        },
+        {
+          "text": "user-management \u51fa\u73fe\u5728\u5df2\u5b8c\u6210\u8868\u683c",
+          "passed": true,
+          "evidence": "user-management \u88ab\u5217\u5165\u5df2\u5b8c\u6210"
+        },
+        {
+          "text": "notification-fix \u51fa\u73fe\u5728\u5df2\u5b8c\u6210\u8868\u683c",
+          "passed": true,
+          "evidence": "notification-fix \u88ab\u5217\u5165\u5df2\u5b8c\u6210"
+        },
+        {
+          "text": "product-management \u4e0d\u51fa\u73fe\u5728\u5df2\u5b8c\u6210\u8868\u683c",
+          "passed": true,
+          "evidence": "product-management \u6709 [ ] \u4efb\u52d9\uff0c\u6b63\u78ba\u88ab\u6392\u9664\u2014\u2014\u4f46 baseline \u4f7f\u7528 [x] \u4f5c\u70ba\u5b8c\u6210\u6a19\u6e96\u800c\u975e [x][cr]\uff0c\u6b64 fixture \u7d50\u679c\u76f8\u540c"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 8,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 2,
+        "failed": 0,
+        "total": 2,
+        "time_seconds": 70.1,
+        "tokens": 13076,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "spec.md \u9802\u90e8\u63d2\u5165 ## \u5df2\u5b8c\u6210 \u5340\u584a",
+          "passed": true,
+          "evidence": "## \u5df2\u5b8c\u6210 \u63d2\u5165\u5728 H1 \u6a19\u984c\u5f8c\uff08\u7b2c 3 \u884c\uff09\uff0c\u5728 ## \u4f7f\u7528\u8005\u7ba1\u7406 \u4e4b\u524d\uff0c\u70ba\u7b2c\u4e00\u500b ## \u6a19\u984c\u2014\u2014\u7b26\u5408\u300cspec.md \u7b2c\u4e00\u500b ## \u6a19\u984c\u70ba ## \u5df2\u5b8c\u6210\u300d\u65b7\u8a00"
+        },
+        {
+          "text": "\u5df2\u5b8c\u6210\u8868\u683c\u5305\u542b user-management",
+          "passed": true,
+          "evidence": "user-management \u5df2\u5217\u5165\u5df2\u5b8c\u6210\u8868\u683c"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 119.825,
+        "stddev": 48.8504,
+        "min": 53.2,
+        "max": 203.4
+      },
+      "tokens": {
+        "mean": 20479.125,
+        "stddev": 3920.0275,
+        "min": 13910,
+        "max": 25437
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.4479,
+        "stddev": 0.3907,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 66.775,
+        "stddev": 18.2229,
+        "min": 43.3,
+        "max": 91.0
+      },
+      "tokens": {
+        "mean": 13513.625,
+        "stddev": 1399.1801,
+        "min": 12140,
+        "max": 16442
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.55",
+      "time_seconds": "+53.0",
+      "tokens": "+6966"
+    }
+  },
+  "notes": []
+}
