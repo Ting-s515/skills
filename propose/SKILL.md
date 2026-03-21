@@ -49,7 +49,7 @@ docs/propose/
 
 **Bug Fix 處理（`## bug fix list` 區塊）：**
 
-讀取 `~/.claude/issue-doc-spec.md`，對每個 bug item 套用標記判斷：
+讀取 `~/.claude/skills/propose/references/issue-doc-spec.md`，對每個 bug item 套用標記判斷：
 
 | 標記 | 判斷方式 | propose 行為 |
 |---|---|---|
