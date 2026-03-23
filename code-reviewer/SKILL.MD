@@ -36,7 +36,7 @@ git diff main...HEAD # 與主分支的完整差異（適用於 feature branch）
 
 **判斷前端檔案的條件（符合任一即視為前端變更）：**
 - 副檔名為 `.tsx`、`.jsx`
-- 副檔名為 `.ts`、`.js`，且路徑包含 `components/`、`hooks/`、`context/`、`pages/` 或 `views/`
+- 副檔名為 `.ts`、`.js`，且路徑包含 `components?/`、`hooks?/`、`contexts?/`、`pages/` 或 `views/`
 
 **若包含前端檔案，必須先載入並執行 `react-design` skill，依照其原則對 diff 進行審查。**
 
