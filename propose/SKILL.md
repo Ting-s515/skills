@@ -16,17 +16,27 @@ description: >
 
 ## 輸出路徑規則
 
-每個功能獨立一個資料夾：
+### 根路徑確認（只需一次）
+
+開始前先確認根路徑前綴：
+
+- 使用者已指定「前端」或「frontend」→ 路徑前綴為 `frontend/`
+- 使用者已指定「後端」或「backend」→ 路徑前綴為 `backend/`
+- 未指定 → **主動詢問**：「請問此規格文檔為前端還是後端，或是不區分？」，依回答決定前綴（不區分則無前綴，直接使用 `docs/propose/`）
+
+確認後，後續所有功能皆沿用相同路徑，不再重複判斷。
+
+### 路徑格式
+
 ```
-docs/propose/
-  <feature-a>/
-    01-flow.md        ← 結構化流程
-    02-gherkin.md     ← Gherkin 驗收條件
-    03-tasks.md       ← 任務清單
-  <feature-b>/
-    01-flow.md
-    02-gherkin.md
-    03-tasks.md
+# 未指定前綴
+docs/propose/<feature-a>/
+
+# 前端
+frontend/docs/propose/<feature-a>/
+
+# 後端
+backend/docs/propose/<feature-a>/
 ```
 
 `<feature-name>` 從功能描述自動推導，使用 kebab-case。
@@ -75,10 +85,11 @@ docs/propose/
 - <bug 描述>
 
 資料夾命名：
-  docs/propose/feature-a/
-  docs/propose/feature-b/
-  docs/propose/fix-slug-a/
-  docs/propose/fix-slug-b/
+  <base>/docs/propose/feature-a/
+  <base>/docs/propose/feature-b/
+  <base>/docs/propose/fix-slug-a/
+  <base>/docs/propose/fix-slug-b/
+（<base> 為 frontend、backend，或省略）
 
 確認後開始？
 ```
@@ -88,7 +99,7 @@ docs/propose/
 確認後，**立即回寫規格文檔**，在每個功能對應段落下方插入區塊標記：
 
 ```markdown
-> propose: `docs/propose/<feature-name>/`
+> propose: `{root}/docs/propose/<feature-name>/`
 ```
 
 若規格文檔已有舊標記，更新為新的 folder name。回寫完成後才開始執行各功能步驟。
@@ -101,7 +112,7 @@ docs/propose/
 
 讀取 `~/.claude/skills/clarify-flow/SKILL.md`，依照其規則將該功能的自然語言描述整理為結構化流程。
 
-完成邊界確認互動後，寫入 `docs/propose/<feature-name>/01-flow.md`：
+完成邊界確認互動後，寫入 `{root}/docs/propose/<feature-name>/01-flow.md`：
 
 ```markdown
 # 功能流程：<功能名稱>
@@ -117,7 +128,7 @@ docs/propose/
 
 #### Step 2：Gherkin 驗收條件（02-gherkin.md）
 
-依照 `01-flow.md` 撰寫 Gherkin 格式驗收條件，寫入 `docs/propose/<feature-name>/02-gherkin.md`：
+依照 `01-flow.md` 撰寫 Gherkin 格式驗收條件，寫入 `{root}/docs/propose/<feature-name>/02-gherkin.md`：
 
 規則：
 - 每個主要路徑（happy path）一個 Scenario
@@ -144,7 +155,7 @@ Feature: <功能名稱>
 
 #### Step 3：任務清單（03-tasks.md）
 
-依照 `01-flow.md` 與 `02-gherkin.md` 拆解具體實作任務，寫入 `docs/propose/<feature-name>/03-tasks.md`：
+依照 `01-flow.md` 與 `02-gherkin.md` 拆解具體實作任務，寫入 `{root}/docs/propose/<feature-name>/03-tasks.md`：
 
 規則：
 - 每個任務對應一個可獨立完成的工作單位
@@ -155,8 +166,8 @@ Feature: <功能名稱>
 # 任務清單：<功能名稱>
 
 ## 參考文檔
-- 結構化流程：`docs/propose/<feature-name>/01-flow.md`
-- 驗收條件：`docs/propose/<feature-name>/02-gherkin.md`
+- 結構化流程：`{root}/docs/propose/<feature-name>/01-flow.md`
+- 驗收條件：`{root}/docs/propose/<feature-name>/02-gherkin.md`
 
 ## 任務
 
@@ -174,12 +185,12 @@ Feature: <功能名稱>
 ```
 propose 完成：
 
-  docs/propose/feature-a/
+  {root}/docs/propose/feature-a/
     01-flow.md
     02-gherkin.md
     03-tasks.md
 
-  docs/propose/feature-b/
+  {root}/docs/propose/feature-b/
     01-flow.md
     02-gherkin.md
     03-tasks.md

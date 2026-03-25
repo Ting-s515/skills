@@ -1,7 +1,8 @@
 ---
 name: propose-sync
 description: >
-  掃描專案 docs/propose/ 下所有功能資料夾，判斷 03-tasks.md 是否全部任務已完成（[x][cr]），
+  掃描專案 docs/propose/（或 frontend/docs/propose/、backend/docs/propose/）下所有功能資料夾，
+  判斷 03-tasks.md 是否全部任務已完成（[x][cr]），
   並將已完成的功能同步更新至使用者指定的規格需求文檔最上方的 ## 已完成 區塊。
   觸發情境包含但不限於：「propose-sync」、「同步完成狀態」、「更新規格文檔已完成功能」、
   「哪些功能已經實作完成」、「幫我把完成的 propose 同步回規格文檔」。
@@ -13,7 +14,7 @@ description: >
 
 ## 執行流程
 
-### Step 1：確認規格文檔路徑
+### Step 1：確認規格文檔路徑與根路徑前綴
 
 詢問使用者：
 
@@ -22,9 +23,15 @@ description: >
 （例如：docs/spec.md）
 ```
 
-### Step 2：掃描 docs/propose/
+同時從使用者指令或規格文檔路徑判斷根路徑前綴：
 
-讀取 `docs/propose/` 下所有子資料夾的 `03-tasks.md`，判斷完成狀態：
+- 使用者指定「前端」或「frontend」→ 掃描 `frontend/docs/propose/`
+- 使用者指定「後端」或「backend」→ 掃描 `backend/docs/propose/`
+- 未指定 → **主動詢問**：「請問要同步的是前端還是後端，或是不區分？」，依回答決定掃描目錄（不區分則掃描 `docs/propose/`）
+
+### Step 2：掃描 propose 目錄
+
+讀取對應目錄下所有子資料夾的 `03-tasks.md`，判斷完成狀態：
 
 **完成判斷規則：**
 
@@ -46,15 +53,15 @@ description: >
 ```markdown
 ## 已完成
 
-| 功能       | 資料夾                    |
-| ---------- | ------------------------- |
-| <功能描述> | `docs/propose/feature-a/` |
-| <功能描述> | `docs/propose/feature-b/` |
+| 功能       | 資料夾                               |
+| ---------- | ------------------------------------ |
+| <功能描述> | `<掃描路徑>/feature-a/` |
+| <功能描述> | `<掃描路徑>/feature-b/` |
 
 ---
 ```
 
-**功能描述**從規格文檔中對應的 `> propose: \`docs/propose/<feature-name>/\`` 標記上方段落取得；若找不到對應標記，使用 folder name 作為描述。
+**功能描述**從規格文檔中對應的 `> propose:` 標記上方段落取得；若找不到對應標記，使用 folder name 作為描述。
 
 ### Step 4：輸出結果
 
