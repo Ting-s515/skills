@@ -1,11 +1,11 @@
 ---
 name: apply
 description: >
-  當使用者指定 propose 產出的資料夾，並要求開始或繼續實作時，必須載入此技能。
-  獨立讀取 {root}/docs/propose/<feature-name>/ 下的三份文檔，依序實作未完成任務，完成後更新 checkbox 狀態。
+  當使用者指定 propose 產出的功能資料夾路徑，並要求開始或繼續實作時，必須載入此技能。
+  從路徑自動推斷根路徑，讀取資料夾下的三份文檔，自動逐一實作未完成任務並更新 checkbox 狀態。
   觸發情境包含但不限於：「apply」、「開始實作」、「繼續實作」、「apply frontend/docs/propose/feature-name」、
   「apply backend/docs/propose/feature-name」、「apply docs/propose/feature-name」、「按照任務清單實作」。
-  使用者通常會在新 session 中指定 feature-name 來呼叫此技能，不依賴 propose 的對話 context。
+  使用者通常會在新 session 中指定功能路徑來呼叫此技能，不依賴 propose 的對話 context。
 ---
 
 # Apply
@@ -14,26 +14,15 @@ description: >
 
 ## 前置確認
 
-### 根路徑識別
+### 根路徑與文檔定位
 
-從使用者提供的路徑或指令中判斷根路徑 `{root}`：
+從使用者提供的路徑或指令中自動推斷根路徑 `{root}`，依序嘗試：
 
-- 路徑包含 `frontend/` 前綴 → `{root}` = `frontend`
-- 路徑包含 `backend/` 前綴 → `{root}` = `backend`
-- 未指定前綴 → **主動詢問**：「請問此功能為前端還是後端，或是不區分？」，依回答決定路徑（不區分則無前綴，直接使用 `docs/propose/`）
+1. 路徑包含 `frontend/` 前綴 → `{root}` = `frontend`
+2. 路徑包含 `backend/` 前綴 → `{root}` = `backend`
+3. 未指定前綴 → 依序嘗試 `frontend/docs/propose/<feature-name>/`、`backend/docs/propose/<feature-name>/`、`docs/propose/<feature-name>/`，找到三份文檔（`01-flow.md`、`02-gherkin.md`、`03-tasks.md`）的路徑即為正確根路徑
 
-### 文檔存在確認
-
-確認以下三份文檔存在：
-
-```
-{root}/docs/propose/<feature-name>/
-  01-flow.md      ← 結構化流程（實作依據）
-  02-gherkin.md   ← 驗收條件（完成標準）
-  03-tasks.md     ← 任務清單（執行順序）
-```
-
-若 `<feature-name>` 不明確，詢問使用者確認。
+三個路徑都找不到文檔，才詢問使用者確認路徑。
 
 ---
 
@@ -62,7 +51,7 @@ description: >
    - 規格文檔路徑：`{root}/docs/propose/<feature-name>/`（含三份文檔）
    - use `code-reviewer` skill 執行審查
 6. subagent 回傳結果後，**立即** 用 Edit tool 將 `03-tasks.md` 中該任務的 `[x]` 改為 `[x][cr]`，作為 code review 已完成的持久記錄。這一步不可遺漏——subagent 完成不等於 checkbox 已更新，必須主動執行 Edit。
-7. 告知使用者該任務完成，等待確認後繼續下一個
+7. 宣告「Tx 完成 ✓」，直接繼續下一個任務（不等待使用者確認）
 
 若任務有依賴關係（`依賴 Tx`），必須先確認依賴任務已完成（`[x]` 或 `[x][cr]`）再執行。
 
