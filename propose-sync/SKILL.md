@@ -14,20 +14,21 @@ description: >
 
 ## 執行流程
 
-### Step 1：確認規格文檔路徑與根路徑前綴
+### Step 1：確認規格文檔路徑與掃描根目錄
 
-詢問使用者：
+若使用者未提供規格文檔路徑，詢問：
 
 ```
 請提供要同步的規格需求文檔路徑：
 （例如：docs/spec.md）
 ```
 
-同時從使用者指令或規格文檔路徑判斷根路徑前綴：
+讀取規格文檔，從文檔內的 `> propose:` 標記自動推斷掃描根目錄：
 
-- 使用者指定「前端」或「frontend」→ 掃描 `frontend/docs/propose/`
-- 使用者指定「後端」或「backend」→ 掃描 `backend/docs/propose/`
-- 未指定 → **主動詢問**：「請問要同步的是前端還是後端，或是不區分？」，依回答決定掃描目錄（不區分則掃描 `docs/propose/`）
+- 標記路徑以 `frontend/` 開頭 → 掃描 `frontend/docs/propose/`
+- 標記路徑以 `backend/` 開頭 → 掃描 `backend/docs/propose/`
+- 標記路徑以 `docs/propose/` 開頭（無前綴）→ 掃描 `docs/propose/`
+- 文檔內無任何 `> propose:` 標記 → **詢問使用者**確認掃描目錄
 
 ### Step 2：掃描 propose 目錄
 
