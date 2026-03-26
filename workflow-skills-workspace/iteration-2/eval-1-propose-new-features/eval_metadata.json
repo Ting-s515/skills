@@ -1,0 +1,19 @@
+{
+  "eval_id": 1,
+  "eval_name": "propose-new-features",
+  "prompt": "我有一份電商後台的規格文檔在 fixtures/eval-1-propose-new-features/spec.md，幫我 propose",
+  "assertions": [
+    {
+      "text": "建立 user-management 資料夾三份文檔",
+      "check": "docs/propose/user-management/ 下存在 01-flow.md、02-gherkin.md、03-tasks.md"
+    },
+    {
+      "text": "建立 product-management 資料夾三份文檔",
+      "check": "docs/propose/product-management/ 下存在 01-flow.md、02-gherkin.md、03-tasks.md"
+    },
+    {
+      "text": "03-tasks.md 包含未完成的任務 checkbox",
+      "check": "兩個 03-tasks.md 都包含 - [ ] 格式的任務項目"
+    }
+  ]
+}
