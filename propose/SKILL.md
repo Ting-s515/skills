@@ -110,9 +110,7 @@ backend/docs/propose/<feature-a>/
 
 #### Step 1：結構化流程（01-flow.md）
 
-讀取 `~/.claude/skills/clarify-flow/SKILL.md`，依照其規則將該功能的自然語言描述整理為結構化流程。
-
-完成邊界確認互動後，寫入 `{root}/docs/propose/<feature-name>/01-flow.md`：
+使用 Skill tool 呼叫 `clarify-flow` 技能，輸入為該功能的自然語言描述，完成邊界確認互動後，將產出寫入 `{root}/docs/propose/<feature-name>/01-flow.md`：
 
 ```markdown
 # 功能流程：<功能名稱>
@@ -121,37 +119,14 @@ backend/docs/propose/<feature-a>/
 <一句話描述功能目的>
 
 ## 流程說明
-<依 clarify-flow 規則產出的結構化步驟，含判斷分支與邊界條件>
+<clarify-flow 產出的結構化步驟，含判斷分支與邊界條件>
 ```
 
 **Bug Fix 特別規則：** `fix-<slug>/` 的 `01-flow.md` 只描述**修正後的正確行為**，不描述 bug 重現步驟。
 
 #### Step 2：Gherkin 驗收條件（02-gherkin.md）
 
-依照 `01-flow.md` 撰寫 Gherkin 格式驗收條件，寫入 `{root}/docs/propose/<feature-name>/02-gherkin.md`：
-
-規則：
-- 每個主要路徑（happy path）一個 Scenario
-- 每個邊界條件或錯誤路徑一個 Scenario
-- 使用繁體中文撰寫 Given / When / Then
-
-```markdown
-# 驗收條件：<功能名稱>
-
-```gherkin
-Feature: <功能名稱>
-
-  Scenario: <描述 happy path>
-    Given <前置狀態>
-    When <使用者操作>
-    Then <預期結果>
-
-  Scenario: <描述邊界或錯誤情境>
-    Given ...
-    When ...
-    Then ...
-```
-```
+使用 Skill tool 呼叫 `export-gherkin` 技能，輸入為 `01-flow.md` 的內容，指定輸出路徑為 `{root}/docs/propose/<feature-name>/02-gherkin.md`。
 
 #### Step 3：任務清單（03-tasks.md）
 
