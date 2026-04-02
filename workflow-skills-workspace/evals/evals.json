@@ -1,0 +1,177 @@
+{
+  "skill_name": "propose-apply-sync-workflow",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我有一份電商後台的規格文檔在 fixtures/eval-1-propose-new-features/spec.md，幫我 propose",
+      "expected_output": "在 docs/propose/ 下建立兩個功能資料夾（user-management 和 product-management），各自包含 01-flow.md、02-gherkin.md、03-tasks.md",
+      "files": ["fixtures/eval-1-propose-new-features/spec.md"],
+      "assertions": [
+        {
+          "name": "建立 user-management 資料夾三份文檔",
+          "check": "docs/propose/user-management/ 下存在 01-flow.md、02-gherkin.md、03-tasks.md"
+        },
+        {
+          "name": "建立 product-management 資料夾三份文檔",
+          "check": "docs/propose/product-management/ 下存在 01-flow.md、02-gherkin.md、03-tasks.md"
+        },
+        {
+          "name": "03-tasks.md 包含未完成的任務 checkbox",
+          "check": "兩個 03-tasks.md 都包含 - [ ] 格式的任務項目"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "依照 fixtures/eval-2-propose-bugfix-routing/spec.md 幫我規劃實作方案",
+      "expected_output": "[quick-fix] 項目列入直接實作清單不建資料夾；[propose] 項目建立 fix-<slug>/ 資料夾走完整流程；無標記項目自動判斷後處理",
+      "files": ["fixtures/eval-2-propose-bugfix-routing/spec.md"],
+      "assertions": [
+        {
+          "name": "[quick-fix] 項目不建立 propose 資料夾",
+          "check": "輸出摘要中列出「直接實作清單」，Safari 按鈕 bug 不出現在 docs/propose/ 資料夾"
+        },
+        {
+          "name": "[propose] 項目建立 fix- 資料夾",
+          "check": "docs/propose/ 下存在 fix-notification 或類似 slug 的資料夾"
+        },
+        {
+          "name": "無標記項目有明確分流結果",
+          "check": "輸出中說明庫存 bug 被歸類為 quick-fix 或 propose，並附理由"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "開始 propose，規格文檔是 fixtures/eval-3-propose-writeback-marker/spec.md",
+      "expected_output": "使用者確認功能分組後，立即在 spec.md 對應段落插入 > propose: `docs/propose/<feature-name>/` 標記，此動作在三份文檔產出之前完成",
+      "files": ["fixtures/eval-3-propose-writeback-marker/spec.md"],
+      "assertions": [
+        {
+          "name": "spec.md 包含 user-management 回寫標記",
+          "check": "spec.md 中存在 > propose: `docs/propose/user-management/`"
+        },
+        {
+          "name": "spec.md 包含 product-management 回寫標記",
+          "check": "spec.md 中存在 > propose: `docs/propose/product-management/`"
+        },
+        {
+          "name": "標記位於對應功能段落下方",
+          "check": "## 使用者管理 標題與 > propose: user-management 標記之間無其他功能段落"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "幫我依照 fixtures/eval-4-propose-bugfix-writeback/spec.md fix bugs，走 propose 流程的 bug 確認後立即回寫標記到規格文檔",
+      "expected_output": "bug fix 走 propose 流程的項目確認後，立即在規格文檔 bug fix list 對應位置插入 > propose: `docs/propose/fix-<slug>/` 標記",
+      "files": ["fixtures/eval-4-propose-bugfix-writeback/spec.md"],
+      "assertions": [
+        {
+          "name": "spec.md 的 bug fix list 下方包含 propose 回寫標記",
+          "check": "spec.md 中存在 > propose: `docs/propose/fix-` 開頭的標記"
+        },
+        {
+          "name": "quick-fix 項目不產生回寫標記",
+          "check": "Safari 按鈕 bug 對應位置下方沒有 > propose: 標記"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "apply fixtures/eval-5-apply-fresh-start/docs/propose/user-management/",
+      "expected_output": "逐一實作 T1、T2、T3，每個任務完成後更新 checkbox 為 [x]，code review subagent 後更新為 [x][cr]",
+      "files": [
+        "fixtures/eval-5-apply-fresh-start/docs/propose/user-management/01-flow.md",
+        "fixtures/eval-5-apply-fresh-start/docs/propose/user-management/02-gherkin.md",
+        "fixtures/eval-5-apply-fresh-start/docs/propose/user-management/03-tasks.md"
+      ],
+      "assertions": [
+        {
+          "name": "所有任務 checkbox 更新為 [x][cr]",
+          "check": "03-tasks.md 中所有任務格式為 - [x][cr] Tx:"
+        },
+        {
+          "name": "按依賴順序執行",
+          "check": "T2 在 T1 完成後才執行，T3 在 T2 完成後才執行"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "繼續實作 fixtures/eval-6-apply-resume-midway/docs/propose/notification-fix/",
+      "expected_output": "告知 T1 已完成（含 cr），T2 僅實作完成需補跑 code review → 補跑後更新為 [x][cr] → 再實作 T3",
+      "files": [
+        "fixtures/eval-6-apply-resume-midway/docs/propose/notification-fix/01-flow.md",
+        "fixtures/eval-6-apply-resume-midway/docs/propose/notification-fix/02-gherkin.md",
+        "fixtures/eval-6-apply-resume-midway/docs/propose/notification-fix/03-tasks.md"
+      ],
+      "assertions": [
+        {
+          "name": "T1 狀態不變（仍為 [x][cr]）",
+          "check": "03-tasks.md 中 T1 仍為 - [x][cr] T1:"
+        },
+        {
+          "name": "T2 從 [x] 更新為 [x][cr]",
+          "check": "03-tasks.md 中 T2 為 - [x][cr] T2:"
+        },
+        {
+          "name": "T3 從 [ ] 更新為 [x][cr]",
+          "check": "03-tasks.md 中 T3 為 - [x][cr] T3:"
+        },
+        {
+          "name": "輸出說明補跑 T2 code review",
+          "check": "對話輸出提及 T2 已完成但 code review 未執行，現在補跑"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "propose-sync，規格文檔是 fixtures/eval-7-sync-partial-complete/spec.md",
+      "expected_output": "只將 user-management 和 notification-fix（全部 [x][cr]）同步至 ## 已完成 表格，product-management（有未完成任務）不出現",
+      "files": [
+        "fixtures/eval-7-sync-partial-complete/spec.md",
+        "fixtures/eval-7-sync-partial-complete/docs/propose/user-management/03-tasks.md",
+        "fixtures/eval-7-sync-partial-complete/docs/propose/product-management/03-tasks.md",
+        "fixtures/eval-7-sync-partial-complete/docs/propose/notification-fix/03-tasks.md"
+      ],
+      "assertions": [
+        {
+          "name": "spec.md 包含 ## 已完成 區塊",
+          "check": "spec.md 中存在 ## 已完成"
+        },
+        {
+          "name": "user-management 出現在已完成表格",
+          "check": "## 已完成 表格中包含 user-management"
+        },
+        {
+          "name": "notification-fix 出現在已完成表格",
+          "check": "## 已完成 表格中包含 notification-fix"
+        },
+        {
+          "name": "product-management 不出現在已完成表格",
+          "check": "## 已完成 表格中不包含 product-management"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "同步完成狀態，規格文檔是 fixtures/eval-8-sync-create-section/spec.md",
+      "expected_output": "規格文檔沒有 ## 已完成 區塊，同步後在文檔頂部插入 ## 已完成 表格，列出 user-management",
+      "files": [
+        "fixtures/eval-8-sync-create-section/spec.md",
+        "fixtures/eval-8-sync-create-section/docs/propose/user-management/03-tasks.md"
+      ],
+      "assertions": [
+        {
+          "name": "spec.md 頂部插入 ## 已完成 區塊",
+          "check": "spec.md 第一個 ## 標題為 ## 已完成"
+        },
+        {
+          "name": "已完成表格包含 user-management",
+          "check": "## 已完成 表格中包含 user-management"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "T1 狀態不變（仍為 [x][cr]）",
+      "passed": true,
+      "evidence": "summary 指出 T1 [x][cr] 已完成，直接跳過，狀態未被修改"
+    },
+    {
+      "text": "T2 從 [x] 更新為 [x][cr]",
+      "passed": false,
+      "evidence": "baseline 將 T2 視為已完成直接跳過，沒有補跑 code review，T2 停留在 [x] 狀態"
+    },
+    {
+      "text": "T3 從 [ ] 更新為 [x][cr]",
+      "passed": false,
+      "evidence": "T3 實作後只更新為 [x]，沒有執行 code review 步驟，沒有 [x][cr]"
+    },
+    {
+      "text": "輸出說明補跑 T2 code review",
+      "passed": false,
+      "evidence": "baseline 完全沒有提及補跑 T2 code review 的概念，直接跳過 T2 實作 T3"
+    }
+  ],
+  "summary": {
+    "pass_rate": 0.25,
+    "passed": 1,
+    "failed": 3,
+    "total": 4
+  }
+}

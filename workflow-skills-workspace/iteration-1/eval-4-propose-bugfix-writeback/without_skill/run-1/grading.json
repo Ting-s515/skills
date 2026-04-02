@@ -1,0 +1,20 @@
+{
+  "expectations": [
+    {
+      "text": "spec.md 的 bug fix list 下方包含 propose 回寫標記",
+      "passed": false,
+      "evidence": "baseline 插入了 [confirmed: 方案A - 事件驅動非同步通知佇列] 格式的標記，非規範的 > propose: `docs/propose/fix-<slug>/` 格式"
+    },
+    {
+      "text": "quick-fix 項目不產生回寫標記",
+      "passed": true,
+      "evidence": "Safari 按鈕 bug 沒有收到任何標記（雖然整體格式不符規範）"
+    }
+  ],
+  "summary": {
+    "pass_rate": 0.5,
+    "passed": 1,
+    "failed": 1,
+    "total": 2
+  }
+}

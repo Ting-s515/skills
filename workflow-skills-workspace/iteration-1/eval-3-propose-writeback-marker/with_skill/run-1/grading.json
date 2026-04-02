@@ -1,0 +1,25 @@
+{
+  "expectations": [
+    {
+      "text": "spec.md 包含 user-management 回寫標記",
+      "passed": true,
+      "evidence": "summary 指出 spec.md 第 9 行已插入 > propose: `docs/propose/user-management/` 標記"
+    },
+    {
+      "text": "spec.md 包含 product-management 回寫標記",
+      "passed": true,
+      "evidence": "summary 指出 spec.md 第 17 行已插入 > propose: `docs/propose/product-management/` 標記"
+    },
+    {
+      "text": "標記位於對應功能段落下方",
+      "passed": true,
+      "evidence": "第 9 行（使用者管理段落下方）與第 17 行（商品管理段落下方），且回寫動作在確認後立即執行，在三份文檔產出之前完成"
+    }
+  ],
+  "summary": {
+    "pass_rate": 1.0,
+    "passed": 3,
+    "failed": 0,
+    "total": 3
+  }
+}

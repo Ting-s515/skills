@@ -1,0 +1,30 @@
+{
+  "eval_id": 6,
+  "eval_name": "apply-resume-midway",
+  "run_type": "with_skill",
+  "assertions": [
+    {
+      "text": "T1 狀態不變（仍為 [x][cr]）",
+      "passed": true,
+      "evidence": "03-tasks.md 中 T1 為 - [x][cr] T1:；transcript 步驟4說明「T1 跳過」"
+    },
+    {
+      "text": "T2 從 [x] 更新為 [x][cr]",
+      "passed": true,
+      "evidence": "03-tasks.md 中 T2 為 - [x][cr] T2:；transcript 步驟5補跑 code review 後更新"
+    },
+    {
+      "text": "T3 從 [ ] 更新為 [x][cr]",
+      "passed": true,
+      "evidence": "03-tasks.md 中 T3 為 - [x][cr] T3:；transcript 步驟6-7完整實作與CR"
+    },
+    {
+      "text": "輸出說明補跑 T2 code review",
+      "passed": true,
+      "evidence": "transcript 步驟3明確告知：「T2 實作完成但 code review 未執行，從補跑 T2 code review 開始」"
+    }
+  ],
+  "pass_count": 4,
+  "total_count": 4,
+  "pass_rate": 1.0
+}

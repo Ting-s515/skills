@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "spec.md 包含 ## 已完成 區塊",
+      "passed": true,
+      "evidence": "summary 確認在 spec.md 頂部插入了 ## 已完成 區塊"
+    },
+    {
+      "text": "user-management 出現在已完成表格",
+      "passed": true,
+      "evidence": "使用者管理（docs/propose/user-management/）已列入 ## 已完成 表格"
+    },
+    {
+      "text": "notification-fix 出現在已完成表格",
+      "passed": true,
+      "evidence": "Bug Fix：通知信修復（docs/propose/notification-fix/）已列入 ## 已完成 表格"
+    },
+    {
+      "text": "product-management 不出現在已完成表格",
+      "passed": true,
+      "evidence": "product-management 因 T2、T3 為 [ ]，正確被排除在 ## 已完成 表格之外"
+    }
+  ],
+  "summary": {
+    "pass_rate": 1.0,
+    "passed": 4,
+    "failed": 0,
+    "total": 4
+  }
+}
