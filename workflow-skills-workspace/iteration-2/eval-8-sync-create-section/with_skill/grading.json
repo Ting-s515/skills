@@ -1,0 +1,16 @@
+{
+  "eval_id": 8,
+  "eval_name": "sync-create-section",
+  "expectations": [
+    {
+      "text": "spec.md 頂部插入 ## 已完成 區塊",
+      "passed": true,
+      "evidence": "spec.md 第 1 行為 ## 已完成，是文檔第一個 ## 標題"
+    },
+    {
+      "text": "已完成表格包含 user-management",
+      "passed": true,
+      "evidence": "spec.md 第 5 行：| 使用者管理 | `docs/propose/user-management/` |"
+    }
+  ]
+}
