@@ -47,13 +47,11 @@ description: >
 2. 實作該任務，依照 `01-flow.md` 的邏輯與 `02-gherkin.md` 的驗收條件
 3. 實作完成後，將 `03-tasks.md` 中該任務的 `[ ]` 更新為 `[x]`
 4. 產生該任務的 commit message（格式：`<type>: <description>`）
-5. 使用 Agent tool 開啟 subagent 執行 code review（每個單一任務完成後立即執行）：
-   - 規格文檔路徑：`{root}/docs/propose/<feature-name>/`（含三份文檔）
-   - use `code-reviewer` skill 執行審查
-6. subagent 回傳結果後，**立即** 用 Edit tool 將 `03-tasks.md` 中該任務的 `[x]` 改為 `[x][cr]`，作為 code review 已完成的持久記錄。這一步不可遺漏——subagent 完成不等於 checkbox 已更新，必須主動執行 Edit。
-7. 宣告「Tx 完成 ✓」，直接繼續下一個任務（不等待使用者確認）
+5. 宣告「Tx 完成 ✓」，直接繼續下一個任務（不等待使用者確認）
 
 若任務有依賴關係（`依賴 Tx`），必須先確認依賴任務已完成（`[x]` 或 `[x][cr]`）再執行。
+
+**`[manual]` 任務跳過規則：** 標記為 `[manual]` 的任務（如 `T_test`）不自動執行，apply 遇到時直接跳過，等待使用者在新 session 中手動指定觸發。
 
 ### 3. 實作規範
 
@@ -67,7 +65,13 @@ description: >
 
 ## 全部完成後
 
-所有任務（`[x]`）完成後，告知使用者所有任務已完成。
+所有任務皆為 `[x]` 後，統一執行一次 code review：
+
+1. 使用 Agent tool 開啟 subagent，傳入：
+   - 規格文檔路徑：`{root}/docs/propose/<feature-name>/`（含三份文檔）
+   - use `code-reviewer` skill 執行審查，審查範圍涵蓋整個 feature 的架構與完整實作
+2. subagent 回傳結果後，**立即** 用 Edit tool 將 `03-tasks.md` 中所有 `[x]` 更新為 `[x][cr]`。這步不可遺漏——subagent 完成不等於 checkbox 已更新，必須主動執行 Edit。
+3. 告知使用者所有任務已完成，並附上 code review 結果摘要。
 
 ---
 
@@ -75,8 +79,8 @@ description: >
 
 若使用者在任務進行到一半時重新開啟對話：
 
-- 讀取 `03-tasks.md`，依任務狀態決定行動：
-  - `[x][cr]`：實作與 code review 皆完成，完全跳過
-  - `[x]`：實作完成但 code review 未執行，**直接補跑 code review**，subagent 回傳後立即用 Edit tool 更新為 `[x][cr]`
-  - `[ ]`：從此任務開始實作
-- 告知使用者目前進度，例如：「T1 已完成（含 code review），T2 實作完成但 code review 未執行，從補跑 T2 code review 開始」
+- 讀取 `03-tasks.md`，依整體狀態決定行動：
+  - 所有任務皆為 `[x][cr]`：全部完成，告知使用者即可
+  - 存在 `[ ]` 任務：從第一個 `[ ]` 繼續實作，完成後再統一執行 code review
+  - 所有任務皆為 `[x]`（無 `[x][cr]`）：實作已全部完成但 code review 未執行，直接補跑一次統一 code review，subagent 回傳後立即用 Edit tool 將所有 `[x]` 更新為 `[x][cr]`
+- 告知使用者目前進度，例如：「T1、T2 已完成實作，T3 尚未開始，從 T3 繼續實作」
