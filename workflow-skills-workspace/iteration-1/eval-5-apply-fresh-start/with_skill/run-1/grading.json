@@ -1,0 +1,20 @@
+{
+  "expectations": [
+    {
+      "text": "所有任務 checkbox 更新為 [x][cr]",
+      "passed": true,
+      "evidence": "summary 明確列出 T1、T2、T3 全部為 [x][cr]，每個任務實作後立即更新 [x]，code review 後立即更新 [x][cr]"
+    },
+    {
+      "text": "按依賴順序執行",
+      "passed": true,
+      "evidence": "T1 無依賴首先執行，T2 等待 T1 為 [x][cr] 後才執行，T3 等待 T2 為 [x][cr] 後才執行，完全符合依賴關係"
+    }
+  ],
+  "summary": {
+    "pass_rate": 1.0,
+    "passed": 2,
+    "failed": 0,
+    "total": 2
+  }
+}

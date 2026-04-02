@@ -1,0 +1,86 @@
+{
+  "metadata": {
+    "skill_name": "apply",
+    "iteration": 3,
+    "timestamp": "2026-03-26T00:00:00Z",
+    "changes": [
+      "apply 根路徑改為自動偵測（試 frontend/ → backend/ → docs/propose/ 順序），不再詢問使用者",
+      "apply 移除逐任務等待確認，全流程自動執行"
+    ],
+    "evals_run": [5, 6],
+    "evals_skipped": [1, 2, 3, 4, 7, 8],
+    "skip_reason": "propose 和 propose-sync skill 未修改，沿用 iteration-2 結果（100% pass rate）"
+  },
+  "summary": {
+    "overall_pass_rate": 1.0,
+    "total_assertions": 12,
+    "passed": 12,
+    "failed": 0
+  },
+  "runs": [
+    {
+      "eval_id": 5,
+      "eval_name": "apply-fresh-start",
+      "configuration": "with_skill (iteration-3)",
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 2,
+        "failed": 0,
+        "total": 2,
+        "time_seconds": 128.5,
+        "tokens": 20496
+      },
+      "vs_old_skill": {
+        "pass_rate_delta": 0.0,
+        "time_delta_seconds": 8.9,
+        "tokens_delta": 300,
+        "note": "通過率一致；新版自動偵測路徑，舊版需詢問前端/後端（模擬中選不區分）"
+      }
+    },
+    {
+      "eval_id": 5,
+      "eval_name": "apply-fresh-start",
+      "configuration": "old_skill",
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 2,
+        "failed": 0,
+        "total": 2,
+        "time_seconds": 119.6,
+        "tokens": 20196
+      }
+    },
+    {
+      "eval_id": 6,
+      "eval_name": "apply-resume-midway",
+      "configuration": "with_skill (iteration-3)",
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 109.2,
+        "tokens": 18172
+      },
+      "vs_old_skill": {
+        "pass_rate_delta": 0.0,
+        "time_delta_seconds": -16.8,
+        "tokens_delta": 304,
+        "note": "新版更快（-16.8s），自動流程省去逐任務等待；中途繼續邏輯兩版一致"
+      }
+    },
+    {
+      "eval_id": 6,
+      "eval_name": "apply-resume-midway",
+      "configuration": "old_skill",
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 126.0,
+        "tokens": 17868
+      }
+    }
+  ]
+}

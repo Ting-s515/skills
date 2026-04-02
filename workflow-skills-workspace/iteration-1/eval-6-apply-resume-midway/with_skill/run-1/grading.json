@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "T1 狀態不變（仍為 [x][cr]）",
+      "passed": true,
+      "evidence": "summary 明確指出 T1 已完成含 code review，未重新執行，狀態保持 [x][cr]"
+    },
+    {
+      "text": "T2 從 [x] 更新為 [x][cr]",
+      "passed": true,
+      "evidence": "補跑 T2 code review 後，立即用 Edit tool 將 T2 更新為 [x][cr]"
+    },
+    {
+      "text": "T3 從 [ ] 更新為 [x][cr]",
+      "passed": true,
+      "evidence": "實作 T3 後更新為 [x]，code review 後更新為 [x][cr]，最終三個任務全部 [x][cr]"
+    },
+    {
+      "text": "輸出說明補跑 T2 code review",
+      "passed": true,
+      "evidence": "summary 第 2 點：告知使用者 T1 已完成含 code review，T2 僅實作完成，從補跑 T2 code review 開始"
+    }
+  ],
+  "summary": {
+    "pass_rate": 1.0,
+    "passed": 4,
+    "failed": 0,
+    "total": 4
+  }
+}

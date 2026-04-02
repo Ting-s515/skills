@@ -47,11 +47,13 @@ description: >
 2. 實作該任務，依照 `01-flow.md` 的邏輯與 `02-gherkin.md` 的驗收條件
 3. 實作完成後，將 `03-tasks.md` 中該任務的 `[ ]` 更新為 `[x]`
 4. 產生該任務的 commit message（格式：`<type>: <description>`）
-5. 宣告「Tx 完成 ✓」，直接繼續下一個任務（不等待使用者確認）
+5. 使用 Agent tool 開啟 subagent 執行 code review（每個單一任務完成後立即執行）：
+   - 規格文檔路徑：`{root}/docs/propose/<feature-name>/`（含三份文檔）
+   - use `code-reviewer` skill 執行審查
+6. subagent 回傳結果後，**立即** 用 Edit tool 將 `03-tasks.md` 中該任務的 `[x]` 改為 `[x][cr]`，作為 code review 已完成的持久記錄。這一步不可遺漏——subagent 完成不等於 checkbox 已更新，必須主動執行 Edit。
+7. 宣告「Tx 完成 ✓」，直接繼續下一個任務（不等待使用者確認）
 
 若任務有依賴關係（`依賴 Tx`），必須先確認依賴任務已完成（`[x]` 或 `[x][bdd]`）再執行。
-
-**`[manual]` 任務跳過規則：** 標記為 `[manual]` 的任務（如 `T_test`）不自動執行，apply 遇到時直接跳過，等待使用者在新 session 中手動指定觸發。
 
 ### 3. 實作規範
 

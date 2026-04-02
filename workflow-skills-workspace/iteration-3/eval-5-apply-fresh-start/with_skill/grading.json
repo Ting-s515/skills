@@ -1,0 +1,20 @@
+{
+  "eval_id": 5,
+  "eval_name": "apply-fresh-start",
+  "run_type": "with_skill",
+  "assertions": [
+    {
+      "text": "所有任務 checkbox 更新為 [x][cr]",
+      "passed": true,
+      "evidence": "03-tasks.md 中 T1、T2、T3 皆為 - [x][cr] 格式"
+    },
+    {
+      "text": "按依賴順序執行（T2 在 T1 之後，T3 在 T2 之後）",
+      "passed": true,
+      "evidence": "transcript 中步驟2執行T1，步驟3確認T1[x][cr]後執行T2，步驟4確認T2[x][cr]後執行T3"
+    }
+  ],
+  "pass_count": 2,
+  "total_count": 2,
+  "pass_rate": 1.0
+}
