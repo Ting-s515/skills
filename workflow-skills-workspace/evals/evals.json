@@ -4,7 +4,7 @@
     {
       "id": 1,
       "prompt": "我有一份電商後台的規格文檔在 fixtures/eval-1-propose-new-features/spec.md，幫我 propose",
-      "expected_output": "在 docs/propose/ 下建立兩個功能資料夾（user-management 和 product-management），各自包含 01-flow.md、02-gherkin.md、03-tasks.md",
+      "expected_output": "在 docs/propose/ 下建立兩個功能資料夾（user-management 和 product-management），各自包含 01-flow.md、02-gherkin.md、03-tasks.md，且 03-tasks.md 包含 [manual] T_test 任務",
       "files": ["fixtures/eval-1-propose-new-features/spec.md"],
       "assertions": [
         {
@@ -18,6 +18,10 @@
         {
           "name": "03-tasks.md 包含未完成的任務 checkbox",
           "check": "兩個 03-tasks.md 都包含 - [ ] 格式的任務項目"
+        },
+        {
+          "name": "03-tasks.md 包含 [manual] T_test 任務",
+          "check": "兩個 03-tasks.md 都包含 - [ ] [manual] T_test: 行，表示測試任務被標記為手動觸發"
         }
       ]
     },
@@ -80,7 +84,7 @@
     {
       "id": 5,
       "prompt": "apply fixtures/eval-5-apply-fresh-start/docs/propose/user-management/",
-      "expected_output": "逐一實作 T1、T2、T3，每個任務完成後更新 checkbox 為 [x]，code review subagent 後更新為 [x][cr]",
+      "expected_output": "逐一實作 T1、T2、T3，每個任務完成後更新 checkbox 為 [x]，code review subagent 後更新為 [x][cr]；[manual] T_test 不被執行，保持 [ ] 狀態",
       "files": [
         "fixtures/eval-5-apply-fresh-start/docs/propose/user-management/01-flow.md",
         "fixtures/eval-5-apply-fresh-start/docs/propose/user-management/02-gherkin.md",
@@ -88,19 +92,23 @@
       ],
       "assertions": [
         {
-          "name": "所有任務 checkbox 更新為 [x][cr]",
-          "check": "03-tasks.md 中所有任務格式為 - [x][cr] Tx:"
+          "name": "所有一般任務 checkbox 更新為 [x][cr]",
+          "check": "03-tasks.md 中 T1、T2、T3 格式為 - [x][cr] Tx:"
         },
         {
           "name": "按依賴順序執行",
           "check": "T2 在 T1 完成後才執行，T3 在 T2 完成後才執行"
+        },
+        {
+          "name": "[manual] T_test 不被執行（保持 [ ]）",
+          "check": "03-tasks.md 中 T_test 仍為 - [ ] [manual] T_test:，未被變更為 [x] 或 [x][cr]"
         }
       ]
     },
     {
       "id": 6,
       "prompt": "繼續實作 fixtures/eval-6-apply-resume-midway/docs/propose/notification-fix/",
-      "expected_output": "告知 T1 已完成（含 cr），T2 僅實作完成需補跑 code review → 補跑後更新為 [x][cr] → 再實作 T3",
+      "expected_output": "告知 T1 已完成（含 cr），T2 僅實作完成需補跑 code review → 補跑後更新為 [x][cr] → 再實作 T3；[manual] T_test 不被執行",
       "files": [
         "fixtures/eval-6-apply-resume-midway/docs/propose/notification-fix/01-flow.md",
         "fixtures/eval-6-apply-resume-midway/docs/propose/notification-fix/02-gherkin.md",
@@ -122,13 +130,17 @@
         {
           "name": "輸出說明補跑 T2 code review",
           "check": "對話輸出提及 T2 已完成但 code review 未執行，現在補跑"
+        },
+        {
+          "name": "[manual] T_test 不被執行（保持 [ ]）",
+          "check": "03-tasks.md 中 T_test 仍為 - [ ] [manual] T_test:，未被執行"
         }
       ]
     },
     {
       "id": 7,
       "prompt": "propose-sync，規格文檔是 fixtures/eval-7-sync-partial-complete/spec.md",
-      "expected_output": "只將 user-management 和 notification-fix（全部 [x][cr]）同步至 ## 已完成 表格，product-management（有未完成任務）不出現",
+      "expected_output": "只將 user-management 和 notification-fix（一般任務全部 [x][cr]，[manual] 任務忽略）同步至 ## 已完成 表格，product-management（有未完成一般任務）不出現",
       "files": [
         "fixtures/eval-7-sync-partial-complete/spec.md",
         "fixtures/eval-7-sync-partial-complete/docs/propose/user-management/03-tasks.md",
@@ -151,13 +163,17 @@
         {
           "name": "product-management 不出現在已完成表格",
           "check": "## 已完成 表格中不包含 product-management"
+        },
+        {
+          "name": "[manual] T_test 不阻礙完成判斷",
+          "check": "user-management 和 notification-fix 的 03-tasks.md 含有 [ ] [manual] T_test 但仍被視為已完成並納入表格"
         }
       ]
     },
     {
       "id": 8,
       "prompt": "同步完成狀態，規格文檔是 fixtures/eval-8-sync-create-section/spec.md",
-      "expected_output": "規格文檔沒有 ## 已完成 區塊，同步後在文檔頂部插入 ## 已完成 表格，列出 user-management",
+      "expected_output": "規格文檔沒有 ## 已完成 區塊，同步後在文檔頂部插入 ## 已完成 表格，列出 user-management（含 [manual] T_test 但一般任務全 [x][cr]，視為已完成）",
       "files": [
         "fixtures/eval-8-sync-create-section/spec.md",
         "fixtures/eval-8-sync-create-section/docs/propose/user-management/03-tasks.md"
@@ -169,7 +185,7 @@
         },
         {
           "name": "已完成表格包含 user-management",
-          "check": "## 已完成 表格中包含 user-management"
+          "check": "## 已完成 表格中包含 user-management（即使含有 [ ] [manual] T_test 也視為已完成）"
         }
       ]
     }
