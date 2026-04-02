@@ -1,0 +1,127 @@
+{
+  "metadata": {
+    "skill_name": "propose-apply-sync-workflow",
+    "iteration": 2,
+    "timestamp": "2026-03-26T00:00:00Z",
+    "changes": [
+      "propose Step 1 改為 invoke clarify-flow skill（原：讀取 SKILL.md）",
+      "propose Step 2 改為 invoke export-gherkin skill（原：inline 產出 Gherkin）",
+      "propose-sync Step 1 改為從 > propose: 標記自動推斷掃描目錄（原：詢問前端/後端）"
+    ],
+    "evals_run": [1, 2, 3, 4, 7, 8],
+    "evals_skipped": [5, 6],
+    "skip_reason": "apply skill 未修改，沿用 iteration-1 結果"
+  },
+  "summary": {
+    "overall_pass_rate": 1.0,
+    "total_assertions": 16,
+    "passed": 16,
+    "failed": 0
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "propose-new-features",
+      "configuration": "with_skill (iteration-2)",
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 278.2,
+        "tokens": 44838,
+        "tool_calls": 28
+      },
+      "vs_iteration_1": {
+        "pass_rate_delta": 0.0,
+        "time_delta_seconds": 159.9,
+        "tokens_delta": 23418,
+        "note": "時間與 token 增加，因為額外 invoke clarify-flow 和 export-gherkin skill（各需讀取並執行）"
+      }
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "propose-bugfix-routing",
+      "configuration": "with_skill (iteration-2)",
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 165.8,
+        "tokens": 28598,
+        "tool_calls": 18
+      },
+      "vs_iteration_1": {
+        "pass_rate_delta": 0.0,
+        "time_delta_seconds": 11.5,
+        "tokens_delta": 3161,
+        "note": "結果一致，token 小幅增加"
+      }
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "propose-writeback-marker",
+      "configuration": "with_skill (iteration-2)",
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 251.2,
+        "tokens": 42022,
+        "tool_calls": 29
+      }
+    },
+    {
+      "eval_id": 4,
+      "eval_name": "propose-bugfix-writeback",
+      "configuration": "with_skill (iteration-2)",
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 2,
+        "failed": 0,
+        "total": 2,
+        "time_seconds": 153.9,
+        "tokens": 27731,
+        "tool_calls": 18
+      }
+    },
+    {
+      "eval_id": 7,
+      "eval_name": "sync-partial-complete",
+      "configuration": "with_skill (iteration-2)",
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 67.4,
+        "tokens": 16604,
+        "tool_calls": 12
+      },
+      "vs_iteration_1": {
+        "pass_rate_delta": 0.0,
+        "note": "新行為：從 > propose: 標記自動推斷掃描目錄，不再詢問使用者"
+      }
+    },
+    {
+      "eval_id": 8,
+      "eval_name": "sync-create-section",
+      "configuration": "with_skill (iteration-2)",
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 2,
+        "failed": 0,
+        "total": 2,
+        "time_seconds": 58.9,
+        "tokens": 14846,
+        "tool_calls": 11
+      },
+      "vs_iteration_1": {
+        "pass_rate_delta": 0.0,
+        "note": "新行為：從 > propose: 標記自動推斷掃描目錄，不再詢問使用者"
+      }
+    }
+  ]
+}

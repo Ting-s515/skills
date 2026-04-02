@@ -1,0 +1,25 @@
+{
+  "expectations": [
+    {
+      "text": "建立 user-management 資料夾三份文檔",
+      "passed": true,
+      "evidence": "summary 明確列出 docs/propose/user-management/01-flow.md、02-gherkin.md、03-tasks.md 均已建立"
+    },
+    {
+      "text": "建立 product-management 資料夾三份文檔",
+      "passed": true,
+      "evidence": "summary 明確列出 docs/propose/product-management/ 下三份文檔均已建立"
+    },
+    {
+      "text": "03-tasks.md 包含未完成的任務 checkbox",
+      "passed": true,
+      "evidence": "summary 提及 T1–T9 與 T1–T11 任務清單，含依賴關係標示，格式應為 - [ ] Tx:"
+    }
+  ],
+  "summary": {
+    "pass_rate": 1.0,
+    "passed": 3,
+    "failed": 0,
+    "total": 3
+  }
+}

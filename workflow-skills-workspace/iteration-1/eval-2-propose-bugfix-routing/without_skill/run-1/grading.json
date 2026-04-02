@@ -1,0 +1,25 @@
+{
+  "expectations": [
+    {
+      "text": "[quick-fix] 項目不建立 propose 資料夾",
+      "passed": true,
+      "evidence": "baseline 沒有建立任何 docs/propose/ 資料夾，Safari bug 被整合在 implementation-plan.md 中直接描述修復步驟"
+    },
+    {
+      "text": "[propose] 項目建立 fix- 資料夾",
+      "passed": false,
+      "evidence": "所有 bug 整合在一份 implementation-plan.md，沒有建立 fix- 資料夾結構"
+    },
+    {
+      "text": "無標記項目有明確分流結果",
+      "passed": false,
+      "evidence": "庫存 bug 被視為 quick-fix 等級直接修復，雖有判斷但非系統性的標籤驅動分流；且沒有建立對應資料夾"
+    }
+  ],
+  "summary": {
+    "pass_rate": 0.3333,
+    "passed": 1,
+    "failed": 2,
+    "total": 3
+  }
+}

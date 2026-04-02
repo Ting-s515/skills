@@ -1,0 +1,15 @@
+{
+  "eval_id": 5,
+  "eval_name": "apply-fresh-start",
+  "prompt": "apply fixtures/eval-5-apply-fresh-start/docs/propose/user-management/",
+  "assertions": [
+    {
+      "text": "所有任務 checkbox 更新為 [x][cr]",
+      "check": "03-tasks.md 中所有任務格式為 - [x][cr] Tx:"
+    },
+    {
+      "text": "按依賴順序執行（T2 在 T1 之後，T3 在 T2 之後）",
+      "check": "T2 在 T1 完成後才執行，T3 在 T2 完成後才執行"
+    }
+  ]
+}
