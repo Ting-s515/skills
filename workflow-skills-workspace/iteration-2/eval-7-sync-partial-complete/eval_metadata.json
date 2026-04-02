@@ -1,0 +1,23 @@
+{
+  "eval_id": 7,
+  "eval_name": "sync-partial-complete",
+  "prompt": "propose-sync，規格文檔是 fixtures/eval-7-sync-partial-complete/spec.md",
+  "assertions": [
+    {
+      "text": "spec.md 包含 ## 已完成 區塊",
+      "check": "spec.md 中存在 ## 已完成"
+    },
+    {
+      "text": "user-management 出現在已完成表格",
+      "check": "## 已完成 表格中包含 user-management"
+    },
+    {
+      "text": "notification-fix 出現在已完成表格",
+      "check": "## 已完成 表格中包含 notification-fix"
+    },
+    {
+      "text": "product-management 不出現在已完成表格",
+      "check": "## 已完成 表格中不包含 product-management"
+    }
+  ]
+}

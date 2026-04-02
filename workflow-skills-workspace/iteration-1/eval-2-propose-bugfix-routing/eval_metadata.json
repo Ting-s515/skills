@@ -1,0 +1,19 @@
+{
+  "eval_id": 2,
+  "eval_name": "propose-bugfix-routing",
+  "prompt": "依照 spec.md 幫我規劃實作方案",
+  "assertions": [
+    {
+      "text": "[quick-fix] 項目不建立 propose 資料夾",
+      "check": "輸出摘要中列出直接實作清單，Safari 按鈕 bug 不出現在 docs/propose/ 資料夾"
+    },
+    {
+      "text": "[propose] 項目建立 fix- 資料夾",
+      "check": "docs/propose/ 下存在 fix-notification 或類似 slug 的資料夾"
+    },
+    {
+      "text": "無標記項目有明確分流結果",
+      "check": "輸出中說明庫存 bug 被歸類為 quick-fix 或 propose，並附理由"
+    }
+  ]
+}
