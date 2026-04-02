@@ -1,0 +1,15 @@
+{
+  "eval_id": 4,
+  "eval_name": "propose-bugfix-writeback",
+  "prompt": "幫我依照 fixtures/eval-4-propose-bugfix-writeback/spec.md fix bugs，走 propose 流程的 bug 確認後立即回寫標記到規格文檔",
+  "assertions": [
+    {
+      "text": "spec.md 的 bug fix list 下方包含 propose 回寫標記",
+      "check": "spec.md 中存在 > propose: `docs/propose/fix-` 開頭的標記"
+    },
+    {
+      "text": "quick-fix 項目不產生回寫標記",
+      "check": "Safari 按鈕 bug 對應位置下方沒有 > propose: 標記"
+    }
+  ]
+}

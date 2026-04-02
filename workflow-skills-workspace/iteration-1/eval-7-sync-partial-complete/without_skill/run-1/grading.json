@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "spec.md 包含 ## 已完成 區塊",
+      "passed": true,
+      "evidence": "baseline 在 spec.md 末尾新增了 ## 已完成 區塊（注意：skill 要求在頂部，baseline 放在末尾）"
+    },
+    {
+      "text": "user-management 出現在已完成表格",
+      "passed": true,
+      "evidence": "user-management 被列入已完成"
+    },
+    {
+      "text": "notification-fix 出現在已完成表格",
+      "passed": true,
+      "evidence": "notification-fix 被列入已完成"
+    },
+    {
+      "text": "product-management 不出現在已完成表格",
+      "passed": true,
+      "evidence": "product-management 有 [ ] 任務，正確被排除——但 baseline 使用 [x] 作為完成標準而非 [x][cr]，此 fixture 結果相同"
+    }
+  ],
+  "summary": {
+    "pass_rate": 1.0,
+    "passed": 4,
+    "failed": 0,
+    "total": 4
+  }
+}

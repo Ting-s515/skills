@@ -1,0 +1,19 @@
+{
+  "eval_id": 3,
+  "eval_name": "propose-writeback-marker",
+  "prompt": "開始 propose，規格文檔是 fixtures/eval-3-propose-writeback-marker/spec.md",
+  "assertions": [
+    {
+      "text": "spec.md 包含 user-management 回寫標記",
+      "check": "spec.md 中存在 > propose: `docs/propose/user-management/`"
+    },
+    {
+      "text": "spec.md 包含 product-management 回寫標記",
+      "check": "spec.md 中存在 > propose: `docs/propose/product-management/`"
+    },
+    {
+      "text": "標記位於對應功能段落下方",
+      "check": "## 使用者管理 標題與 > propose: user-management 標記之間無其他功能段落"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "eval_id": 4,
+  "eval_name": "propose-bugfix-writeback",
+  "expectations": [
+    {
+      "text": "spec.md 的 bug fix list 下方包含 propose 回寫標記",
+      "passed": true,
+      "evidence": "spec.md 第 8 行：> propose: `docs/propose/fix-order-notification/`；第 12 行：> propose: `docs/propose/fix-product-availability-status/`"
+    },
+    {
+      "text": "quick-fix 項目不產生回寫標記",
+      "passed": true,
+      "evidence": "Safari bug 在第 5 行（[quick-fix] 標記），第 6-7 行無 > propose: 標記，propose 標記從第 8 行起屬於其他 bug"
+    }
+  ]
+}
