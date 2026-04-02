@@ -1,0 +1,25 @@
+{
+  "expectations": [
+    {
+      "text": "spec.md 包含 user-management 回寫標記",
+      "passed": false,
+      "evidence": "baseline 沒有在 spec.md 中插入任何標記，直接在對話中輸出規劃方案"
+    },
+    {
+      "text": "spec.md 包含 product-management 回寫標記",
+      "passed": false,
+      "evidence": "同上，spec.md 保持原始內容不變"
+    },
+    {
+      "text": "標記位於對應功能段落下方",
+      "passed": false,
+      "evidence": "無任何標記插入，此斷言無從驗證"
+    }
+  ],
+  "summary": {
+    "pass_rate": 0.0,
+    "passed": 0,
+    "failed": 3,
+    "total": 3
+  }
+}

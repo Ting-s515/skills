@@ -1,0 +1,23 @@
+{
+  "eval_id": 6,
+  "eval_name": "apply-resume-midway",
+  "prompt": "繼續實作 fixtures/eval-6-apply-resume-midway/docs/propose/notification-fix/",
+  "assertions": [
+    {
+      "text": "T1 狀態不變（仍為 [x][cr]）",
+      "check": "03-tasks.md 中 T1 仍為 - [x][cr] T1:"
+    },
+    {
+      "text": "T2 從 [x] 更新為 [x][cr]",
+      "check": "03-tasks.md 中 T2 為 - [x][cr] T2:"
+    },
+    {
+      "text": "T3 從 [ ] 更新為 [x][cr]",
+      "check": "03-tasks.md 中 T3 為 - [x][cr] T3:"
+    },
+    {
+      "text": "輸出說明補跑 T2 code review",
+      "check": "對話輸出提及 T2 已完成但 code review 未執行，現在補跑"
+    }
+  ]
+}

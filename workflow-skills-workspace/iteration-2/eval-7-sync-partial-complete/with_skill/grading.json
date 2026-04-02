@@ -1,0 +1,26 @@
+{
+  "eval_id": 7,
+  "eval_name": "sync-partial-complete",
+  "expectations": [
+    {
+      "text": "spec.md 包含 ## 已完成 區塊",
+      "passed": true,
+      "evidence": "spec.md 第 3 行存在 ## 已完成"
+    },
+    {
+      "text": "user-management 出現在已完成表格",
+      "passed": true,
+      "evidence": "spec.md 第 7 行：| 使用者管理 | `docs/propose/user-management/` |"
+    },
+    {
+      "text": "notification-fix 出現在已完成表格",
+      "passed": true,
+      "evidence": "spec.md 第 8 行：| Bug Fix：通知信修復 | `docs/propose/notification-fix/` |"
+    },
+    {
+      "text": "product-management 不出現在已完成表格",
+      "passed": true,
+      "evidence": "product-management 僅出現在第 26 行的 > propose: 標記中（主體內容區），未出現在 ## 已完成 表格內"
+    }
+  ]
+}
