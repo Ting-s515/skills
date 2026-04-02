@@ -1,0 +1,20 @@
+{
+  "expectations": [
+    {
+      "text": "spec.md 頂部插入 ## 已完成 區塊",
+      "passed": true,
+      "evidence": "## 已完成 插入在文檔第一行（H1 標題之前），為文檔最頂部"
+    },
+    {
+      "text": "已完成表格包含 user-management",
+      "passed": true,
+      "evidence": "使用者管理（docs/propose/user-management/）已列入 ## 已完成 表格"
+    }
+  ],
+  "summary": {
+    "pass_rate": 1.0,
+    "passed": 2,
+    "failed": 0,
+    "total": 2
+  }
+}

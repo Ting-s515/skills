@@ -1,0 +1,15 @@
+{
+  "eval_id": 8,
+  "eval_name": "sync-create-section",
+  "prompt": "同步完成狀態，規格文檔是 fixtures/eval-8-sync-create-section/spec.md",
+  "assertions": [
+    {
+      "text": "spec.md 頂部插入 ## 已完成 區塊",
+      "check": "spec.md 第一個 ## 標題為 ## 已完成"
+    },
+    {
+      "text": "已完成表格包含 user-management",
+      "check": "## 已完成 表格中包含 user-management"
+    }
+  ]
+}

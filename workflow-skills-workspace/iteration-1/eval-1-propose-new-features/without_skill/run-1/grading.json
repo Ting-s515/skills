@@ -1,0 +1,25 @@
+{
+  "expectations": [
+    {
+      "text": "建立 user-management 資料夾三份文檔",
+      "passed": false,
+      "evidence": "baseline 只建立了單一 proposals/implementation-plan.md，沒有建立 docs/propose/user-management/ 資料夾結構"
+    },
+    {
+      "text": "建立 product-management 資料夾三份文檔",
+      "passed": false,
+      "evidence": "同上，無任何 docs/propose/ 子資料夾"
+    },
+    {
+      "text": "03-tasks.md 包含未完成的任務 checkbox",
+      "passed": false,
+      "evidence": "沒有建立任何 03-tasks.md，只有一份整合的 implementation-plan.md"
+    }
+  ],
+  "summary": {
+    "pass_rate": 0.0,
+    "passed": 0,
+    "failed": 3,
+    "total": 3
+  }
+}
