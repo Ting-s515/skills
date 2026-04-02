@@ -1,0 +1,21 @@
+{
+  "eval_id": 2,
+  "eval_name": "propose-bugfix-routing",
+  "expectations": [
+    {
+      "text": "[quick-fix] 項目不建立 propose 資料夾",
+      "passed": true,
+      "evidence": "conversation_summary.md 列出 Safari 按鈕 bug 為直接實作清單，docs/propose/ 下僅有 fix-order-notification/ 和 fix-stock-button-state/，無 safari 相關資料夾"
+    },
+    {
+      "text": "[propose] 項目建立 fix- 資料夾",
+      "passed": true,
+      "evidence": "docs/propose/fix-order-notification/ 存在（含三份文檔）"
+    },
+    {
+      "text": "無標記項目有明確分流結果",
+      "passed": true,
+      "evidence": "庫存歸零 bug 被 AI 判斷為 propose，理由：跨前後台多檔案、涉及狀態管理與即時資料流，符合 issue-doc-spec 準則"
+    }
+  ]
+}

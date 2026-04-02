@@ -1,0 +1,25 @@
+{
+  "expectations": [
+    {
+      "text": "[quick-fix] 項目不建立 propose 資料夾",
+      "passed": true,
+      "evidence": "Safari 按鈕 bug 被列入直接實作清單，未建立任何 docs/propose/fix- 資料夾"
+    },
+    {
+      "text": "[propose] 項目建立 fix- 資料夾",
+      "passed": true,
+      "evidence": "docs/propose/fix-order-notification-flow/ 已建立完整三份文檔"
+    },
+    {
+      "text": "無標記項目有明確分流結果",
+      "passed": true,
+      "evidence": "庫存按鈕 bug 被判斷為 [propose]，理由：跨多檔案協調＋涉及狀態管理資料流，建立了 fix-product-stock-button-state/ 資料夾"
+    }
+  ],
+  "summary": {
+    "pass_rate": 1.0,
+    "passed": 3,
+    "failed": 0,
+    "total": 3
+  }
+}

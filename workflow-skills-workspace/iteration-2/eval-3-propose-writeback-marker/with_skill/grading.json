@@ -1,0 +1,21 @@
+{
+  "eval_id": 3,
+  "eval_name": "propose-writeback-marker",
+  "expectations": [
+    {
+      "text": "spec.md 包含 user-management 回寫標記",
+      "passed": true,
+      "evidence": "spec.md 第 9 行：> propose: `docs/propose/user-management/`"
+    },
+    {
+      "text": "spec.md 包含 product-management 回寫標記",
+      "passed": true,
+      "evidence": "spec.md 第 17 行：> propose: `docs/propose/product-management/`"
+    },
+    {
+      "text": "標記位於對應功能段落下方",
+      "passed": true,
+      "evidence": "## 使用者管理 在第 3 行，標記在第 9 行；## 商品管理 在第 11 行，兩個標記之間無其他功能 ## 標題"
+    }
+  ]
+}
