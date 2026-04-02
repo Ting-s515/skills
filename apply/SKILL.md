@@ -65,13 +65,13 @@ description: >
 
 ## 全部完成後
 
-所有任務皆為 `[x]` 後，統一執行一次 code review：
+所有一般任務（無 `[manual]` 標記）皆為 `[x]` 後，統一執行一次 code review：
 
 1. 使用 Agent tool 開啟 subagent，傳入：
    - 規格文檔路徑：`{root}/docs/propose/<feature-name>/`（含三份文檔）
-   - use `code-reviewer` skill 執行審查，審查範圍涵蓋整個 feature 的架構與完整實作
-2. subagent 回傳結果後，**立即** 用 Edit tool 將 `03-tasks.md` 中所有 `[x]` 更新為 `[x][cr]`。這步不可遺漏——subagent 完成不等於 checkbox 已更新，必須主動執行 Edit。
-3. 告知使用者所有任務已完成，並附上 code review 結果摘要。
+   - 使用 Skill tool 呼叫 `code-reviewer` skill 執行審查，審查範圍涵蓋整個 feature 的架構與完整實作
+2. subagent 回傳結果後，**立即** 用 Edit tool 將 `03-tasks.md` 中所有一般任務的 `[x]` 更新為 `[x][cr]`。`[manual]` 任務保持原狀，不納入此次 code review。這步不可遺漏——subagent 完成不等於 checkbox 已更新，必須主動執行 Edit。
+3. 告知使用者所有任務已完成，並附上 code review 結果摘要。`[manual]` 任務（如 `T_test`）請在新 session 中手動指定觸發。
 
 ---
 

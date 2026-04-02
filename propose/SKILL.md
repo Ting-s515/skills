@@ -149,7 +149,10 @@ backend/docs/propose/<feature-a>/
 - [ ] T1: <任務描述>（影響：`path/to/file.ts`）
 - [ ] T2: <任務描述>（影響：`path/to/other.ts`）（依賴 T1）
 - [ ] T3: <任務描述>
+- [ ] [manual] T_test: 補上單元測試，使用 Skill tool 呼叫 `bdd-unit-test` skill 分析實作檔案產出測試（依賴所有前置任務）
 ```
+
+`[manual]` 標記表示此任務**不由 apply 自動執行**，須由使用者手動在新 session 中指定觸發。
 
 ---
 
