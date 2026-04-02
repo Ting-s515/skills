@@ -1,0 +1,21 @@
+{
+  "eval_id": 1,
+  "eval_name": "propose-new-features",
+  "expectations": [
+    {
+      "text": "建立 user-management 資料夾三份文檔",
+      "passed": true,
+      "evidence": "outputs/docs/propose/user-management/ 下存在 01-flow.md、02-gherkin.md、03-tasks.md"
+    },
+    {
+      "text": "建立 product-management 資料夾三份文檔",
+      "passed": true,
+      "evidence": "outputs/docs/propose/product-management/ 下存在 01-flow.md、02-gherkin.md、03-tasks.md"
+    },
+    {
+      "text": "03-tasks.md 包含未完成的任務 checkbox",
+      "passed": true,
+      "evidence": "user-management 有 9 個 - [ ] 任務、product-management 有 10 個 - [ ] 任務"
+    }
+  ]
+}

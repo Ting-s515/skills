@@ -1,0 +1,20 @@
+{
+  "expectations": [
+    {
+      "text": "所有任務 checkbox 更新為 [x][cr]",
+      "passed": false,
+      "evidence": "baseline 只將 checkbox 更新為 [x]，沒有執行 code review 步驟，因此沒有 [x][cr]"
+    },
+    {
+      "text": "按依賴順序執行",
+      "passed": true,
+      "evidence": "T1→T2→T3 順序正確，有依照 01-flow.md 的依賴關係執行"
+    }
+  ],
+  "summary": {
+    "pass_rate": 0.5,
+    "passed": 1,
+    "failed": 1,
+    "total": 2
+  }
+}
