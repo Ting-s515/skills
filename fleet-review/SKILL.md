@@ -1,7 +1,7 @@
 ---
 name: fleet-review
 description: |
-  code-reviewer 的多代理擴充版。並行啟動 Claude + Codex 子代理從不同角度審查程式碼，
+  並行啟動 Claude + Codex 子代理從不同角度審查程式碼，
   透過跨模型交叉驗證消除誤報，找出單次審查遺漏的問題。
   當使用者說「fleet review」、「multi-agent review」、「用多個代理審查我的程式碼」、
   「fleet-review」、「深度審查」或「完整審查流程」時觸發。
@@ -9,7 +9,7 @@ description: |
 
 # /fleet-review — 多代理程式碼審查
 
-以 code-reviewer 為基礎，並行啟動 Claude + Codex 子代理，再交叉比對找出高信心問題。
+並行啟動多個 Claude + Codex 子代理從不同角度審查程式碼，再交叉比對找出高信心問題。
 
 核心價值：不同代理以不同順序讀取程式碼，會建立不同的心智模型，因此發現不同的問題。
 加入模型多樣性（Claude + Codex）可加乘這個效果，交叉驗證再過濾誤報。

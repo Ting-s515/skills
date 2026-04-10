@@ -1,5 +1,7 @@
 # Fleet Review 工作流程圖
 
+多代理並行程式碼審查技能。並行啟動 Claude + Codex 子代理從不同角度審查，透過獨立驗證代理交叉比對消除誤報。
+
 ```mermaid
 flowchart TD
     Start([使用者觸發 fleet-review]) --> S0
