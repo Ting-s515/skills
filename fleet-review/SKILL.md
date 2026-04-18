@@ -16,6 +16,23 @@ description: |
 
 ---
 
+## 模式選擇（啟動前詢問使用者）
+
+詢問使用者選擇審查模式：
+
+```
+請選擇審查模式：
+1. 混合模式（預設）— 2 Codex + 1 Claude，兼顧品質與 token 效率
+2. 全 Codex 模式 — 3 Codex（effort 不同），適合 Claude token 不足時使用
+```
+
+- 選 **1（混合模式）**：執行步驟 1 正常配置（2 Codex + 1 Claude）
+- 選 **2（全 Codex 模式）**：步驟 1 改用 3 個 Codex 代理（見文末全 Codex 配置）
+
+若使用者未明確選擇，預設使用混合模式。
+
+---
+
 ## 步驟 0：前置檢查（0 個 sub-agent）
 
 > 僅執行 Bash 指令，不啟動任何 sub-agent。
@@ -162,6 +179,7 @@ Codex（全面）：N 個發現
 ## 步驟 3：獨立驗證（2 個 sub-agent，單一回應同時啟動）
 
 > 1 個 Claude Agent + 1 個 Codex Bash，共 2 個並行。
+> 若任一代理結果缺失（非 `NO_FINDINGS`），以現有結果繼續，報告標注缺失代理。
 
 驗證代理不知道哪個審查代理提出哪條發現——它們是「冷眼旁觀者」，
 回去讀原始程式碼，獨立確認每條發現是否真的存在，過濾審查代理的誤判。
@@ -295,16 +313,98 @@ rm -f "$DIFF_FILE"
 
 ---
 
-## 備用方案：Claude token 用完冷卻中
+## 全 Codex 模式配置（模式 2）
 
-若 Claude Agent 因 token 耗盡無法啟動，改以 3 個 Codex 子代理取代審查層：
+步驟 1 改用 3 個 Codex 審查代理，步驟 3 驗證層也全部改用 Codex（effort 不同）。
+適用於 Claude 可能在中途 rate limit 的情境，整條 pipeline 不依賴 Claude sub-agent。
 
-- Codex Agent A：邏輯與安全（同步驟 1 Codex Agent A）
-- Codex Agent B：穩健性與品質（同步驟 1 Codex Agent B）
-- Codex Agent C：全面審查（不限方向，找任何問題）
+### 審查層（步驟 1）
 
-驗證層（步驟 3）保持不動，等待 Claude token 冷卻後仍使用 Claude 驗證者 + Codex 驗證者。
-裁決規則與原版相同。
+#### Codex Agent A — 邏輯與安全（effort: medium）
+
+同步驟 1 Codex Agent A，`model_reasoning_effort="medium"`。
+
+#### Codex Agent B — 穩健性與品質（effort: medium）
+
+同步驟 1 Codex Agent B，`model_reasoning_effort="medium"`。
+
+#### Codex Agent C — 全面審查（effort: high）
+
+```bash
+codex exec "你是程式碼審查代理。審查以下 diff 的所有變更，閱讀實際原始檔了解上下文。
+找出邏輯錯誤、安全問題、邊界情況、效能問題與程式碼品質問題。
+絕不修改任何程式碼（唯讀）。
+
+Diff 檔案：$DIFF_FILE
+
+每個發現輸出：
+FINDING:
+  severity: P0|P1|P2|P3
+  file: <路徑>
+  line: <行號>
+  title: <一行摘要>
+  detail: <2-3 句話說明問題及其影響>
+
+嚴重程度：P0=生產崩潰/安全漏洞 P1=功能錯誤 P2=條件性問題 P3=輕微問題
+若無發現，輸出：NO_FINDINGS" \
+  -s read-only \
+  -c 'model_reasoning_effort="high"' \
+  2>/dev/null
+```
+
+使用 `timeout: 300000`（5 分鐘）。
+
+### 驗證層（步驟 3）— 全 Codex 模式專用
+
+以 2 個 Codex 驗證者取代，effort 不同以提供觀點多樣性。
+
+#### Codex 驗證者 A — medium（Bash，run_in_background: true）
+
+```bash
+codex exec "你是驗證代理。以下發現由程式碼審查者回報。
+閱讀實際原始檔案並驗證每一條。
+
+對每條：讀取 file/line，追蹤邏輯，給出裁決。
+
+待驗證的發現：
+[貼上所有 FINDING 區塊]
+
+每條發現輸出：
+VERDICT:
+  original_title: <來自發現的 title>
+  status: CONFIRMED|REFUTED|LIKELY
+  confidence: HIGH|MEDIUM|LOW
+  reasoning: <1-2 句說明理由>" \
+  -s read-only \
+  -c 'model_reasoning_effort="medium"' \
+  2>/dev/null
+```
+
+使用 `timeout: 300000`（5 分鐘）。
+
+#### Codex 驗證者 B — high（Bash，run_in_background: true）
+
+```bash
+codex exec "你是驗證代理。以下發現由程式碼審查者回報。
+閱讀實際原始檔案並驗證每一條。
+
+對每條：讀取 file/line，追蹤邏輯，給出裁決。
+
+待驗證的發現：
+[貼上所有 FINDING 區塊]
+
+每條發現輸出：
+VERDICT:
+  original_title: <來自發現的 title>
+  status: CONFIRMED|REFUTED|LIKELY
+  confidence: HIGH|MEDIUM|LOW
+  reasoning: <1-2 句說明理由>" \
+  -s read-only \
+  -c 'model_reasoning_effort="high"' \
+  2>/dev/null
+```
+
+使用 `timeout: 300000`（5 分鐘）。
 
 ---
 
@@ -313,4 +413,4 @@ rm -f "$DIFF_FILE"
 - **絕不修改程式碼**，所有代理以唯讀模式執行
 - **審查代理全部在單一回應中並行啟動**，不得序列化
 - **驗證代理在審查代理全部完成後，同一回應中並行啟動**
-- **若某個代理逾時**，繼續處理其他代理的結果，最終報告標注「N 個代理完成」
+- **若某個代理結果缺失（非 NO_FINDINGS）**，繼續處理其他代理的結果，最終報告標注「[代理名稱] 結果缺失，已跳過」
