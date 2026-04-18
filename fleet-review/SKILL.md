@@ -90,6 +90,7 @@ FINDING:
 嚴重程度：P0=生產崩潰/安全漏洞 P1=功能錯誤 P2=條件性問題 P3=輕微問題
 若無發現，輸出：NO_FINDINGS" \
   -s read-only \
+  -m "gpt-5.4" \
   -c 'model_reasoning_effort="medium"' \
   2>/dev/null
 ```
@@ -122,6 +123,7 @@ FINDING:
 嚴重程度：P0=生產崩潰/安全漏洞 P1=功能錯誤 P2=條件性問題 P3=輕微問題
 若無發現，輸出：NO_FINDINGS" \
   -s read-only \
+  -m "gpt-5.4" \
   -c 'model_reasoning_effort="medium"' \
   2>/dev/null
 ```
@@ -231,6 +233,7 @@ VERDICT:
   confidence: HIGH|MEDIUM|LOW
   reasoning: <1-2 句說明理由>" \
   -s read-only \
+  -m "gpt-5.4" \
   -c 'model_reasoning_effort="medium"' \
   2>/dev/null
 ```
@@ -322,11 +325,11 @@ rm -f "$DIFF_FILE"
 
 #### Codex Agent A — 邏輯與安全（effort: medium）
 
-同步驟 1 Codex Agent A，`model_reasoning_effort="medium"`。
+同步驟 1 Codex Agent A，`-m "gpt-5.4" -c 'model_reasoning_effort="medium"'`。
 
 #### Codex Agent B — 穩健性與品質（effort: medium）
 
-同步驟 1 Codex Agent B，`model_reasoning_effort="medium"`。
+同步驟 1 Codex Agent B，`-m "gpt-5.4" -c 'model_reasoning_effort="medium"'`。
 
 #### Codex Agent C — 全面審查（effort: high）
 
@@ -348,6 +351,7 @@ FINDING:
 嚴重程度：P0=生產崩潰/安全漏洞 P1=功能錯誤 P2=條件性問題 P3=輕微問題
 若無發現，輸出：NO_FINDINGS" \
   -s read-only \
+  -m "gpt-5.4" \
   -c 'model_reasoning_effort="high"' \
   2>/dev/null
 ```
@@ -376,6 +380,7 @@ VERDICT:
   confidence: HIGH|MEDIUM|LOW
   reasoning: <1-2 句說明理由>" \
   -s read-only \
+  -m "gpt-5.4" \
   -c 'model_reasoning_effort="medium"' \
   2>/dev/null
 ```
@@ -400,6 +405,7 @@ VERDICT:
   confidence: HIGH|MEDIUM|LOW
   reasoning: <1-2 句說明理由>" \
   -s read-only \
+  -m "gpt-5.4" \
   -c 'model_reasoning_effort="high"' \
   2>/dev/null
 ```
