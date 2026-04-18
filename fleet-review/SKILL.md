@@ -126,12 +126,11 @@ FINDING:
 嚴重程度：P0=生產崩潰/安全漏洞 P1=功能錯誤 P2=條件性問題 P3=輕微問題
 若無發現，輸出：NO_FINDINGS" \
   -s read-only \
-  -c 'model_reasoning_effort="xhigh"' \
-  --enable web_search_cached \
+  -c 'model_reasoning_effort="medium"' \
   2>/dev/null
 ```
 
-使用 `timeout: 900000`（15 分鐘）。
+使用 `timeout: 300000`（5 分鐘）。
 
 ---
 
@@ -210,12 +209,11 @@ VERDICT:
   confidence: HIGH|MEDIUM|LOW
   reasoning: <1-2 句說明理由>" \
   -s read-only \
-  -c 'model_reasoning_effort="xhigh"' \
-  --enable web_search_cached \
+  -c 'model_reasoning_effort="medium"' \
   2>/dev/null
 ```
 
-使用 `timeout: 900000`（15 分鐘）。
+使用 `timeout: 300000`（5 分鐘）。
 
 ---
 
