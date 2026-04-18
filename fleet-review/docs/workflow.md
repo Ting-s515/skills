@@ -1,104 +1,66 @@
-# Fleet Review 工作流程圖
+# Fleet Review 工作流程
 
 多代理並行程式碼審查技能。並行啟動 Claude + Codex 子代理從不同角度審查，透過獨立驗證代理交叉比對消除誤報。
 
-```mermaid
-flowchart TD
-    Start([使用者觸發 fleet-review]) --> S0
+---
 
-    subgraph S0["步驟 0：前置檢查"]
-        ChkCodex{Codex 可用?}
-        GetDiff[取得 BASE 分支</br>產生 diff 檔案]
-        NoDiff([無 diff，停止])
-        Fallback[改用 3 Claude 子代理模式]
+## 核心理念
 
-        ChkCodex -->|是| GetDiff
-        ChkCodex -->|否| Fallback
-        GetDiff --> ChkEmpty{diff 為空?}
-        ChkEmpty -->|是| NoDiff
-        ChkEmpty -->|否| S1
-        Fallback --> S1
-    end
-
-    subgraph S1["步驟 1：並行審查代理（單一回應同時啟動）"]
-        direction LR
-        AgentA["Claude Agent A</br>邏輯 / 安全 / 型別 / API 合約"]
-        AgentB["Claude Agent B</br>邊界情況 / 效能 / 並發 / 測試"]
-        AgentC["Codex Agent</br>全面審查"]
-    end
-
-    S0 --> S1
-    S1 --> S2
-
-    subgraph S2["步驟 2：彙整原始發現"]
-        Collect[收集所有 FINDING 區塊]
-        ShowSummary[向使用者展示原始發現摘要]
-        AllEmpty{所有代理皆</br>NO_FINDINGS?}
-        Pass([審查通過，無問題])
-
-        Collect --> ShowSummary --> AllEmpty
-        AllEmpty -->|是| Pass
-        AllEmpty -->|否| S3
-    end
-
-    subgraph S3["步驟 3：獨立驗證代理（並行啟動）"]
-        direction LR
-        ValClaude["Claude 驗證者</br>逐條讀原始碼</br>CONFIRMED / REFUTED / LIKELY"]
-        ValCodex["Codex 驗證者</br>逐條讀原始碼</br>CONFIRMED / REFUTED / LIKELY"]
-    end
-
-    subgraph S4["步驟 4：交叉比對裁決"]
-        Compare[比對兩驗證者裁決]
-        High["✅ 高/中信心</br>CONFIRMED + CONFIRMED/LIKELY"]
-        Low["⚠️ 低信心</br>LIKELY + LIKELY"]
-        Dispute["❓ 有爭議</br>CONFIRMED + REFUTED"]
-        Exclude["❌ 排除（誤報）</br>REFUTED + REFUTED/LIKELY"]
-
-        Compare --> High
-        Compare --> Low
-        Compare --> Dispute
-        Compare --> Exclude
-    end
-
-    S3 --> S4
-
-    S4 --> Report["輸出最終報告</br>🔴 P0/P1 必須修正</br>🟠 P2 建議改善</br>🟡 低信心供參考</br>❓ 有爭議附雙方觀點</br>統計：原始 N → 確認 N，排除 N"]
-
-    Report --> Cleanup[rm diff 暫存檔]
-    Cleanup --> Done([完成])
-```
-
-## Sub-agent 數量總覽
-
-| 步驟 | Sub-agent 數 | 說明 |
-|------|-------------|------|
-| 步驟 0 前置檢查 | **0** | 只跑 Bash 指令 |
-| 步驟 1 審查代理 | **3** | Claude-A + Claude-B + Codex（並行） |
-| 步驟 2 彙整發現 | **0** | 主代理自行整理 |
-| 步驟 3 獨立驗證 | **2** | Claude 驗證者 + Codex 驗證者（並行） |
-| 步驟 4 最終報告 | **0** | 主代理自行比對輸出 |
-| **總計** | **5** | |
+不同代理以不同順序讀取程式碼，會建立不同的心智模型，因此發現不同的問題。
+透過多模型並行審查 + 交叉驗證，消除誤報，找出單次審查遺漏的問題。
 
 ---
 
-## 代理數量總覽
+## 執行流程（共 5 步）
 
-| 階段 | 正常模式 | Codex 不可用 |
-|------|----------|--------------|
-| 審查代理 | Claude-A + Claude-B + Codex | Claude-A + Claude-B + Claude-C |
-| 驗證代理 | Claude 驗證者 + Codex 驗證者 | Claude（延伸思考）+ Claude（一般） |
-| **合計** | **5 個代理** | **5 個代理** |
+**步驟 0：前置檢查**
 
-## 裁決交叉比對規則
+- 確認 Codex CLI 是否可用
+- 取得 git diff（與 base branch 的差異）
 
-| Claude 驗證者 | Codex 驗證者 | 結果 |
-|---|---|---|
-| CONFIRMED | CONFIRMED | ✅ 高信心，納入 |
-| CONFIRMED | LIKELY | ✅ 中信心，納入 |
-| LIKELY | CONFIRMED | ✅ 中信心，納入 |
-| LIKELY | LIKELY | ⚠️ 低信心，標注後納入 |
-| CONFIRMED | REFUTED | ❓ 有爭議，附雙方觀點 |
-| REFUTED | CONFIRMED | ❓ 有爭議，附雙方觀點 |
-| LIKELY | REFUTED | ❌ 排除 |
-| REFUTED | LIKELY | ❌ 排除 |
-| REFUTED | REFUTED | ❌ 排除（誤報） |
+**步驟 1：並行啟動 3 個審查代理（同時啟動）**
+
+- Claude Agent A — 邏輯正確性、安全性、型別安全、API 合約
+- Claude Agent B — 邊界條件、效能、並發、測試覆蓋
+- Codex Agent — 全面審查（不限方向）
+
+**步驟 2：彙整所有 FINDING，向使用者展示摘要**
+
+**步驟 3：並行啟動 2 個驗證代理（同時啟動）**
+
+- Claude 驗證者 — 冷眼旁觀者，獨立確認每條發現是否真實存在
+- Codex 驗證者 — 同上，從不同角度驗證
+
+**步驟 4：交叉比對裁決，輸出最終報告**
+
+- CONFIRMED + CONFIRMED → ✅ 高信心納入
+- CONFIRMED + REFUTED → ❓ 有爭議，附雙方觀點
+- REFUTED + REFUTED → ❌ 排除（誤報）
+
+**步驟 5：清理暫存 diff 檔**
+
+---
+
+## 關鍵設計
+
+| 設計                         | 目的                                       |
+| ---------------------------- | ------------------------------------------ |
+| 模型多樣性（Claude + Codex） | 不同模型有不同心智模型，發現不同問題       |
+| 職責分離（A/B 分工）         | 邏輯/安全 vs 穩健性/品質，聚焦不漏掉       |
+| 獨立驗證層                   | 驗證代理不知道誰提出哪條發現，消除偏見誤報 |
+| 所有代理唯讀                 | 絕不修改任何程式碼                         |
+
+---
+
+## 執行規則
+
+- 審查代理（步驟 1）必須在**單一回應**中同時啟動，不得序列化
+- 驗證代理（步驟 3）必須等步驟 1 全部完成後，在**同一回應**中同時啟動
+- 若某代理逾時，繼續處理其他代理結果，最終報告標注「N 個代理完成」
+
+---
+
+## 備用方案
+
+若 Codex 未安裝，改用 3 個 Claude 子代理（A、B、C 全面審查），
+驗證層改為 Claude 延伸思考版 + 一般版，以獲得觀點多樣性。
