@@ -26,8 +26,7 @@ description: |
 which codex 2>/dev/null || echo "NOT_FOUND"
 ```
 
-若回傳 `NOT_FOUND`，告知安裝方式：`npm install -g @openai/codex`，
-並詢問是否改以 3 個 Claude 子代理執行（見文末備用方案）。
+若回傳 `NOT_FOUND`，告知安裝方式：`npm install -g @openai/codex`，並停止。
 
 ### 取得 diff
 
@@ -46,14 +45,12 @@ git diff origin/$BASE --stat | tail -5
 
 ## 步驟 1：並行啟動審查代理（3 個 sub-agent，單一回應同時啟動）
 
-> 2 個 Claude Agent + 1 個 Codex Bash，共 3 個並行。
+> 2 個 Codex Bash + 1 個 Claude Agent，共 3 個並行。
 
-### Claude Agent A — 邏輯與安全（Agent 工具，run_in_background: true）
+### Codex Agent A — 邏輯與安全（Bash，run_in_background: true）
 
-Prompt：
-
-```
-你是程式碼審查代理。請審查以下 diff 的變更，並閱讀相關原始檔以了解完整上下文。
+```bash
+codex exec "你是程式碼審查代理。請審查以下 diff 的變更，並閱讀相關原始檔以了解完整上下文。
 
 Diff 檔案：$DIFF_FILE
 
@@ -74,15 +71,18 @@ FINDING:
   detail: <2-3 句話說明問題及其影響>
 
 嚴重程度：P0=生產崩潰/安全漏洞 P1=功能錯誤 P2=條件性問題 P3=輕微問題
-若無發現，輸出：NO_FINDINGS
+若無發現，輸出：NO_FINDINGS" \
+  -s read-only \
+  -c 'model_reasoning_effort="medium"' \
+  2>/dev/null
 ```
 
-### Claude Agent B — 穩健性與品質（Agent 工具，run_in_background: true）
+使用 `timeout: 300000`（5 分鐘）。
 
-Prompt：
+### Codex Agent B — 穩健性與品質（Bash，run_in_background: true）
 
-```
-你是程式碼審查代理。請審查以下 diff 的變更，並閱讀相關原始檔以了解完整上下文。
+```bash
+codex exec "你是程式碼審查代理。請審查以下 diff 的變更，並閱讀相關原始檔以了解完整上下文。
 
 Diff 檔案：$DIFF_FILE
 
@@ -103,27 +103,6 @@ FINDING:
   detail: <2-3 句話說明問題及其影響>
 
 嚴重程度：P0=生產崩潰/安全漏洞 P1=功能錯誤 P2=條件性問題 P3=輕微問題
-若無發現，輸出：NO_FINDINGS
-```
-
-### Codex 代理（Bash，run_in_background: true）
-
-```bash
-codex exec "你是程式碼審查代理。審查以下 diff 的所有變更，閱讀實際原始檔了解上下文。
-找出邏輯錯誤、安全問題、邊界情況、效能問題與程式碼品質問題。
-絕不修改任何程式碼（唯讀）。
-
-Diff 檔案：$DIFF_FILE
-
-每個發現輸出：
-FINDING:
-  severity: P0|P1|P2|P3
-  file: <路徑>
-  line: <行號>
-  title: <一行摘要>
-  detail: <2-3 句話說明問題及其影響>
-
-嚴重程度：P0=生產崩潰/安全漏洞 P1=功能錯誤 P2=條件性問題 P3=輕微問題
 若無發現，輸出：NO_FINDINGS" \
   -s read-only \
   -c 'model_reasoning_effort="medium"' \
@@ -131,6 +110,31 @@ FINDING:
 ```
 
 使用 `timeout: 300000`（5 分鐘）。
+
+### Claude Agent — 全面審查（Agent 工具，run_in_background: true）
+
+Prompt：
+
+```
+你是程式碼審查代理。請審查以下 diff 的變更，並閱讀相關原始檔以了解完整上下文。
+
+Diff 檔案：$DIFF_FILE
+
+關注方向：找出任何潛在問題，不限方向（邏輯、安全、效能、邊界、品質均可）。
+
+絕不修改任何程式碼（唯讀）。
+
+每個發現輸出以下精確格式：
+FINDING:
+  severity: P0|P1|P2|P3
+  file: <路徑>
+  line: <行號或範圍>
+  title: <一行摘要>
+  detail: <2-3 句話說明問題及其影響>
+
+嚴重程度：P0=生產崩潰/安全漏洞 P1=功能錯誤 P2=條件性問題 P3=輕微問題
+若無發現，輸出：NO_FINDINGS
+```
 
 ---
 
@@ -291,15 +295,15 @@ rm -f "$DIFF_FILE"
 
 ---
 
-## 備用方案：Codex 不可用
+## 備用方案：Claude token 用完冷卻中
 
-以 3 個 Claude 子代理取代審查層：
+若 Claude Agent 因 token 耗盡無法啟動，改以 3 個 Codex 子代理取代審查層：
 
-- Agent A：邏輯與安全（同上）
-- Agent B：穩健性與品質（同上）
-- Agent C：全面審查（不限關注方向，找任何問題）
+- Codex Agent A：邏輯與安全（同步驟 1 Codex Agent A）
+- Codex Agent B：穩健性與品質（同步驟 1 Codex Agent B）
+- Codex Agent C：全面審查（不限方向，找任何問題）
 
-驗證層改為 2 個 Claude 驗證者——一個使用延伸思考，一個不使用——以獲得觀點多樣性。
+驗證層（步驟 3）保持不動，等待 Claude token 冷卻後仍使用 Claude 驗證者 + Codex 驗證者。
 裁決規則與原版相同。
 
 ---
