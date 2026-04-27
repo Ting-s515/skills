@@ -19,3 +19,27 @@
 
 ## 最終目的
 1. 減少步驟、agent 數量，以減少token usage
+
+## 驗證步驟
+---                                                                           
+我要測試 /fleet-review skill 的步驟 1
+並行啟動功能。請依照以下步驟執行，不要自動修正或跳過步驟：                    
+                              
+測試目的： 確認 fleet-review skill 的步驟 0 前置檢查、步驟 1 並行啟動 Claude
+subagent + Codex agent 是否正常運作。
+
+請執行：
+
+1. 先確認 codex 可用：which codex
+2. 先確認 claude 可用：which claude
+3. 取得目前 git diff（用 main 或 origin/main 作為 base）
+4. 同時啟動兩個背景代理：
+  - Claude Agent（Agent 工具，run_in_background: true）：prompt
+為「你是程式碼審查代理，請讀取 diff
+內容並回傳你看到的檔案清單，不需要做完整審查。」
+  - Codex Agent（Bash，run_in_background: true）：codex exec
+"你是程式碼審查代理，請回覆：Codex 並行啟動成功" -s read-only -m "gpt-5.5" -c
+'model_reasoning_effort="high"' 2>/dev/null
+5. 等兩個代理都回傳結果後，告訴我各自的輸出內容與是否成功
+
+驗收標準： 兩個代理在同一個回應中啟動（並行），且都有成功回傳結果。
