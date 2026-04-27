@@ -59,6 +59,7 @@ git diff origin/$BASE --stat | tail -5
 ## 步驟 1：並行啟動審查代理（2 個 sub-agent，單一回應同時啟動）
 
 > 1 個 Claude Agent + 1 個 Codex Bash，共 2 個並行。
+> **重要**：以下 prompt 中的 `$DIFF_FILE` 與 `$BASE` 必須替換為步驟 0 取得的實際值再帶入，不可原樣傳入。
 
 ### Claude Agent — 全面審查（Agent 工具，run_in_background: true）
 
