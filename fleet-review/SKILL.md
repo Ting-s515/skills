@@ -1,7 +1,6 @@
 ---
 name: fleet-review
-description: 並行啟動 Claude + Codex 子代理從不同角度審查程式碼，透過跨模型交叉驗證消除誤報。接受一個參數：規格文檔路徑（例如：/fleet-review path/to/spec.md）。
-disable-model-invocation: true
+description: 當使用者明確說出「fleet-review」關鍵字時，才觸發此技能。並行啟動 Claude + Codex 子代理從不同角度審查程式碼，透過跨模型交叉驗證消除誤報。接受一個參數：規格文檔路徑（例如：/fleet-review path/to/spec.md）。不得與 code-reviewer 技能混用，兩者功能不同：fleet-review 需明確呼叫，code-reviewer 則依業務邏輯文檔自動觸發。
 ---
 
 # /fleet-review — 多代理程式碼審查
