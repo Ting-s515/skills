@@ -20,8 +20,8 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-pass() { echo -e "  ${GREEN}✓${NC} $1"; ((PASS++)); ((TOTAL++)); }
-fail() { echo -e "  ${RED}✗${NC} $1"; ((FAIL++)); ((TOTAL++)); }
+pass() { echo -e "  ${GREEN}✓${NC} $1"; ((++PASS)); ((++TOTAL)); }
+fail() { echo -e "  ${RED}✗${NC} $1"; ((++FAIL)); ((++TOTAL)); }
 info() { echo -e "  ${YELLOW}→${NC} $1"; }
 
 # ─── 斷言函式 ───────────────────────────────────────────────
