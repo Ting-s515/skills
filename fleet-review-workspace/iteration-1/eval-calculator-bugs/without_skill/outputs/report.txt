@@ -1,0 +1,13 @@
+FINDING:
+  severity: P0
+  file: fleet-review/test/calculator.js
+  line: 8
+  title: add 函式使用減法而非加法
+  detail: 規格要求 add(a, b) 回傳 a + b，但實作為 return a - b，核心運算邏輯錯誤，導致所有 add 呼叫結果不正確。
+
+FINDING:
+  severity: P0
+  file: fleet-review/test/calculator.js
+  line: 20
+  title: divide 函式缺少除零保護，違反規格邊界條件
+  detail: 規格明確要求 divide(x, 0) 必須拋出 Error('Division by zero')，但實作直接 return a / b，當 b = 0 時 JavaScript 回傳 Infinity 而非拋出例外，完全未實作強制邊界條件。

@@ -1,0 +1,71 @@
+{
+  "skill_name": "fleet-review",
+  "evals": [
+    {
+      "id": 1,
+      "name": "calculator-bugs",
+      "prompt": "請用 fleet-review 審查這個 PR。規格文檔：fleet-review/test/fixtures/spec.md，使用 --diff fleet-review/test/fixtures/calculator-bugs.patch",
+      "expected_output": "找到 add() 使用減法、divide() 缺除零檢查兩個 P1 問題，並顯示 AGENT_MODEL 與 CODEX_MODEL",
+      "files": [],
+      "assertions": [
+        {
+          "name": "找到至少一個 FINDING",
+          "check": "output contains 'FINDING:'"
+        },
+        {
+          "name": "偵測到 add() 邏輯錯誤",
+          "check": "output contains 'add'"
+        },
+        {
+          "name": "偵測到 divide() 缺除零檢查",
+          "check": "output contains 'divide'"
+        },
+        {
+          "name": "存在 P1 嚴重度",
+          "check": "output contains 'P1'"
+        },
+        {
+          "name": "Claude 回報模型名稱",
+          "check": "output contains 'AGENT_MODEL:'"
+        },
+        {
+          "name": "Codex 回報模型名稱",
+          "check": "output contains 'CODEX_MODEL:'"
+        },
+        {
+          "name": "Codex 未失敗",
+          "check": "output does not contain 'CODEX_FAILED'"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "calculator-clean",
+      "prompt": "請用 fleet-review 審查這個 PR。規格文檔：fleet-review/test/fixtures/spec.md，使用 --diff fleet-review/test/fixtures/calculator-clean.patch",
+      "expected_output": "正確實作無問題，兩個代理都回報 NO_FINDINGS",
+      "files": [],
+      "assertions": [
+        {
+          "name": "回報 NO_FINDINGS",
+          "check": "output contains 'NO_FINDINGS'"
+        },
+        {
+          "name": "無 P0 問題",
+          "check": "output does not contain 'severity: P0'"
+        },
+        {
+          "name": "無 P1 問題",
+          "check": "output does not contain 'severity: P1'"
+        },
+        {
+          "name": "Codex 回報模型名稱",
+          "check": "output contains 'CODEX_MODEL:'"
+        },
+        {
+          "name": "Codex 未失敗",
+          "check": "output does not contain 'CODEX_FAILED'"
+        }
+      ]
+    }
+  ]
+}

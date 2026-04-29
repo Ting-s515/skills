@@ -1,0 +1,7 @@
+=== CLAUDE OUTPUT ===
+NO_FINDINGS
+AGENT_MODEL: claude-sonnet-4-6
+
+=== CODEX OUTPUT ===
+NO_FINDINGS
+CODEX_MODEL: gpt-5

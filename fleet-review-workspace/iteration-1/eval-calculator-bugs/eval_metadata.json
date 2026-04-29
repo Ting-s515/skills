@@ -1,0 +1,14 @@
+{
+  "eval_id": 1,
+  "eval_name": "calculator-bugs",
+  "prompt": "請用 fleet-review 審查這個 PR。規格文檔：fleet-review/test/fixtures/spec.md，使用 --diff fleet-review/test/fixtures/calculator-bugs.patch",
+  "assertions": [
+    { "text": "找到至少一個 FINDING", "check": "output contains 'FINDING:'" },
+    { "text": "偵測到 add() 邏輯錯誤", "check": "output contains 'add'" },
+    { "text": "偵測到 divide() 缺除零檢查", "check": "output contains 'divide'" },
+    { "text": "存在 P1 嚴重度", "check": "output contains 'P1'" },
+    { "text": "Claude 回報模型名稱", "check": "output contains 'AGENT_MODEL:'" },
+    { "text": "Codex 回報模型名稱", "check": "output contains 'CODEX_MODEL:'" },
+    { "text": "Codex 未失敗", "check": "output does not contain 'CODEX_FAILED'" }
+  ]
+}

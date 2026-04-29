@@ -1,0 +1,54 @@
+{
+  "skill_name": "fleet-review",
+  "iteration": 1,
+  "configs": [
+    {
+      "config": "with_skill",
+      "avg_pass_rate": 1.0,
+      "avg_duration_ms": 66066,
+      "avg_total_tokens": 21870,
+      "evals": [
+        {
+          "eval_name": "calculator-bugs",
+          "pass_count": 7,
+          "total_count": 7,
+          "pass_rate": 1.0,
+          "duration_ms": 73813,
+          "total_tokens": 22558
+        },
+        {
+          "eval_name": "calculator-clean",
+          "pass_count": 5,
+          "total_count": 5,
+          "pass_rate": 1.0,
+          "duration_ms": 58319,
+          "total_tokens": 21182
+        }
+      ]
+    },
+    {
+      "config": "without_skill",
+      "avg_pass_rate": 0.514,
+      "avg_duration_ms": 22394,
+      "avg_total_tokens": 18354,
+      "evals": [
+        {
+          "eval_name": "calculator-bugs",
+          "pass_count": 3,
+          "total_count": 7,
+          "pass_rate": 0.429,
+          "duration_ms": 22399,
+          "total_tokens": 18507
+        },
+        {
+          "eval_name": "calculator-clean",
+          "pass_count": 3,
+          "total_count": 5,
+          "pass_rate": 0.6,
+          "duration_ms": 22389,
+          "total_tokens": 18200
+        }
+      ]
+    }
+  ]
+}

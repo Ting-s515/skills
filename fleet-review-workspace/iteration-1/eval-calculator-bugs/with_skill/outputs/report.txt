@@ -1,0 +1,33 @@
+=== CLAUDE OUTPUT ===
+FINDING:
+  severity: P1
+  file: fleet-review/test/calculator.js
+  line: 2
+  title: add 函式邏輯錯誤，應回傳 a + b 但實作為 a - b
+  detail: 規格要求 add(a, b) 回傳 a + b。目前實作 `return a - b` 為減法操作，導致所有加法呼叫結果錯誤。程式碼中的行內註解也確認這是一個 intentional bug，必須修正為 `return a + b`。
+
+FINDING:
+  severity: P1
+  file: fleet-review/test/calculator.js
+  line: 14
+  title: divide 缺少除以零的防護，違反規格邊界條件
+  detail: 規格明確要求 divide(x, 0) 必須拋出 Error('Division by zero')。目前實作直接 `return a / b`，當 b 為 0 時 JavaScript 不會拋出例外，而是回傳 Infinity（或 -Infinity、NaN），完全不符合規格的邊界條件要求。必須在函式開頭加入 `if (b === 0) throw new Error('Division by zero');`。
+
+AGENT_MODEL: claude-sonnet-4-6
+
+=== CODEX OUTPUT ===
+FINDING:
+  severity: P1
+  file: fleet-review/test/calculator.js
+  line: 2
+  title: add 回傳錯誤運算結果
+  detail: 規格要求 add(a, b) 回傳 a + b，但目前實作為 a - b，會導致所有加法結果錯誤。
+
+FINDING:
+  severity: P1
+  file: fleet-review/test/calculator.js
+  line: 13
+  title: divide 缺少除以零錯誤處理
+  detail: 規格要求 divide(x, 0) 必須拋出 Error('Division by zero')，但目前直接回傳 a / b，JavaScript 會回傳 Infinity 或 -Infinity，未符合 API 與邊界條件。
+
+CODEX_MODEL: gpt-5

@@ -5,7 +5,12 @@
       "Bash(git add *)",
       "Bash(git diff *)",
       "Bash(git restore *)",
-      "Bash(cp C:/Users/tenns/.claude/skills/fleet-review/test/spec.md C:/Users/tenns/.claude/skills/fleet-review/test/fixtures/spec.md)"
+      "Bash(cp C:/Users/tenns/.claude/skills/fleet-review/test/spec.md C:/Users/tenns/.claude/skills/fleet-review/test/fixtures/spec.md)",
+      "Bash(mkdir -p \"C:/Users/tenns/.claude/skills/fleet-review/evals\")",
+      "Bash(mkdir -p \"C:/Users/tenns/.claude/skills/fleet-review-workspace/iteration-1/eval-calculator-bugs/with_skill/outputs\")",
+      "Bash(mkdir -p \"C:/Users/tenns/.claude/skills/fleet-review-workspace/iteration-1/eval-calculator-bugs/without_skill/outputs\")",
+      "Bash(mkdir -p \"C:/Users/tenns/.claude/skills/fleet-review-workspace/iteration-1/eval-calculator-clean/with_skill/outputs\")",
+      "Bash(mkdir -p \"C:/Users/tenns/.claude/skills/fleet-review-workspace/iteration-1/eval-calculator-clean/without_skill/outputs\")"
     ]
   }
 }
