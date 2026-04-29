@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"C:/Users/tenns/.claude/skills/fleet-review/test/fixtures\")",
+      "Bash(git add *)",
+      "Bash(git diff *)",
+      "Bash(git restore *)",
+      "Bash(cp C:/Users/tenns/.claude/skills/fleet-review/test/spec.md C:/Users/tenns/.claude/skills/fleet-review/test/fixtures/spec.md)"
+    ]
+  }
+}
