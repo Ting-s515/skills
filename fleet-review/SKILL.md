@@ -50,6 +50,11 @@ BASE=$(gh pr view --json baseRefName -q .baseRefName 2>/dev/null || \
 DIFF_FILE=$(mktemp /tmp/fleet-review-XXXXXX.patch)
 git diff origin/$BASE > "$DIFF_FILE"
 git diff origin/$BASE --stat | tail -5
+
+# 將路徑轉換為 Windows 格式供 Codex 使用（cygpath 為 Git for Windows 內建）
+# macOS/Linux 無 cygpath 時 fallback 回原始路徑，不影響行為
+DIFF_FILE_WIN=$(cygpath -w "$DIFF_FILE" 2>/dev/null || echo "$DIFF_FILE")
+SPEC_PATH_WIN=$(cygpath -w "$SPEC_PATH" 2>/dev/null || echo "$SPEC_PATH")
 ```
 
 若 diff 為空，告知使用者並停止。
@@ -59,7 +64,9 @@ git diff origin/$BASE --stat | tail -5
 ## 步驟 1：並行啟動審查代理（2 個 sub-agent，單一回應同時啟動）
 
 > 1 個 Claude Agent + 1 個 Codex Bash，共 2 個並行。
-> **重要**：以下 prompt 中的 `$DIFF_FILE`、`$SPEC_PATH`、`$BASE` 必須替換為步驟 0 取得的實際值再帶入，不可原樣傳入。
+> **重要**：以下 prompt 中的變數必須替換為步驟 0 取得的實際值再帶入，不可原樣傳入。
+> - Claude Agent 使用 `$DIFF_FILE`、`$SPEC_PATH`（Unix 路徑，sub-agent 跑在 bash 環境）
+> - Codex 使用 `$DIFF_FILE_WIN`、`$SPEC_PATH_WIN`（Windows 路徑，Codex 是 Windows process）
 
 ### Claude Agent — 全面審查（Agent 工具，run_in_background: true）
 
@@ -108,8 +115,8 @@ FINDING:
 ```bash
 codex exec "你是程式碼審查代理。請用你的 Read 工具依序讀取下列兩個檔案，再審查並輸出發現。
 
-規格文檔路徑（請讀取）：$SPEC_PATH
-Diff 檔案路徑（請讀取）：$DIFF_FILE
+規格文檔路徑（請讀取）：$SPEC_PATH_WIN
+Diff 檔案路徑（請讀取）：$DIFF_FILE_WIN
 
 審查方向：
 1. 規格符合度：規格中要求的功能是否完整實作？定義的 API / 資料結構是否一致？邊界條件與錯誤處理是否涵蓋？是否有規格以外的多餘實作？
