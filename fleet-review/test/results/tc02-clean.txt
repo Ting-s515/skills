@@ -1,11 +1,7 @@
 === CLAUDE OUTPUT ===
-審查完成，實作與規格完全吻合，無任何問題。
-
-NO_FINDINGS
-
-AGENT_MODEL: claude-sonnet-4-6
+CLAUDE_SKIPPED: true
 
 === CODEX OUTPUT ===
 NO_FINDINGS
-
-CODEX_MODEL: GPT-5
+CODEX_REQUESTED_MODEL: gpt-5.5
+CODEX_MODEL_SOURCE: requested_by_wrapper

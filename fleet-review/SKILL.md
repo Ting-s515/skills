@@ -203,18 +203,14 @@ if [ $CODEX_EXIT -eq 0 ] && [ -s "$CODEX_OUTPUT_FILE" ]; then
   echo ""
   echo "CODEX_REQUESTED_MODEL: $CODEX_REQUESTED_MODEL"
   echo "CODEX_MODEL_SOURCE: requested_by_wrapper"
-  echo "CODEX_CLI_HEADER_MODEL: $CODEX_CLI_HEADER_MODEL"
-  echo "CODEX_CLI_HEADER_MODEL_SOURCE: cli_transcript_header"
-  echo "CODEX_CLI_VERSION: $CODEX_CLI_VERSION"
 else
   echo "CODEX_FAILED: exit_code=$CODEX_EXIT"
   echo "CODEX_REQUESTED_MODEL: $CODEX_REQUESTED_MODEL"
   echo "CODEX_MODEL_SOURCE: requested_by_wrapper"
-  echo "CODEX_CLI_HEADER_MODEL: $CODEX_CLI_HEADER_MODEL"
-  echo "CODEX_CLI_HEADER_MODEL_SOURCE: cli_transcript_header"
-  echo "CODEX_CLI_VERSION: $CODEX_CLI_VERSION"
 fi
 
+# Debug metadata is intentionally captured but not emitted in normal reports.
+: "$CODEX_CLI_HEADER_MODEL" "$CODEX_CLI_VERSION"
 rm -f "$CODEX_PROMPT_FILE" "$CODEX_OUTPUT_FILE" "$CODEX_TRACE_FILE"
 ```
 
@@ -230,7 +226,8 @@ rm -f "$CODEX_PROMPT_FILE" "$CODEX_OUTPUT_FILE" "$CODEX_TRACE_FILE"
 - 從 Claude Agent 輸出的最後一行 `AGENT_MODEL: ...` 取得 `$CLAUDE_MODEL`（若缺失則顯示 `unknown`）
 - 從 Codex wrapper 輸出的 `CODEX_REQUESTED_MODEL: ...` 取得 `$CODEX_REQUESTED_MODEL`（若缺失則顯示 `unknown`）
 - 從 Codex wrapper 輸出的 `CODEX_MODEL_SOURCE: ...` 取得 `$CODEX_MODEL_SOURCE`（若缺失則顯示 `unknown`）
-- 可選：從 `CODEX_CLI_HEADER_MODEL: ...` 取得 `$CODEX_CLI_HEADER_MODEL` 作為 debug metadata，不得宣稱為雲端實際模型 ID
+- 可選：從 `CODEX_CLI_HEADER_MODEL: ...` 與 `CODEX_CLI_VERSION: ...` 取得 debug metadata，不得宣稱為雲端實際模型 ID
+- 一般報告僅輸出 `CODEX_REQUESTED_MODEL` 與 `CODEX_MODEL_SOURCE` 對應的精簡資訊；除非使用者要求 debug/raw metadata，否則不得輸出 `CODEX_CLI_HEADER_MODEL`、`CODEX_CLI_HEADER_MODEL_SOURCE`、`CODEX_CLI_VERSION`
 
 收集兩個代理的 FINDING 區塊，整理成一份清單，向使用者展示摘要：
 
@@ -239,7 +236,9 @@ rm -f "$CODEX_PROMPT_FILE" "$CODEX_OUTPUT_FILE" "$CODEX_TRACE_FILE"
 ════════════════════════════════════════════════════════════
 基礎分支：$BASE | 已變更檔案：N 個
 Claude（全面審查）：N 個發現
-Codex（全面審查，requested: $CODEX_REQUESTED_MODEL）：N 個發現
+Codex（全面審查）：N 個發現
+Codex requested model：$CODEX_REQUESTED_MODEL
+Codex model source：$CODEX_MODEL_SOURCE
 原始發現總計：N 個
 ════════════════════════════════════════════════════════════
 ```
