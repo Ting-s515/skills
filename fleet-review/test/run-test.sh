@@ -132,11 +132,11 @@ PROMPT_EOF
     fi
     echo ""
     echo "CODEX_REQUESTED_MODEL: $CODEX_REQUESTED_MODEL"
-    echo "CODEX_MODEL_SOURCE: requested_by_wrapper"
   } > "$output_file"
 
   # Debug metadata is intentionally captured but not emitted in normal reports.
-  : "$CODEX_CLI_HEADER_MODEL" "$CODEX_CLI_VERSION"
+  CODEX_MODEL_SOURCE="requested_by_wrapper"
+  : "$CODEX_MODEL_SOURCE" "$CODEX_CLI_HEADER_MODEL" "$CODEX_CLI_VERSION"
   rm -f "$CLAUDE_OUTPUT_FILE" "$CODEX_PROMPT_FILE" "$CODEX_OUTPUT_FILE" "$CODEX_TRACE_FILE"
   return $CLAUDE_EXIT
 }
@@ -159,7 +159,7 @@ assert_contains "偵測到 add() 問題" "add" "$(cat "$TC01_OUTPUT")"
 assert_contains "偵測到 divide() 問題" "divide" "$(cat "$TC01_OUTPUT")"
 assert_contains "P1 嚴重度存在" "P1" "$(cat "$TC01_OUTPUT")"
 assert_contains "Codex 記錄 requested model" "CODEX_REQUESTED_MODEL: gpt-5.5" "$(cat "$TC01_OUTPUT")"
-assert_contains "Codex 記錄模型來源" "CODEX_MODEL_SOURCE: requested_by_wrapper" "$(cat "$TC01_OUTPUT")"
+assert_not_contains "一般輸出不顯示模型來源" "CODEX_MODEL_SOURCE:" "$(cat "$TC01_OUTPUT")"
 assert_not_contains "Codex 未失敗" "CODEX_FAILED" "$(cat "$TC01_OUTPUT")"
 
 # ════════════════════════════════════════════════════════════
@@ -179,7 +179,7 @@ assert_contains "回報 NO_FINDINGS" "NO_FINDINGS" "$(cat "$TC02_OUTPUT")"
 assert_not_contains "不應有 P0/P1" "severity: P0" "$(cat "$TC02_OUTPUT")"
 assert_not_contains "不應有 P0/P1" "severity: P1" "$(cat "$TC02_OUTPUT")"
 assert_contains "Codex 記錄 requested model" "CODEX_REQUESTED_MODEL: gpt-5.5" "$(cat "$TC02_OUTPUT")"
-assert_contains "Codex 記錄模型來源" "CODEX_MODEL_SOURCE: requested_by_wrapper" "$(cat "$TC02_OUTPUT")"
+assert_not_contains "一般輸出不顯示模型來源" "CODEX_MODEL_SOURCE:" "$(cat "$TC02_OUTPUT")"
 
 # ════════════════════════════════════════════════════════════
 # 結果
