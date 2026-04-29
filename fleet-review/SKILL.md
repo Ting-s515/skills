@@ -38,7 +38,7 @@ which claude 2>/dev/null || echo "NOT_FOUND"
 ### 取得規格文檔
 
 從 `$ARGUMENTS` 取得規格文檔路徑並讀取內容：
-- 若 `$ARGUMENTS` 有值（例如 `/fleet-review path/to/spec.md`）→ 讀取該路徑的文檔
+- 若 `$ARGUMENTS` 有值（例如 `/fleet-review path/to/spec.md`）→ 讀取該路徑的文檔，並將路徑記為 `$SPEC_PATH`
 - 若 `$ARGUMENTS` 為空 → 告知使用者需提供規格文檔路徑，例如：`/fleet-review path/to/spec.md`，並停止
 
 ### 取得 diff
@@ -59,7 +59,7 @@ git diff origin/$BASE --stat | tail -5
 ## 步驟 1：並行啟動審查代理（2 個 sub-agent，單一回應同時啟動）
 
 > 1 個 Claude Agent + 1 個 Codex Bash，共 2 個並行。
-> **重要**：以下 prompt 中的 `$DIFF_FILE` 與 `$BASE` 必須替換為步驟 0 取得的實際值再帶入，不可原樣傳入。
+> **重要**：以下 prompt 中的 `$DIFF_FILE`、`$SPEC_PATH`、`$BASE` 必須替換為步驟 0 取得的實際值再帶入，不可原樣傳入。
 
 ### Claude Agent — 全面審查（Agent 工具，run_in_background: true）
 
@@ -100,14 +100,16 @@ FINDING:
 ### Codex Agent — 全面審查（Bash，run_in_background: true）
 
 > ⚠️ **絕對不可在 bash 腳本內部加 `&`**：`run_in_background: true` 已讓 Bash 工具本身非同步執行；若再於腳本內加 `&`，codex 會變成孤立子程序，輸出無法被捕捉，結果直接丟失。
+>
+> ⚠️ **只傳檔案路徑，不展開內容**：將 `$(cat file)` 嵌入 `codex exec "..."` 字串中，當檔案較大時 shell 解析含特殊字元的多行字串容易出錯，導致 codex 阻塞等待 stdin（"Reading additional input from stdin..."）。改為只傳路徑，讓 codex 用自身的 Read 工具讀取。
+>
+> ⚠️ **必須加 `< /dev/null`**：顯式關閉 stdin，防止 codex 在非互動環境中等待輸入而卡住。
 
 ```bash
-codex exec "你是程式碼審查代理。請審查以下 diff 的變更，並閱讀相關原始檔以了解完整上下文。
+codex exec "你是程式碼審查代理。請用你的 Read 工具依序讀取下列兩個檔案，再審查並輸出發現。
 
-Diff 檔案：$DIFF_FILE
-
-規格文檔：
-[貼上規格文檔內容]
+規格文檔路徑（請讀取）：$SPEC_PATH
+Diff 檔案路徑（請讀取）：$DIFF_FILE
 
 審查方向：
 1. 規格符合度：規格中要求的功能是否完整實作？定義的 API / 資料結構是否一致？邊界條件與錯誤處理是否涵蓋？是否有規格以外的多餘實作？
@@ -132,7 +134,7 @@ FINDING:
   -s read-only \
   -m "gpt-5.5" \
   -c 'model_reasoning_effort="high"' \
-  2>/dev/null
+  2>/dev/null < /dev/null
 ```
 
 使用 `timeout: 300000`（5 分鐘）。
