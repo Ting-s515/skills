@@ -7,12 +7,12 @@ FINDING:
   file: fleet-review/test/calculator.js
   line: 2
   title: add 實作成減法
-  detail: 規格要求 `add(a, b)` 回傳 `a + b`，但目前實作回傳 `a - b`。這會讓所有非零 `b` 的加法結果錯誤，屬於核心功能不符合規格。
+  detail: 規格要求 `add(a, b)` 回傳 `a + b`，但目前實作回傳 `a - b`。這會讓所有加法結果錯誤，屬於核心功能不符合規格。
 
 FINDING:
   severity: P1
   file: fleet-review/test/calculator.js
   line: 14
-  title: divide 缺少除以零錯誤處理
-  detail: 規格要求 `divide(x, 0)` 必須拋出 `Error('Division by zero')`，但目前直接執行 `a / b`。在 JavaScript 中除以零會回傳 `Infinity` 或 `-Infinity`，不會拋錯，會導致邊界條件違反規格。
+  title: divide 未處理除以零
+  detail: 規格要求 `divide(x, 0)` 必須拋出 `Error('Division by zero')`，但目前直接執行 `a / b`。在 JavaScript 中除以零會回傳 `Infinity` 或 `-Infinity`，不會拋錯，導致邊界條件未實作。
 CODEX_REQUESTED_MODEL: gpt-5.5

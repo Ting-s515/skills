@@ -5,7 +5,7 @@
       "id": 1,
       "name": "calculator-bugs",
       "prompt": "請用 fleet-review 審查這個 PR。規格文檔：fleet-review/test/fixtures/spec.md，使用 --diff fleet-review/test/fixtures/calculator-bugs.patch",
-      "expected_output": "找到 add() 使用減法、divide() 缺除零檢查兩個 P1 問題，並顯示 AGENT_MODEL 與 CODEX_MODEL",
+      "expected_output": "找到 add() 使用減法、divide() 缺除零檢查兩個 P1 問題，並顯示 CODEX_REQUESTED_MODEL，不顯示 CODEX_MODEL 或 CODEX_MODEL_SOURCE",
       "files": [],
       "assertions": [
         {
@@ -25,12 +25,16 @@
           "check": "output contains 'P1'"
         },
         {
-          "name": "Claude 回報模型名稱",
-          "check": "output contains 'AGENT_MODEL:'"
+          "name": "Codex 記錄 requested model",
+          "check": "output contains 'CODEX_REQUESTED_MODEL: gpt-5.5'"
         },
         {
-          "name": "Codex 回報模型名稱",
-          "check": "output contains 'CODEX_MODEL:'"
+          "name": "不使用 Codex 模型自報",
+          "check": "output does not contain 'CODEX_MODEL:'"
+        },
+        {
+          "name": "一般輸出不顯示模型來源",
+          "check": "output does not contain 'CODEX_MODEL_SOURCE:'"
         },
         {
           "name": "Codex 未失敗",
@@ -58,8 +62,16 @@
           "check": "output does not contain 'severity: P1'"
         },
         {
-          "name": "Codex 回報模型名稱",
-          "check": "output contains 'CODEX_MODEL:'"
+          "name": "Codex 記錄 requested model",
+          "check": "output contains 'CODEX_REQUESTED_MODEL: gpt-5.5'"
+        },
+        {
+          "name": "不使用 Codex 模型自報",
+          "check": "output does not contain 'CODEX_MODEL:'"
+        },
+        {
+          "name": "一般輸出不顯示模型來源",
+          "check": "output does not contain 'CODEX_MODEL_SOURCE:'"
         },
         {
           "name": "Codex 未失敗",
