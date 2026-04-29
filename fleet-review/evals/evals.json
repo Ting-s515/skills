@@ -5,7 +5,7 @@
       "id": 1,
       "name": "calculator-bugs",
       "prompt": "請用 fleet-review 審查這個 PR。規格文檔：fleet-review/test/fixtures/spec.md，使用 --diff fleet-review/test/fixtures/calculator-bugs.patch",
-      "expected_output": "找到 add() 使用減法、divide() 缺除零檢查兩個 P1 問題，並顯示 CODEX_REQUESTED_MODEL，不顯示 CODEX_MODEL 或 CODEX_MODEL_SOURCE",
+      "expected_output": "找到 add() 使用減法、divide() 缺除零檢查兩個 P1 問題，並顯示 Claude AGENT_MODEL 與 CODEX_REQUESTED_MODEL，不顯示 CODEX_MODEL 或 CODEX_MODEL_SOURCE",
       "files": [],
       "assertions": [
         {
@@ -23,6 +23,10 @@
         {
           "name": "存在 P1 嚴重度",
           "check": "output contains 'P1'"
+        },
+        {
+          "name": "Claude 記錄 agent model",
+          "check": "output contains 'AGENT_MODEL:'"
         },
         {
           "name": "Codex 記錄 requested model",
@@ -60,6 +64,10 @@
         {
           "name": "無 P1 問題",
           "check": "output does not contain 'severity: P1'"
+        },
+        {
+          "name": "Claude 記錄 agent model",
+          "check": "output contains 'AGENT_MODEL:'"
         },
         {
           "name": "Codex 記錄 requested model",

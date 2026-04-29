@@ -7,11 +7,13 @@
     { "text": "偵測到 add() 邏輯錯誤", "passed": true, "evidence": "Claude 與 Codex 均回報 add 使用減法" },
     { "text": "偵測到 divide() 缺除零檢查", "passed": true, "evidence": "Claude 與 Codex 均回報 divide 缺少 Error('Division by zero')" },
     { "text": "存在 P1 嚴重度", "passed": true, "evidence": "所有 FINDING 標記為 severity: P1" },
-    { "text": "Claude 回報模型名稱", "passed": true, "evidence": "AGENT_MODEL: claude-sonnet-4-6" },
-    { "text": "Codex 回報模型名稱", "passed": true, "evidence": "CODEX_MODEL: gpt-5" },
+    { "text": "Claude 記錄 agent model", "passed": true, "evidence": "AGENT_MODEL: claude-sonnet-4-6" },
+    { "text": "Codex 記錄 requested model", "passed": true, "evidence": "CODEX_REQUESTED_MODEL: gpt-5.5" },
+    { "text": "不使用 Codex 模型自報", "passed": true, "evidence": "輸出中無 CODEX_MODEL: 字串" },
+    { "text": "一般輸出不顯示模型來源", "passed": true, "evidence": "輸出中無 CODEX_MODEL_SOURCE: 字串" },
     { "text": "Codex 未失敗", "passed": true, "evidence": "輸出中無 CODEX_FAILED 字串" }
   ],
-  "pass_count": 7,
-  "total_count": 7,
+  "pass_count": 9,
+  "total_count": 9,
   "pass_rate": 1.0
 }

@@ -7,11 +7,13 @@
     { "text": "偵測到 add() 邏輯錯誤", "passed": true, "evidence": "回報 add 使用減法" },
     { "text": "偵測到 divide() 缺除零檢查", "passed": true, "evidence": "回報 divide 缺少除零保護" },
     { "text": "存在 P1 嚴重度", "passed": false, "evidence": "標記為 P0 而非 P1（無規格比對指引導致過度升級嚴重度）" },
-    { "text": "Claude 回報模型名稱", "passed": false, "evidence": "無 AGENT_MODEL: 輸出（baseline 無此格式要求）" },
-    { "text": "Codex 回報模型名稱", "passed": false, "evidence": "無 Codex 執行，無 CODEX_MODEL: 輸出" },
-    { "text": "Codex 未失敗", "passed": false, "evidence": "無 Codex 執行（baseline 不含 Codex）" }
+    { "text": "Claude 記錄 agent model", "passed": false, "evidence": "無 Claude agent 執行，無 AGENT_MODEL: 輸出" },
+    { "text": "Codex 記錄 requested model", "passed": false, "evidence": "無 Codex 執行，無 CODEX_REQUESTED_MODEL: 輸出" },
+    { "text": "不使用 Codex 模型自報", "passed": true, "evidence": "輸出中無 CODEX_MODEL: 字串" },
+    { "text": "一般輸出不顯示模型來源", "passed": true, "evidence": "輸出中無 CODEX_MODEL_SOURCE: 字串" },
+    { "text": "Codex 未失敗", "passed": true, "evidence": "輸出中無 CODEX_FAILED 字串" }
   ],
-  "pass_count": 3,
-  "total_count": 7,
-  "pass_rate": 0.429
+  "pass_count": 6,
+  "total_count": 9,
+  "pass_rate": 0.667
 }

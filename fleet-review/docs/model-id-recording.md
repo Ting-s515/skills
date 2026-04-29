@@ -61,25 +61,25 @@ reasoning effort: high
 
 ```text
 CODEX_REQUESTED_MODEL: gpt-5.5
+```
+
+內部可保留 debug metadata：
+
+```text
 CODEX_MODEL_SOURCE: requested_by_wrapper
+CODEX_CLI_HEADER_MODEL: gpt-5.5
+CODEX_CLI_HEADER_MODEL_SOURCE: cli_transcript_header
 CODEX_CLI_VERSION: codex-cli 0.125.0
 ```
 
-可選 debug 輸出：
-
-```text
-CODEX_CLI_HEADER_MODEL: gpt-5.5
-CODEX_CLI_HEADER_MODEL_SOURCE: cli_transcript_header
-```
-
-但 `CODEX_CLI_HEADER_MODEL` 只能作為輔助資訊，不應在正式報告中宣稱為雲端實際模型 ID，因為它依賴 Codex CLI 的輸出格式，不是公開穩定 API。
+但 `CODEX_MODEL_SOURCE`、`CODEX_CLI_HEADER_MODEL` 與 `CODEX_CLI_VERSION` 只能作為輔助資訊，不應在正式報告中預設輸出，也不得宣稱為雲端實際模型 ID。
 
 ## 報告呈現建議
 
 正式報告建議改為：
 
 ```text
-代理：Claude（AGENT_MODEL: unknown）+ Codex（requested: gpt-5.5, source: wrapper）
+代理：Claude（結果缺失）+ Codex（requested: gpt-5.5）
 ```
 
 若有紀錄 CLI header，可附在 debug 或 raw metadata 區塊：
@@ -102,6 +102,6 @@ Codex actual cloud model: gpt-5.5
 
 1. 移除 prompt 中的 `CODEX_MODEL: <你實際使用的模型 ID>` 要求。
 2. 在執行 `codex exec` 前由 wrapper 設定 `CODEX_REQUESTED_MODEL="gpt-5.5"`。
-3. 在 Codex 輸出後由 wrapper 追加 `CODEX_REQUESTED_MODEL` 與 `CODEX_MODEL_SOURCE`。
-4. 若需要，從 CLI transcript header 解析 `model:` 作為 debug metadata，但不可視為權威雲端模型 ID。
+3. 在 Codex 輸出後由 wrapper 追加 `CODEX_REQUESTED_MODEL`。
+4. 若需要，內部可保留 `CODEX_MODEL_SOURCE` 並從 CLI transcript header 解析 `model:` 作為 debug metadata，但不可視為權威雲端模型 ID，也不可預設輸出給一般使用者。
 5. 最終報告使用 `requested: gpt-5.5`，避免讓使用者誤以為已取得雲端實際 response metadata。

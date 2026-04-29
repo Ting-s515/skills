@@ -30,4 +30,4 @@ FINDING:
   title: divide 缺少除以零錯誤處理
   detail: 規格要求 divide(x, 0) 必須拋出 Error('Division by zero')，但目前直接回傳 a / b，JavaScript 會回傳 Infinity 或 -Infinity，未符合 API 與邊界條件。
 
-CODEX_MODEL: gpt-5
+CODEX_REQUESTED_MODEL: gpt-5.5
