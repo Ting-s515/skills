@@ -99,6 +99,8 @@ FINDING:
 
 ### Codex Agent — 全面審查（Bash，run_in_background: true）
 
+> ⚠️ **絕對不可在 bash 腳本內部加 `&`**：`run_in_background: true` 已讓 Bash 工具本身非同步執行；若再於腳本內加 `&`，codex 會變成孤立子程序，輸出無法被捕捉，結果直接丟失。
+
 ```bash
 codex exec "你是程式碼審查代理。請審查以下 diff 的變更，並閱讀相關原始檔以了解完整上下文。
 
