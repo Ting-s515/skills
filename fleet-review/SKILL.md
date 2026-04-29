@@ -142,8 +142,10 @@ FINDING:
 > ⚠️ **輸出必須用 `-o` 寫入檔案**：background 執行時 stdout 不可靠，`-o` 保證輸出寫入指定路徑，最後再 `cat` 讀出。
 
 ```bash
+CODEX_REQUESTED_MODEL="gpt-5.5"
 CODEX_PROMPT_FILE=$(mktemp /tmp/codex-prompt-XXXXXX.txt)
 CODEX_OUTPUT_FILE=$(mktemp /tmp/codex-output-XXXXXX.txt)
+CODEX_TRACE_FILE=$(mktemp /tmp/codex-trace-XXXXXX.txt)
 
 # 靜態 header（單引號 heredoc，完全不展開，避免特殊字元被 shell 解析）
 cat > "$CODEX_PROMPT_FILE" << 'PROMPT_EOF'
@@ -180,27 +182,40 @@ FINDING:
 
 嚴重程度：P0=生產崩潰/安全漏洞 P1=功能錯誤 P2=條件性問題 P3=輕微問題
 若無發現，輸出：NO_FINDINGS
-
-最後一行必須輸出：CODEX_MODEL: <你實際使用的模型 ID>
 PROMPT_EOF
 
 codex exec - \
-  -m "gpt-5.5" \
+  -m "$CODEX_REQUESTED_MODEL" \
   -c 'model_reasoning_effort="high"' \
   -s read-only \
   --ephemeral \
   -o "$CODEX_OUTPUT_FILE" \
-  < "$CODEX_PROMPT_FILE"
+  < "$CODEX_PROMPT_FILE" \
+  > "$CODEX_TRACE_FILE" 2>&1
 
 CODEX_EXIT=$?
+CODEX_CLI_HEADER_MODEL=$(awk -F': ' '/^model: / {print $2; exit}' "$CODEX_TRACE_FILE")
+CODEX_CLI_HEADER_MODEL=${CODEX_CLI_HEADER_MODEL:-unknown}
+CODEX_CLI_VERSION=$(codex --version 2>/dev/null || echo "unknown")
 
 if [ $CODEX_EXIT -eq 0 ] && [ -s "$CODEX_OUTPUT_FILE" ]; then
   cat "$CODEX_OUTPUT_FILE"
+  echo ""
+  echo "CODEX_REQUESTED_MODEL: $CODEX_REQUESTED_MODEL"
+  echo "CODEX_MODEL_SOURCE: requested_by_wrapper"
+  echo "CODEX_CLI_HEADER_MODEL: $CODEX_CLI_HEADER_MODEL"
+  echo "CODEX_CLI_HEADER_MODEL_SOURCE: cli_transcript_header"
+  echo "CODEX_CLI_VERSION: $CODEX_CLI_VERSION"
 else
   echo "CODEX_FAILED: exit_code=$CODEX_EXIT"
+  echo "CODEX_REQUESTED_MODEL: $CODEX_REQUESTED_MODEL"
+  echo "CODEX_MODEL_SOURCE: requested_by_wrapper"
+  echo "CODEX_CLI_HEADER_MODEL: $CODEX_CLI_HEADER_MODEL"
+  echo "CODEX_CLI_HEADER_MODEL_SOURCE: cli_transcript_header"
+  echo "CODEX_CLI_VERSION: $CODEX_CLI_VERSION"
 fi
 
-rm -f "$CODEX_PROMPT_FILE" "$CODEX_OUTPUT_FILE"
+rm -f "$CODEX_PROMPT_FILE" "$CODEX_OUTPUT_FILE" "$CODEX_TRACE_FILE"
 ```
 
 使用 `timeout: 300000`（5 分鐘）。
@@ -213,7 +228,9 @@ rm -f "$CODEX_PROMPT_FILE" "$CODEX_OUTPUT_FILE"
 
 從兩個代理的輸出中解析模型名稱：
 - 從 Claude Agent 輸出的最後一行 `AGENT_MODEL: ...` 取得 `$CLAUDE_MODEL`（若缺失則顯示 `unknown`）
-- 從 Codex 輸出的最後一行 `CODEX_MODEL: ...` 取得 `$CODEX_MODEL`（若缺失則顯示 `unknown`）
+- 從 Codex wrapper 輸出的 `CODEX_REQUESTED_MODEL: ...` 取得 `$CODEX_REQUESTED_MODEL`（若缺失則顯示 `unknown`）
+- 從 Codex wrapper 輸出的 `CODEX_MODEL_SOURCE: ...` 取得 `$CODEX_MODEL_SOURCE`（若缺失則顯示 `unknown`）
+- 可選：從 `CODEX_CLI_HEADER_MODEL: ...` 取得 `$CODEX_CLI_HEADER_MODEL` 作為 debug metadata，不得宣稱為雲端實際模型 ID
 
 收集兩個代理的 FINDING 區塊，整理成一份清單，向使用者展示摘要：
 
@@ -222,7 +239,7 @@ rm -f "$CODEX_PROMPT_FILE" "$CODEX_OUTPUT_FILE"
 ════════════════════════════════════════════════════════════
 基礎分支：$BASE | 已變更檔案：N 個
 Claude（全面審查）：N 個發現
-Codex（全面審查）：N 個發現
+Codex（全面審查，requested: $CODEX_REQUESTED_MODEL）：N 個發現
 原始發現總計：N 個
 ════════════════════════════════════════════════════════════
 ```
@@ -248,7 +265,7 @@ Codex（全面審查）：N 個發現
 艦隊審查 — 最終報告
 ════════════════════════════════════════════════════════════
 基礎分支：$BASE | 已變更檔案：N 個
-代理：Claude（$CLAUDE_MODEL）+ Codex（$CODEX_MODEL）
+代理：Claude（$CLAUDE_MODEL）+ Codex（requested: $CODEX_REQUESTED_MODEL, source: $CODEX_MODEL_SOURCE）
 原始發現：N 個 → 雙代理確認：N 個，單代理發現：N 個
 
 ### 📐 規格符合度
