@@ -36,19 +36,47 @@ which claude 2>/dev/null || echo "NOT_FOUND"
 
 ### 取得規格文檔
 
-從 `$ARGUMENTS` 取得規格文檔路徑並讀取內容：
-- 若 `$ARGUMENTS` 有值（例如 `/fleet-review path/to/spec.md`）→ 讀取該路徑的文檔，並將路徑記為 `$SPEC_PATH`
-- 若 `$ARGUMENTS` 為空 → 告知使用者需提供規格文檔路徑，例如：`/fleet-review path/to/spec.md`，並停止
+從 `$ARGUMENTS` 解析參數：
+- 必要：規格文檔路徑（第一個非旗標參數），記為 `$SPEC_PATH`
+- 選用：`--diff path/to/file.patch`，直接使用指定的 patch 檔，跳過 git diff（供測試用）
+- 若缺少規格文檔路徑 → 告知使用者，並停止
+
+範例：
+- 一般使用：`/fleet-review path/to/spec.md`
+- 測試模式：`/fleet-review path/to/spec.md --diff path/to/fixture.patch`
 
 ### 取得 diff
 
 ```bash
-BASE=$(gh pr view --json baseRefName -q .baseRefName 2>/dev/null || \
-       gh repo view --json defaultBranchRef -q .defaultBranchRef.name 2>/dev/null || \
-       echo "main")
-DIFF_FILE=$(mktemp /tmp/fleet-review-XXXXXX.patch)
-git diff origin/$BASE > "$DIFF_FILE"
-git diff origin/$BASE --stat | tail -5
+# 解析 --diff 旗標
+PRESET_DIFF=""
+SPEC_PATH=""
+ARGS=($ARGUMENTS)
+i=0
+while [ $i -lt ${#ARGS[@]} ]; do
+  if [ "${ARGS[$i]}" = "--diff" ]; then
+    i=$((i+1))
+    PRESET_DIFF="${ARGS[$i]}"
+  else
+    SPEC_PATH="${ARGS[$i]}"
+  fi
+  i=$((i+1))
+done
+
+if [ -n "$PRESET_DIFF" ]; then
+  # 測試模式：直接使用指定 patch，不執行 git diff
+  DIFF_FILE="$PRESET_DIFF"
+  BASE="(fixture)"
+  wc -l "$DIFF_FILE"
+else
+  # 一般模式：從 git 取得 diff
+  BASE=$(gh pr view --json baseRefName -q .baseRefName 2>/dev/null || \
+         gh repo view --json defaultBranchRef -q .defaultBranchRef.name 2>/dev/null || \
+         echo "main")
+  DIFF_FILE=$(mktemp /tmp/fleet-review-XXXXXX.patch)
+  git diff origin/$BASE > "$DIFF_FILE"
+  git diff origin/$BASE --stat | tail -5
+fi
 
 # 將路徑轉換為 Windows 格式供 Codex 使用（cygpath 為 Git for Windows 內建）
 # macOS/Linux 無 cygpath 時 fallback 回原始路徑，不影響行為
