@@ -132,8 +132,7 @@ FINDING:
 嚴重程度：P0=生產崩潰/安全漏洞 P1=功能錯誤 P2=條件性問題 P3=輕微問題
 若無發現，輸出：NO_FINDINGS" \
   -s read-only \
-  -m "gpt-5.5" \
-  -c 'model_reasoning_effort="high"' \
+  --ephemeral \
   2>/dev/null < /dev/null
 ```
 
