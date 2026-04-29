@@ -108,16 +108,29 @@ FINDING:
 
 > ⚠️ **絕對不可在 bash 腳本內部加 `&`**：`run_in_background: true` 已讓 Bash 工具本身非同步執行；若再於腳本內加 `&`，codex 會變成孤立子程序，輸出無法被捕捉，結果直接丟失。
 >
-> ⚠️ **只傳檔案路徑，不展開內容**：將 `$(cat file)` 嵌入 `codex exec "..."` 字串中，當檔案較大時 shell 解析含特殊字元的多行字串容易出錯，導致 codex 阻塞等待 stdin（"Reading additional input from stdin..."）。改為只傳路徑，讓 codex 用自身的 Read 工具讀取。
+> ⚠️ **prompt 必須寫入暫存檔再以 stdin 傳入**：inline 字串（`codex exec "..."`）遇到中文、換行、引號時 shell 解析容易失敗。改用 heredoc 分段寫入暫存檔，再以 `< file` 傳入，可完全迴避這個問題。
 >
-> ⚠️ **必須加 `< /dev/null`**：顯式關閉 stdin，防止 codex 在非互動環境中等待輸入而卡住。
+> ⚠️ **輸出必須用 `-o` 寫入檔案**：background 執行時 stdout 不可靠，`-o` 保證輸出寫入指定路徑，最後再 `cat` 讀出。
 
 ```bash
-codex exec "你是程式碼審查代理。請用你的 Read 工具依序讀取下列兩個檔案，再審查並輸出發現。
+CODEX_PROMPT_FILE=$(mktemp /tmp/codex-prompt-XXXXXX.txt)
+CODEX_OUTPUT_FILE=$(mktemp /tmp/codex-output-XXXXXX.txt)
 
+# 靜態 header（單引號 heredoc，完全不展開，避免特殊字元被 shell 解析）
+cat > "$CODEX_PROMPT_FILE" << 'PROMPT_EOF'
+你是程式碼審查代理。請用你的 Read 工具依序讀取下列兩個檔案，再審查並輸出發現。
+
+PROMPT_EOF
+
+# 動態路徑（雙引號 heredoc，展開 $SPEC_PATH_WIN 與 $DIFF_FILE_WIN）
+cat >> "$CODEX_PROMPT_FILE" << PROMPT_EOF
 規格文檔路徑（請讀取）：$SPEC_PATH_WIN
 Diff 檔案路徑（請讀取）：$DIFF_FILE_WIN
 
+PROMPT_EOF
+
+# 靜態審查指示（單引號 heredoc）
+cat >> "$CODEX_PROMPT_FILE" << 'PROMPT_EOF'
 審查方向：
 1. 規格符合度：規格中要求的功能是否完整實作？定義的 API / 資料結構是否一致？邊界條件與錯誤處理是否涵蓋？是否有規格以外的多餘實作？
 2. 邏輯正確性：差一錯誤、條件反轉、錯誤比較、破壞不變條件
@@ -137,12 +150,26 @@ FINDING:
   detail: <2-3 句話說明問題及其影響>
 
 嚴重程度：P0=生產崩潰/安全漏洞 P1=功能錯誤 P2=條件性問題 P3=輕微問題
-若無發現，輸出：NO_FINDINGS" \
+若無發現，輸出：NO_FINDINGS
+PROMPT_EOF
+
+codex exec - \
   -m "gpt-5.5" \
   -c 'model_reasoning_effort="high"' \
   -s read-only \
   --ephemeral \
-  2>/dev/null < /dev/null
+  -o "$CODEX_OUTPUT_FILE" \
+  < "$CODEX_PROMPT_FILE"
+
+CODEX_EXIT=$?
+
+if [ $CODEX_EXIT -eq 0 ] && [ -s "$CODEX_OUTPUT_FILE" ]; then
+  cat "$CODEX_OUTPUT_FILE"
+else
+  echo "CODEX_FAILED: exit_code=$CODEX_EXIT"
+fi
+
+rm -f "$CODEX_PROMPT_FILE" "$CODEX_OUTPUT_FILE"
 ```
 
 使用 `timeout: 300000`（5 分鐘）。
