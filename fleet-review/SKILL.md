@@ -99,6 +99,8 @@ FINDING:
 
 嚴重程度：P0=生產崩潰/安全漏洞 P1=功能錯誤 P2=條件性問題 P3=輕微問題
 若無發現，輸出：NO_FINDINGS
+
+最後一行必須輸出：AGENT_MODEL: <你實際使用的模型 ID，例如 claude-sonnet-4-6>
 ```
 
 使用 `timeout: 300000`（5 分鐘）。
@@ -150,6 +152,8 @@ FINDING:
 
 嚴重程度：P0=生產崩潰/安全漏洞 P1=功能錯誤 P2=條件性問題 P3=輕微問題
 若無發現，輸出：NO_FINDINGS
+
+最後一行必須輸出：CODEX_MODEL: <你實際使用的模型 ID>
 PROMPT_EOF
 
 codex exec - \
@@ -178,6 +182,10 @@ rm -f "$CODEX_PROMPT_FILE" "$CODEX_OUTPUT_FILE"
 ## 步驟 2：彙整原始發現（0 個 sub-agent）
 
 > 主代理自行收集所有 FINDING 區塊並整理摘要，不啟動任何 sub-agent。
+
+從兩個代理的輸出中解析模型名稱：
+- 從 Claude Agent 輸出的最後一行 `AGENT_MODEL: ...` 取得 `$CLAUDE_MODEL`（若缺失則顯示 `unknown`）
+- 從 Codex 輸出的最後一行 `CODEX_MODEL: ...` 取得 `$CODEX_MODEL`（若缺失則顯示 `unknown`）
 
 收集兩個代理的 FINDING 區塊，整理成一份清單，向使用者展示摘要：
 
@@ -212,7 +220,7 @@ Codex（全面審查）：N 個發現
 艦隊審查 — 最終報告
 ════════════════════════════════════════════════════════════
 基礎分支：$BASE | 已變更檔案：N 個
-代理：Claude（sonnet-4.6）+ Codex（gpt-5.5）
+代理：Claude（$CLAUDE_MODEL）+ Codex（$CODEX_MODEL）
 原始發現：N 個 → 雙代理確認：N 個，單代理發現：N 個
 
 ### 📐 規格符合度
