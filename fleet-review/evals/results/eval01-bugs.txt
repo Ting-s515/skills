@@ -1,0 +1,78 @@
+=== CLAUDE OUTPUT ===
+---
+
+FINDING:
+  severity: P1
+  file: fleet-review/test/calculator.js
+  line: 2
+  title: add() 實作使用減法而非加法
+  detail: `add(a, b)` 回傳 `a - b`，與規格要求的 `a + b` 相反。此錯誤將導致所有加法呼叫結果錯誤，例如 `add(3, 2)` 回傳 `1` 而非 `5`。程式碼中的註解 `// intentional bug` 表明這是已知的故意錯誤，仍須修正以符合規格。
+
+FINDING:
+  severity: P1
+  file: fleet-review/test/calculator.js
+  line: 19-21
+  title: divide() 缺少除以零的邊界條件檢查
+  detail: 規格明確要求 `divide(x, 0)` 必須拋出 `Error('Division by zero')`，但當前實作直接執行 `a / b`，當 `b` 為 `0` 時 JavaScript 不會拋出例外，而是回傳 `Infinity`（或 `NaN`，若 `a` 也為 `0`）。此行為與規格不符，且會讓呼叫端收到無效結果而無法察覺錯誤。
+
+AGENT_MODEL: claude-sonnet-4-6
+
+=== CODEX OUTPUT ===
+FINDING:
+  severity: P1
+  file: fleet-review/test/calculator.js
+  line: 2
+  title: add 實作為減法而非加法
+  detail: 規格要求 `add(a, b)` 回傳 `a + b`，但目前實作回傳 `a - b`。這會讓所有 `b` 不為 0 的加法結果錯誤，屬於核心功能不符合規格。
+
+FINDING:
+  severity: P1
+  file: fleet-review/test/calculator.js
+  line: 13-14
+  title: divide 未處理除以零錯誤
+  detail: 規格要求 `divide(x, 0)` 必須拋出 `Error('Division by zero')`，但目前直接執行 `a / b`。在 JavaScript 中除以 0 會回傳 `Infinity` 或 `-Infinity`，導致錯誤情境未依規格處理。
+CODEX_REQUESTED_MODEL: gpt-5.5
+
+艦隊審查 — 原始發現
+════════════════════════════════════════════════════════════
+基礎分支：main | Diff 來源：fixture patch: calculator-bugs.patch | 已變更檔案：2 個（calculator.js,spec.md）
+Claude（全面審查）：2 個發現
+Codex（全面審查）：2 個發現
+Codex requested model：gpt-5.5
+代理原始回報：4 個（未去重）
+去重後問題：2 個
+════════════════════════════════════════════════════════════
+
+艦隊審查 — 最終報告
+════════════════════════════════════════════════════════════
+基礎分支：main | Diff 來源：fixture patch: calculator-bugs.patch | 已變更檔案：2 個
+代理：Claude（claude-sonnet-4-6）+ Codex（requested: gpt-5.5）
+去重後問題：2 個 → 雙代理確認：2 個，單代理發現：0 個
+
+### 必須修正（P0 / P1)
+
+#### add() 實作錯誤 — calculator.js:2
+- 問題：規格要求 add(a, b) 回傳 a + b，但實作回傳 a - b。
+- 影響：所有加法結果錯誤，核心功能不符合規格。
+- 發現者：雙代理確認
+
+### 必須修正（P0 / P1)
+
+#### divide() 缺少除以零錯誤處理 — calculator.js:14
+- 問題：規格要求 divide(x, 0) 必須拋出 Error('Division by zero')，但實作直接除法。
+- 影響：b 為 0 時 JavaScript 會回傳 Infinity，邊界條件不符合規格。
+- 發現者：雙代理確認
+
+---
+
+### 使用者自行決定（註解類 P3）
+
+本測試未將註解類 P3 納入核心統計；若正式報告納入，必須計入去重後問題與單代理/雙代理統計。
+
+---
+
+統計：
+  代理原始回報：4 個（未去重）
+  去重後問題：2 個
+  雙代理確認：2 個，單代理發現：0 個
+════════════════════════════════════════════════════════════
