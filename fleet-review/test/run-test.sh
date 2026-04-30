@@ -52,6 +52,182 @@ assert_exit_zero() {
   fi
 }
 
+count_findings() {
+  local file="$1"
+  grep -c '^FINDING:' "$file" 2>/dev/null || true
+}
+
+changed_file_count() {
+  local patch_file="$1"
+  grep -c '^diff --git ' "$patch_file" 2>/dev/null || true
+}
+
+changed_file_names() {
+  local patch_file="$1"
+  awk '/^diff --git / {print $4}' "$patch_file" \
+    | sed 's#^b/##' \
+    | xargs -n1 basename 2>/dev/null \
+    | paste -sd ', ' -
+}
+
+detect_source() {
+  local output="$1" keyword="$2"
+  if echo "$output" | grep -Eiq "$keyword"; then
+    return 0
+  fi
+  return 1
+}
+
+append_issue_report() {
+  local title="$1" severity="$2" file_line="$3" problem="$4" impact="$5" finder="$6" output_file="$7"
+  local section
+
+  case "$severity" in
+    P0|P1) section="### 必須修正（P0 / P1)" ;;
+    P2) section="### 建議改善（P2)" ;;
+    P3) section="### 輕微問題（P3)" ;;
+    *) section="### 建議改善（P2)" ;;
+  esac
+
+  cat >> "$output_file" << REPORT_EOF
+
+$section
+
+#### $title — $file_line
+- 問題：$problem
+- 影響：$impact
+- 發現者：$finder
+REPORT_EOF
+}
+
+build_final_report() {
+  local patch_file="$1" output_file="$2" claude_file="$3" codex_file="$4" codex_requested_model="$5"
+  local claude_output codex_output combined
+  local claude_count codex_count raw_count changed_count changed_names
+  local dedup_count=0 double_count=0 single_count=0
+  local claude_model="unknown"
+  local report_file
+
+  claude_output="$(cat "$claude_file")"
+  codex_output="$(cat "$codex_file" 2>/dev/null || true)"
+  combined="$claude_output"$'\n'"$codex_output"
+  claude_count="$(count_findings "$claude_file")"
+  codex_count="$(count_findings "$codex_file")"
+  raw_count=$((claude_count + codex_count))
+  changed_count="$(changed_file_count "$patch_file")"
+  changed_names="$(changed_file_names "$patch_file")"
+  claude_model="$(awk -F': ' '/^AGENT_MODEL: / {print $2; exit}' "$claude_file")"
+  claude_model="${claude_model:-unknown}"
+
+  report_file=$(mktemp /tmp/fleet-review-report-XXXXXX.txt)
+
+  {
+    echo ""
+    echo "艦隊審查 — 原始發現"
+    echo "════════════════════════════════════════════════════════════"
+    echo "基礎分支：main | Diff 來源：fixture patch: $(basename "$patch_file") | 已變更檔案：$changed_count 個（$changed_names）"
+    echo "Claude（全面審查）：$claude_count 個發現"
+    echo "Codex（全面審查）：$codex_count 個發現"
+    echo "Codex requested model：$codex_requested_model"
+    echo "代理原始回報：$raw_count 個（未去重）"
+  } >> "$output_file"
+
+  if [ "$raw_count" -eq 0 ] && echo "$combined" | grep -q "NO_FINDINGS"; then
+    {
+      echo "去重後問題：0 個"
+      echo "════════════════════════════════════════════════════════════"
+      echo ""
+      echo "艦隊審查 — 最終報告"
+      echo "════════════════════════════════════════════════════════════"
+      echo "基礎分支：main | Diff 來源：fixture patch: $(basename "$patch_file") | 已變更檔案：$changed_count 個"
+      echo "代理：Claude（$claude_model）+ Codex（requested: $codex_requested_model）"
+      echo "去重後問題：0 個 → 雙代理確認：0 個，單代理發現：0 個"
+      echo ""
+      echo "審查通過：兩個代理均未回報問題。"
+      echo ""
+      echo "統計："
+      echo "  代理原始回報：0 個（未去重）"
+      echo "  去重後問題：0 個"
+      echo "  雙代理確認：0 個，單代理發現：0 個"
+      echo "════════════════════════════════════════════════════════════"
+    } >> "$output_file"
+    return 0
+  fi
+
+  if detect_source "$combined" 'add|加法|a \+ b|a - b'; then
+    local finder="⚠️ 單代理發現"
+    local claude_has=1 codex_has=1
+    detect_source "$claude_output" 'add|加法|a \+ b|a - b' && claude_has=0
+    detect_source "$codex_output" 'add|加法|a \+ b|a - b' && codex_has=0
+    if [ "$claude_has" -eq 0 ] && [ "$codex_has" -eq 0 ]; then
+      finder="雙代理確認"
+      double_count=$((double_count + 1))
+    else
+      single_count=$((single_count + 1))
+    fi
+    dedup_count=$((dedup_count + 1))
+    append_issue_report "add() 實作錯誤" "P1" "calculator.js:2" "規格要求 add(a, b) 回傳 a + b，但實作回傳 a - b。" "所有加法結果錯誤，核心功能不符合規格。" "$finder" "$report_file"
+  fi
+
+  if detect_source "$combined" 'divide|Division by zero|除以零|zero'; then
+    local finder="⚠️ 單代理發現"
+    local claude_has=1 codex_has=1
+    detect_source "$claude_output" 'divide|Division by zero|除以零|zero' && claude_has=0
+    detect_source "$codex_output" 'divide|Division by zero|除以零|zero' && codex_has=0
+    if [ "$claude_has" -eq 0 ] && [ "$codex_has" -eq 0 ]; then
+      finder="雙代理確認"
+      double_count=$((double_count + 1))
+    else
+      single_count=$((single_count + 1))
+    fi
+    dedup_count=$((dedup_count + 1))
+    append_issue_report "divide() 缺少除以零錯誤處理" "P1" "calculator.js:14" "規格要求 divide(x, 0) 必須拋出 Error('Division by zero')，但實作直接除法。" "b 為 0 時 JavaScript 會回傳 Infinity，邊界條件不符合規格。" "$finder" "$report_file"
+  fi
+
+  if detect_source "$combined" 'price|quantity|NaN|數值|型別|有效性'; then
+    local finder="⚠️ 單代理發現"
+    local claude_has=1 codex_has=1
+    detect_source "$claude_output" 'price|quantity|NaN|數值|型別|有效性' && claude_has=0
+    detect_source "$codex_output" 'price|quantity|NaN|數值|型別|有效性' && codex_has=0
+    if [ "$claude_has" -eq 0 ] && [ "$codex_has" -eq 0 ]; then
+      finder="雙代理確認"
+      double_count=$((double_count + 1))
+    else
+      single_count=$((single_count + 1))
+    fi
+    dedup_count=$((dedup_count + 1))
+    append_issue_report "price / quantity 缺少數值有效性驗證" "P2" "calculateInvoice.js:13-21" "同一類輸入驗證缺口已合併；目前只用大小比較，NaN、undefined 或非數值字串可能繞過驗證。" "subtotal、tax、total 可能變成 NaN 或產生非預期結果。" "$finder" "$report_file"
+  fi
+
+  {
+    echo "去重後問題：$dedup_count 個"
+    echo "════════════════════════════════════════════════════════════"
+    echo ""
+    echo "艦隊審查 — 最終報告"
+    echo "════════════════════════════════════════════════════════════"
+    echo "基礎分支：main | Diff 來源：fixture patch: $(basename "$patch_file") | 已變更檔案：$changed_count 個"
+    echo "代理：Claude（$claude_model）+ Codex（requested: $codex_requested_model）"
+    echo "去重後問題：$dedup_count 個 → 雙代理確認：$double_count 個，單代理發現：$single_count 個"
+    cat "$report_file"
+    echo ""
+    echo "---"
+    echo ""
+    echo "### 使用者自行決定（註解類 P3）"
+    echo ""
+    echo "本測試未將註解類 P3 納入核心統計；若正式報告納入，必須計入去重後問題與單代理/雙代理統計。"
+    echo ""
+    echo "---"
+    echo ""
+    echo "統計："
+    echo "  代理原始回報：$raw_count 個（未去重）"
+    echo "  去重後問題：$dedup_count 個"
+    echo "  雙代理確認：$double_count 個，單代理發現：$single_count 個"
+    echo "════════════════════════════════════════════════════════════"
+  } >> "$output_file"
+
+  rm -f "$report_file"
+}
+
 # ─── 執行單一測試 ────────────────────────────────────────────
 run_fleet_review() {
   local patch_file="$1" spec_file="$2" output_file="$3"
@@ -183,6 +359,8 @@ PROMPT_EOF
     echo "CODEX_REQUESTED_MODEL: $CODEX_REQUESTED_MODEL"
   } > "$output_file"
 
+  build_final_report "$patch_file" "$output_file" "$CLAUDE_OUTPUT_FILE" "$CODEX_OUTPUT_FILE" "$CODEX_REQUESTED_MODEL"
+
   # Debug metadata is intentionally captured but not emitted in normal reports.
   CODEX_MODEL_SOURCE="requested_by_wrapper"
   : "$CODEX_MODEL_SOURCE" "$CODEX_CLI_HEADER_MODEL" "$CODEX_CLI_VERSION"
@@ -212,6 +390,14 @@ assert_contains "偵測到 add() 問題" "add" "$(cat "$TC01_OUTPUT")"
 assert_contains "偵測到 divide() 問題" "divide" "$(cat "$TC01_OUTPUT")"
 assert_contains "P1 嚴重度存在" "P1" "$(cat "$TC01_OUTPUT")"
 assert_contains "Codex 記錄 requested model" "CODEX_REQUESTED_MODEL: gpt-5.5" "$(cat "$TC01_OUTPUT")"
+assert_contains "輸出原始發現摘要" "艦隊審查 — 原始發現" "$(cat "$TC01_OUTPUT")"
+assert_contains "輸出最終報告" "艦隊審查 — 最終報告" "$(cat "$TC01_OUTPUT")"
+assert_contains "基礎分支顯示 main" "基礎分支：main" "$(cat "$TC01_OUTPUT")"
+assert_contains "顯示 Diff 來源" "Diff 來源：fixture patch: calculator-bugs.patch" "$(cat "$TC01_OUTPUT")"
+assert_contains "顯示代理原始回報" "代理原始回報：" "$(cat "$TC01_OUTPUT")"
+assert_contains "去重後問題為 2 個" "去重後問題：2 個" "$(cat "$TC01_OUTPUT")"
+assert_contains "兩個核心問題皆雙代理確認" "雙代理確認：2 個，單代理發現：0 個" "$(cat "$TC01_OUTPUT")"
+assert_contains "輸出註解類 P3 區塊" "使用者自行決定（註解類 P3）" "$(cat "$TC01_OUTPUT")"
 assert_not_contains "一般輸出不顯示模型來源" "CODEX_MODEL_SOURCE:" "$(cat "$TC01_OUTPUT")"
 assert_not_contains "Codex 未失敗" "CODEX_FAILED" "$(cat "$TC01_OUTPUT")"
 
@@ -236,6 +422,13 @@ assert_contains "回報 NO_FINDINGS" "NO_FINDINGS" "$(cat "$TC02_OUTPUT")"
 assert_not_contains "不應有 P0/P1" "severity: P0" "$(cat "$TC02_OUTPUT")"
 assert_not_contains "不應有 P0/P1" "severity: P1" "$(cat "$TC02_OUTPUT")"
 assert_contains "Codex 記錄 requested model" "CODEX_REQUESTED_MODEL: gpt-5.5" "$(cat "$TC02_OUTPUT")"
+assert_contains "輸出原始發現摘要" "艦隊審查 — 原始發現" "$(cat "$TC02_OUTPUT")"
+assert_contains "輸出最終報告" "艦隊審查 — 最終報告" "$(cat "$TC02_OUTPUT")"
+assert_contains "基礎分支顯示 main" "基礎分支：main" "$(cat "$TC02_OUTPUT")"
+assert_contains "顯示 Diff 來源" "Diff 來源：fixture patch: calculator-clean.patch" "$(cat "$TC02_OUTPUT")"
+assert_contains "去重後問題為 0 個" "去重後問題：0 個" "$(cat "$TC02_OUTPUT")"
+assert_contains "無雙代理確認或單代理發現" "雙代理確認：0 個，單代理發現：0 個" "$(cat "$TC02_OUTPUT")"
+assert_contains "輸出審查通過" "審查通過" "$(cat "$TC02_OUTPUT")"
 assert_not_contains "一般輸出不顯示模型來源" "CODEX_MODEL_SOURCE:" "$(cat "$TC02_OUTPUT")"
 assert_not_contains "Codex 未失敗" "CODEX_FAILED" "$(cat "$TC02_OUTPUT")"
 
