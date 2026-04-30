@@ -5,15 +5,15 @@ FINDING:
   severity: P1
   file: fleet-review/test/calculator.js
   line: 2
-  title: add() 實作錯誤：使用減法而非加法
-  detail: `add(a, b)` 回傳 `a - b`，與規格要求的 `a + b` 相反。此 bug 使 add 行為與 subtract 完全相同，任何依賴加法的呼叫端都會得到錯誤結果。
+  title: `add` 函式實作錯誤，使用減法而非加法
+  detail: `add(a, b)` 回傳 `a - b`，與規格要求的 `a + b` 相反，導致所有呼叫 `add` 的場景結果錯誤。例如 `add(3, 2)` 會回傳 `1` 而非 `5`，屬於功能性錯誤。
 
 FINDING:
-  severity: P1
+  severity: P0
   file: fleet-review/test/calculator.js
   line: 19-21
-  title: divide() 缺少除以零的防護，違反規格邊界條件
-  detail: 規格明確要求 `divide(x, 0)` 必須拋出 `Error('Division by zero')`，但目前實作直接執行 `a / b`，當 `b === 0` 時會回傳 `Infinity`（JavaScript 行為）而非拋出例外。呼叫端若依賴錯誤捕獲邏輯，將靜默收到非預期的 `Infinity` 值，導致下游計算產生難以追蹤的錯誤。
+  title: `divide` 缺少除以零的防護，將回傳 `Infinity` 而非拋出例外
+  detail: 規格明確要求 `divide(x, 0)` 必須拋出 `Error('Division by zero')`，但實作中完全未加任何檢查，直接回傳 JavaScript 預設的 `Infinity`（或 `-Infinity` / `NaN`）。呼叫端若未預期此行為，可能導致靜默錯誤或下游計算出現非預期的無窮值，屬生產可見的錯誤行為。
 
 AGENT_MODEL: claude-sonnet-4-6
 
@@ -23,14 +23,14 @@ FINDING:
   file: fleet-review/test/calculator.js
   line: 2
   title: add 實作成減法
-  detail: 規格要求 `add(a, b)` 回傳 `a + b`，但目前回傳 `a - b`。這會讓所有加法結果錯誤，屬於核心功能不符合規格。
+  detail: 規格要求 `add(a, b)` 回傳 `a + b`，但目前實作回傳 `a - b`。這會讓所有加法結果錯誤，屬於核心功能不符合規格。
 
 FINDING:
   severity: P1
   file: fleet-review/test/calculator.js
-  line: 13
-  title: divide 未處理除以零
-  detail: 規格要求 `divide(x, 0)` 必須拋出 `Error('Division by zero')`，但目前直接執行 `a / b`。在 JavaScript 中這會回傳 `Infinity` 或 `-Infinity`，導致邊界條件未被正確實作。
+  line: 14
+  title: divide 缺少除以零錯誤處理
+  detail: 規格要求 `divide(x, 0)` 必須拋出 `Error('Division by zero')`，但目前直接執行 `a / b`。在 JavaScript 中除以 0 會回傳 `Infinity` 或 `-Infinity`，不會拋出指定錯誤，導致邊界條件不符合規格。
 CODEX_REQUESTED_MODEL: gpt-5.5
 
 艦隊審查 — 原始發現

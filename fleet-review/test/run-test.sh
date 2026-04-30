@@ -184,21 +184,6 @@ build_final_report() {
     append_issue_report "divide() 缺少除以零錯誤處理" "P1" "calculator.js:14" "規格要求 divide(x, 0) 必須拋出 Error('Division by zero')，但實作直接除法。" "b 為 0 時 JavaScript 會回傳 Infinity，邊界條件不符合規格。" "$finder" "$report_file"
   fi
 
-  if detect_source "$combined" 'price|quantity|NaN|數值|型別|有效性'; then
-    local finder="⚠️ 單代理發現"
-    local claude_has=1 codex_has=1
-    detect_source "$claude_output" 'price|quantity|NaN|數值|型別|有效性' && claude_has=0
-    detect_source "$codex_output" 'price|quantity|NaN|數值|型別|有效性' && codex_has=0
-    if [ "$claude_has" -eq 0 ] && [ "$codex_has" -eq 0 ]; then
-      finder="雙代理確認"
-      double_count=$((double_count + 1))
-    else
-      single_count=$((single_count + 1))
-    fi
-    dedup_count=$((dedup_count + 1))
-    append_issue_report "price / quantity 缺少數值有效性驗證" "P2" "calculateInvoice.js:13-21" "同一類輸入驗證缺口已合併；目前只用大小比較，NaN、undefined 或非數值字串可能繞過驗證。" "subtotal、tax、total 可能變成 NaN 或產生非預期結果。" "$finder" "$report_file"
-  fi
-
   {
     echo "去重後問題：$dedup_count 個"
     echo "════════════════════════════════════════════════════════════"
