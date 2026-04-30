@@ -237,6 +237,7 @@ assert_not_contains "不應有 P0/P1" "severity: P0" "$(cat "$TC02_OUTPUT")"
 assert_not_contains "不應有 P0/P1" "severity: P1" "$(cat "$TC02_OUTPUT")"
 assert_contains "Codex 記錄 requested model" "CODEX_REQUESTED_MODEL: gpt-5.5" "$(cat "$TC02_OUTPUT")"
 assert_not_contains "一般輸出不顯示模型來源" "CODEX_MODEL_SOURCE:" "$(cat "$TC02_OUTPUT")"
+assert_not_contains "Codex 未失敗" "CODEX_FAILED" "$(cat "$TC02_OUTPUT")"
 
 # ════════════════════════════════════════════════════════════
 # 結果

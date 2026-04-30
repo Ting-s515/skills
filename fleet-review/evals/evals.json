@@ -5,12 +5,16 @@
       "id": 1,
       "name": "calculator-bugs",
       "prompt": "請用 fleet-review 審查這個 PR。規格文檔：fleet-review/test/fixtures/spec.md，使用 --diff fleet-review/test/fixtures/calculator-bugs.patch",
-      "expected_output": "找到 add() 使用減法、divide() 缺除零檢查兩個 P1 問題，並顯示 Claude AGENT_MODEL 與 CODEX_REQUESTED_MODEL，不顯示 CODEX_MODEL 或 CODEX_MODEL_SOURCE",
+      "expected_output": "找到 add() 使用減法、divide() 缺除零檢查兩個 P1 問題，輸出艦隊審查最終報告，顯示 gpt-5.5 作為 Codex 模型，不輸出 CODEX_MODEL_SOURCE 等 debug 資訊",
       "files": [],
       "assertions": [
         {
-          "name": "找到至少一個 FINDING",
-          "check": "output contains 'FINDING:'"
+          "name": "輸出艦隊審查報告標頭",
+          "check": "output contains '艦隊審查'"
+        },
+        {
+          "name": "輸出步驟 3 最終報告",
+          "check": "output contains '最終報告'"
         },
         {
           "name": "偵測到 add() 邏輯錯誤",
@@ -25,19 +29,11 @@
           "check": "output contains 'P1'"
         },
         {
-          "name": "Claude 記錄 agent model",
-          "check": "output contains 'AGENT_MODEL:'"
+          "name": "Codex 使用 gpt-5.5",
+          "check": "output contains 'gpt-5.5'"
         },
         {
-          "name": "Codex 記錄 requested model",
-          "check": "output contains 'CODEX_REQUESTED_MODEL: gpt-5.5'"
-        },
-        {
-          "name": "不使用 Codex 模型自報",
-          "check": "output does not contain 'CODEX_MODEL:'"
-        },
-        {
-          "name": "一般輸出不顯示模型來源",
+          "name": "一般輸出不顯示 debug 模型來源",
           "check": "output does not contain 'CODEX_MODEL_SOURCE:'"
         },
         {
@@ -50,12 +46,16 @@
       "id": 2,
       "name": "calculator-clean",
       "prompt": "請用 fleet-review 審查這個 PR。規格文檔：fleet-review/test/fixtures/spec.md，使用 --diff fleet-review/test/fixtures/calculator-clean.patch",
-      "expected_output": "正確實作無問題，兩個代理都回報 NO_FINDINGS",
+      "expected_output": "正確實作無問題，兩個代理都回報 NO_FINDINGS，最終輸出審查通過",
       "files": [],
       "assertions": [
         {
-          "name": "回報 NO_FINDINGS",
-          "check": "output contains 'NO_FINDINGS'"
+          "name": "輸出艦隊審查報告標頭",
+          "check": "output contains '艦隊審查'"
+        },
+        {
+          "name": "回報審查通過或 NO_FINDINGS",
+          "check": "output contains '審查通過' or output contains 'NO_FINDINGS'"
         },
         {
           "name": "無 P0 問題",
@@ -66,19 +66,11 @@
           "check": "output does not contain 'severity: P1'"
         },
         {
-          "name": "Claude 記錄 agent model",
-          "check": "output contains 'AGENT_MODEL:'"
+          "name": "Codex 使用 gpt-5.5",
+          "check": "output contains 'gpt-5.5'"
         },
         {
-          "name": "Codex 記錄 requested model",
-          "check": "output contains 'CODEX_REQUESTED_MODEL: gpt-5.5'"
-        },
-        {
-          "name": "不使用 Codex 模型自報",
-          "check": "output does not contain 'CODEX_MODEL:'"
-        },
-        {
-          "name": "一般輸出不顯示模型來源",
+          "name": "一般輸出不顯示 debug 模型來源",
           "check": "output does not contain 'CODEX_MODEL_SOURCE:'"
         },
         {
