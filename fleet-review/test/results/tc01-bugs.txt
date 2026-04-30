@@ -1,19 +1,17 @@
 === CLAUDE OUTPUT ===
----
-
 FINDING:
   severity: P1
   file: fleet-review/test/calculator.js
   line: 2
-  title: add() 實作錯誤，回傳減法而非加法
-  detail: `add(a, b)` 實際執行 `a - b`，與規格要求的 `a + b` 完全相反。呼叫 `add(3, 2)` 會回傳 `1` 而非 `5`，導致所有依賴加法的邏輯全部出錯。
+  title: add() 實作錯誤，回傳 a - b 而非 a + b
+  detail: `add` 函式內部使用減法運算子（`a - b`），應為加法（`a + b`）。這是邏輯錯誤，導致所有加法呼叫均回傳錯誤結果，完全違反規格定義的功能語意。
 
 FINDING:
-  severity: P0
+  severity: P1
   file: fleet-review/test/calculator.js
-  line: 20
-  title: divide() 缺少除以零的防護，違反規格邊界條件
-  detail: 規格明確要求 `divide(x, 0)` 必須拋出 `Error('Division by zero')`，但實作中完全沒有此檢查，直接執行 `a / b`。在 JavaScript 中 `divide(5, 0)` 會靜默回傳 `Infinity` 而非拋出例外，下游呼叫者若依賴例外處理邏輯將無法正確運作，屬於功能性缺漏且可能造成計算結果靜默錯誤。
+  line: 19-21
+  title: divide() 缺少除以零的錯誤拋出
+  detail: 規格明確要求 `divide(x, 0)` 必須拋出 `Error('Division by zero')`，但目前實作直接執行 `a / b`，當 `b === 0` 時 JavaScript 不會拋出例外而是回傳 `Infinity`，不符合規格的邊界條件要求。
 
 AGENT_MODEL: claude-sonnet-4-6
 
@@ -22,13 +20,13 @@ FINDING:
   severity: P1
   file: fleet-review/test/calculator.js
   line: 2
-  title: add 實作與規格相反
-  detail: 規格要求 `add(a, b)` 回傳 `a + b`，但目前實作回傳 `a - b`。這會讓所有加法結果錯誤，屬於核心功能不符合規格。
+  title: add 實作成減法
+  detail: 規格要求 `add(a, b)` 回傳 `a + b`，但目前回傳 `a - b`。這會讓所有加法結果錯誤，屬於核心功能不符合規格。
 
 FINDING:
   severity: P1
   file: fleet-review/test/calculator.js
   line: 14
-  title: divide 未處理除以零
-  detail: 規格要求 `divide(x, 0)` 必須拋出 `Error('Division by zero')`，但目前直接執行 `a / b`。在 JavaScript 中除以 0 會回傳 `Infinity` 或 `-Infinity`，導致錯誤條件未被正確攔截。
+  title: divide 缺少除以零錯誤處理
+  detail: 規格要求 `divide(x, 0)` 必須拋出 `Error('Division by zero')`，但目前直接執行除法。JavaScript 會回傳 `Infinity` 或 `-Infinity`，導致邊界條件未被正確處理。
 CODEX_REQUESTED_MODEL: gpt-5.5
