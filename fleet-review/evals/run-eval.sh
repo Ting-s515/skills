@@ -369,6 +369,10 @@ assert_contains     "偵測到 add() 邏輯錯誤"    "add"               "$OUTP
 assert_contains     "偵測到 divide() 缺除零"   "divide"            "$OUTPUT01"
 assert_contains     "存在 P1 嚴重度"           "P1"                "$OUTPUT01"
 assert_contains     "Codex 使用 gpt-5.5"      "gpt-5.5"           "$OUTPUT01"
+assert_contains     "基礎分支顯示 main"        "基礎分支：main"     "$OUTPUT01"
+assert_contains     "顯示 Diff 來源"           "Diff 來源："        "$OUTPUT01"
+assert_contains     "去重後問題為 2 個"        "去重後問題：2 個"   "$OUTPUT01"
+assert_contains     "兩個核心問題皆雙代理確認" "雙代理確認：2 個，單代理發現：0 個" "$OUTPUT01"
 assert_not_contains "不顯示 debug 模型來源"    "CODEX_MODEL_SOURCE:" "$OUTPUT01"
 assert_not_contains "Codex 未失敗"             "CODEX_FAILED"      "$OUTPUT01"
 
@@ -391,6 +395,10 @@ assert_contains_any "回報審查通過或 NO_FINDINGS"     "審查通過" "NO_F
 assert_not_contains "無 P0 問題"                     "severity: P0"         "$OUTPUT02"
 assert_not_contains "無 P1 問題"                     "severity: P1"         "$OUTPUT02"
 assert_contains     "Codex 使用 gpt-5.5"            "gpt-5.5"              "$OUTPUT02"
+assert_contains     "基礎分支顯示 main"              "基礎分支：main"       "$OUTPUT02"
+assert_contains     "顯示 Diff 來源"                 "Diff 來源："          "$OUTPUT02"
+assert_contains     "去重後問題為 0 個"              "去重後問題：0 個"     "$OUTPUT02"
+assert_contains     "無雙代理確認或單代理發現"       "雙代理確認：0 個，單代理發現：0 個" "$OUTPUT02"
 assert_not_contains "不顯示 debug 模型來源"          "CODEX_MODEL_SOURCE:"  "$OUTPUT02"
 assert_not_contains "Codex 未失敗"                   "CODEX_FAILED"         "$OUTPUT02"
 
