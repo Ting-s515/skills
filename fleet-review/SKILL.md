@@ -37,11 +37,13 @@ which claude 2>/dev/null || echo "NOT_FOUND"
 ### 取得規格文檔
 
 從 `$ARGUMENTS` 解析參數：
+
 - 必要：規格文檔路徑（第一個非旗標參數），記為 `$SPEC_PATH`
 - 選用：`--diff path/to/file.patch`，直接使用指定的 patch 檔，跳過 git diff（供測試用）
 - 若缺少規格文檔路徑 → 告知使用者，並停止
 
 範例：
+
 - 一般使用：`/fleet-review path/to/spec.md`
 - 測試模式：`/fleet-review path/to/spec.md --diff path/to/fixture.patch`
 
@@ -96,6 +98,7 @@ SPEC_PATH_WIN=$(cygpath -w "$SPEC_PATH" 2>/dev/null || echo "$SPEC_PATH")
 
 > 1 個 Claude Agent + 1 個 Codex Bash，共 2 個並行。
 > **重要**：以下 prompt 中的變數必須替換為步驟 0 取得的實際值再帶入，不可原樣傳入。
+>
 > - Claude Agent 使用 `$DIFF_FILE`、`$SPEC_PATH`（Unix 路徑，sub-agent 跑在 bash 環境）
 > - Codex 使用 `$DIFF_FILE_WIN`、`$SPEC_PATH_WIN`（Windows 路徑，Codex 是 Windows process）
 
@@ -226,6 +229,7 @@ rm -f "$CODEX_PROMPT_FILE" "$CODEX_OUTPUT_FILE" "$CODEX_TRACE_FILE"
 > 主代理自行收集所有 FINDING 區塊並整理摘要，不啟動任何 sub-agent。
 
 從兩個代理的輸出中解析模型名稱：
+
 - 從 Claude Agent 輸出的最後一行 `AGENT_MODEL: ...` 取得 `$CLAUDE_MODEL`（若缺失則顯示 `unknown`）
 - 從 Codex wrapper 輸出的 `CODEX_REQUESTED_MODEL: ...` 取得 `$CODEX_REQUESTED_MODEL`（若缺失則顯示 `unknown`）
 - 可選：內部可保留 `CODEX_MODEL_SOURCE`、`CODEX_CLI_HEADER_MODEL` 與 `CODEX_CLI_VERSION` 作為 debug metadata，不得宣稱為雲端實際模型 ID
@@ -234,6 +238,7 @@ rm -f "$CODEX_PROMPT_FILE" "$CODEX_OUTPUT_FILE" "$CODEX_TRACE_FILE"
 收集兩個代理的 FINDING 區塊，整理成一份清單，向使用者展示摘要。
 
 統計口徑必須分清楚：
+
 - `代理原始回報`：Claude FINDING 數 + Codex FINDING 數，未去重，僅用於說明代理輸出量
 - `去重後問題`：依 file + line + 問題語意交叉比對後的實際問題數，必須等於「雙代理確認 + 單代理發現」
 - 最終報告不得把未去重的 `代理原始回報` 寫成 `原始發現：N 個 → 雙代理確認...`，避免左右數字口徑不一致
@@ -261,12 +266,13 @@ Codex requested model：$CODEX_REQUESTED_MODEL
 
 比對 Claude 與 Codex 對每條發現的重疊程度：
 
-| 重疊狀態 | 信心等級 | 處理方式 |
-| -------- | -------- | -------- |
+| 重疊狀態                          | 信心等級  | 處理方式                     |
+| --------------------------------- | --------- | ---------------------------- |
 | 兩者皆發現（相同 file/line/問題） | ✅ 高信心 | 直接納入，標注「雙代理確認」 |
-| 僅一個代理發現 | ⚠️ 中信心 | 納入，標注發現來源 |
+| 僅一個代理發現                    | ⚠️ 中信心 | 納入，標注發現來源           |
 
 去重與合併規則：
+
 - 同一驗證類問題可合併：若多個 FINDING 指向同一類輸入驗證缺口（例如 `price` 與 `quantity` 都缺少數值有效性驗證），且修正方式與風險相同，合併為一個去重後問題。
 - 合併後的 `file:line` 可使用涵蓋範圍（例如 `calculateInvoice.js:13-21`），標題需描述共同問題（例如 `price / quantity 缺少數值有效性驗證`）。
 - 合併後的發現者以來源集合判定：只要 Claude 與 Codex 都有回報同類問題，即標注「雙代理確認」；若只有一方回報，標注「僅 Claude」或「僅 Codex」。
