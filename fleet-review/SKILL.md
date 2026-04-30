@@ -66,13 +66,17 @@ done
 if [ -n "$PRESET_DIFF" ]; then
   # 測試模式：直接使用指定 patch，不執行 git diff
   DIFF_FILE="$PRESET_DIFF"
-  BASE="(fixture)"
+  BASE=$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name 2>/dev/null || \
+         git branch --show-current 2>/dev/null || \
+         echo "main")
+  DIFF_SOURCE="fixture patch: $PRESET_DIFF"
   wc -l "$DIFF_FILE"
 else
   # 一般模式：從 git 取得 diff
   BASE=$(gh pr view --json baseRefName -q .baseRefName 2>/dev/null || \
          gh repo view --json defaultBranchRef -q .defaultBranchRef.name 2>/dev/null || \
          echo "main")
+  DIFF_SOURCE="git diff origin/$BASE"
   DIFF_FILE=$(mktemp /tmp/fleet-review-XXXXXX.patch)
   git diff origin/$BASE > "$DIFF_FILE"
   git diff origin/$BASE --stat | tail -5
@@ -227,16 +231,23 @@ rm -f "$CODEX_PROMPT_FILE" "$CODEX_OUTPUT_FILE" "$CODEX_TRACE_FILE"
 - 可選：內部可保留 `CODEX_MODEL_SOURCE`、`CODEX_CLI_HEADER_MODEL` 與 `CODEX_CLI_VERSION` 作為 debug metadata，不得宣稱為雲端實際模型 ID
 - 一般報告僅輸出 `CODEX_REQUESTED_MODEL` 對應的精簡資訊；除非使用者要求 debug/raw metadata，否則不得輸出 `CODEX_MODEL_SOURCE`、`CODEX_CLI_HEADER_MODEL`、`CODEX_CLI_HEADER_MODEL_SOURCE`、`CODEX_CLI_VERSION`
 
-收集兩個代理的 FINDING 區塊，整理成一份清單，向使用者展示摘要：
+收集兩個代理的 FINDING 區塊，整理成一份清單，向使用者展示摘要。
+
+統計口徑必須分清楚：
+- `代理原始回報`：Claude FINDING 數 + Codex FINDING 數，未去重，僅用於說明代理輸出量
+- `去重後問題`：依 file + line + 問題語意交叉比對後的實際問題數，必須等於「雙代理確認 + 單代理發現」
+- 最終報告不得把未去重的 `代理原始回報` 寫成 `原始發現：N 個 → 雙代理確認...`，避免左右數字口徑不一致
+- 若使用 `--diff` 測試模式，`基礎分支` 仍顯示 `$BASE`，另以 `Diff 來源：$DIFF_SOURCE` 標示 fixture patch，不得把基礎分支顯示成 `(fixture)`
 
 ```
 艦隊審查 — 原始發現
 ════════════════════════════════════════════════════════════
-基礎分支：$BASE | 已變更檔案：N 個
+基礎分支：$BASE | Diff 來源：$DIFF_SOURCE | 已變更檔案：N 個
 Claude（全面審查）：N 個發現
 Codex（全面審查）：N 個發現
 Codex requested model：$CODEX_REQUESTED_MODEL
-原始發現總計：N 個
+代理原始回報：N 個（未去重）
+去重後問題：N 個
 ════════════════════════════════════════════════════════════
 ```
 
@@ -260,9 +271,9 @@ Codex requested model：$CODEX_REQUESTED_MODEL
 ```
 艦隊審查 — 最終報告
 ════════════════════════════════════════════════════════════
-基礎分支：$BASE | 已變更檔案：N 個
+基礎分支：$BASE | Diff 來源：$DIFF_SOURCE | 已變更檔案：N 個
 代理：Claude（$CLAUDE_MODEL）+ Codex（requested: $CODEX_REQUESTED_MODEL）
-原始發現：N 個 → 雙代理確認：N 個，單代理發現：N 個
+去重後問題：N 個 → 雙代理確認：N 個，單代理發現：N 個
 
 ### 📐 規格符合度
 
@@ -296,7 +307,8 @@ Codex requested model：$CODEX_REQUESTED_MODEL
 ---
 
 統計：
-  原始發現：N 個
+  代理原始回報：N 個（未去重）
+  去重後問題：N 個
   雙代理確認：N 個，單代理發現：N 個
 ════════════════════════════════════════════════════════════
 ```
