@@ -1,0 +1,29 @@
+{
+  "eval_id": 1,
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "有做文件類型判斷，輸出 Lab 或名詞導讀格式（非隨意參考文件格式）",
+      "passed": true,
+      "evidence": "判斷為「實作 Lab」（決策規則第 1 條：具體工具 + 特定功能），輸出完整 Lab 結構"
+    },
+    {
+      "text": "包含 mermaid 流程圖",
+      "passed": true,
+      "evidence": "第 11-17 行「你會做出什麼」有 mermaid，第 253-262 行「學習重點回顧」有第二個 mermaid"
+    },
+    {
+      "text": "文件開頭有「目標：」",
+      "passed": true,
+      "evidence": "第 3 行：目標：建立 Docker Volume，掛載至容器，驗證資料在容器刪除後仍然保留..."
+    },
+    {
+      "text": "技術術語（Volume、mount）加反引號",
+      "passed": true,
+      "evidence": "`Named Volume`、`Bind Mount`、`-v`、`docker volume create`、`my-data` 均有反引號"
+    }
+  ],
+  "pass_count": 4,
+  "total_count": 4,
+  "pass_rate": 1.0
+}

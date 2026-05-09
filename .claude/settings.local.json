@@ -11,7 +11,16 @@
       "Bash(mkdir -p \"C:/Users/tenns/.claude/skills/fleet-review-workspace/iteration-1/eval-calculator-bugs/without_skill/outputs\")",
       "Bash(mkdir -p \"C:/Users/tenns/.claude/skills/fleet-review-workspace/iteration-1/eval-calculator-clean/with_skill/outputs\")",
       "Bash(mkdir -p \"C:/Users/tenns/.claude/skills/fleet-review-workspace/iteration-1/eval-calculator-clean/without_skill/outputs\")",
-      "PowerShell(Start-Process \"C:\\\\Users\\\\tenns\\\\.claude\\\\skills\\\\fleet-review-workspace\\\\iteration-1\\\\review.html\")"
+      "PowerShell(Start-Process \"C:\\\\Users\\\\tenns\\\\.claude\\\\skills\\\\fleet-review-workspace\\\\iteration-1\\\\review.html\")",
+      "Bash(mkdir -p \"/mnt/c/Users/theon.lin/.claude/skills/writing-training-doc/evals\")",
+      "Bash(mkdir -p \"/mnt/c/Users/theon.lin/.claude/skills/writing-training-doc-workspace/iteration-1/eval-kafka-lab/with_skill/outputs\")",
+      "Bash(mkdir -p \"/mnt/c/Users/theon.lin/.claude/skills/writing-training-doc-workspace/iteration-1/eval-kafka-lab/without_skill/outputs\")",
+      "Bash(mkdir -p \"/mnt/c/Users/theon.lin/.claude/skills/writing-training-doc-workspace/iteration-1/eval-docker-volume/with_skill/outputs\")",
+      "Bash(mkdir -p \"/mnt/c/Users/theon.lin/.claude/skills/writing-training-doc-workspace/iteration-1/eval-docker-volume/without_skill/outputs\")",
+      "PowerShell(& python $scriptPath $iterPath --skill-name \"writing-training-doc\" 2>&1)",
+      "PowerShell($scriptPath = \"C:\\\\Users\\\\theon.lin\\\\.claude\\\\plugins\\\\cache\\\\claude-plugins-official\\\\skill-creator\\\\unknown\\\\skills\\\\skill-creator\\\\scripts\\\\aggregate_benchmark.py\")",
+      "PowerShell($iterPath = \"C:\\\\Users\\\\theon.lin\\\\.claude\\\\skills\\\\writing-training-doc-workspace\\\\iteration-1\")",
+      "PowerShell(Get-Command *)"
     ]
   }
 }

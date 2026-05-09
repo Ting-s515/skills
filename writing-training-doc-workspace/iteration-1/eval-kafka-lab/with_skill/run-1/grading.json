@@ -1,0 +1,34 @@
+{
+  "eval_id": 0,
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "文件開頭包含「目標：」與「預估時間：」",
+      "passed": true,
+      "evidence": "第 3 行：目標：透過實際操作... 第 5 行：預估時間：60 分鐘。"
+    },
+    {
+      "text": "包含「你會做出什麼」章節與 mermaid 流程圖",
+      "passed": true,
+      "evidence": "第 9-22 行：完整的 mermaid flowchart LR，展示 Producer→Topic→ConsumerGroup→Broker"
+    },
+    {
+      "text": "包含至少一個「Step N：」步驟群格式",
+      "passed": true,
+      "evidence": "Step 1 到 Step 6，每個 Step 後有說明：解釋 WHY"
+    },
+    {
+      "text": "包含「本 Lab 的學習重點回顧」章節，含 mermaid 與文字說明",
+      "passed": true,
+      "evidence": "第 285-316 行：完整的學習重點回顧，含第二個 mermaid 圖與 3 個核心觀念"
+    },
+    {
+      "text": "包含「完成檢查」checklist（理解導向，非操作步驟）",
+      "passed": true,
+      "evidence": "第 264-272 行：6 項以「你知道...」「你能...」開頭的理解型 checklist"
+    }
+  ],
+  "pass_count": 5,
+  "total_count": 5,
+  "pass_rate": 1.0
+}

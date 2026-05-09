@@ -1,0 +1,29 @@
+{
+  "eval_id": 2,
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "產出符合 SKILL.md README 結構的課程總覽",
+      "passed": true,
+      "evidence": "完整 README 格式：課程目標一段話、課程設計主旨、使用環境表格、課程路線、操作原則、學習目標、課程地圖 mermaid"
+    },
+    {
+      "text": "包含「課程路線」章節，列出至少 3 個 Lab（有序列表含路徑連結）",
+      "passed": true,
+      "evidence": "7 個 Lab 依序列出（Lab 00-05 + 速查表），每項含相對路徑連結與簡短說明"
+    },
+    {
+      "text": "包含「完成課程後你應該能做到」章節",
+      "passed": true,
+      "evidence": "第 61-67 行：6 條學習目標 bullet list，以動詞開頭"
+    },
+    {
+      "text": "包含「課程設計主旨」章節，說明做中學原則",
+      "passed": true,
+      "evidence": "第 7-10 行：明確說明「做中學」原則，強調先執行後解釋"
+    }
+  ],
+  "pass_count": 4,
+  "total_count": 4,
+  "pass_rate": 1.0
+}

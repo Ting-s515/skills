@@ -1,0 +1,6 @@
+{
+  "eval_id": 0,
+  "eval_name": "eval-kafka-lab",
+  "prompt": "我想為 Apache Kafka 的 Consumer Group 機制寫一個 Lab 文件，學員是完全沒接觸過 Kafka 的新人",
+  "assertions": []
+}
