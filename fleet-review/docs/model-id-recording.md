@@ -2,7 +2,7 @@
 
 ## 背景
 
-`fleet-review` 目前以本地 `codex exec` 啟動 Codex 審查代理，並透過 `-m "gpt-5.5"` 指定模型。先前測試中，Codex 審查代理最後輸出：
+`fleet-review` 目前以本地 `codex exec` 啟動 Codex 審查代理，並透過 `-m "gpt-5.5"` 指定模型。早期測試中，曾要求 Codex 審查代理自行輸出：
 
 ```text
 CODEX_MODEL: gpt-5
@@ -17,7 +17,7 @@ sandbox: read-only
 reasoning effort: high
 ```
 
-因此需要明確定義：`fleet-review` 應如何紀錄模型資訊，以及哪些資料不能當作雲端實際模型 ID 的可靠來源。
+這類模型自報內容已不再使用於正式流程。此文件明確定義：`fleet-review` 如何紀錄模型資訊，以及哪些資料不能當作雲端實際模型 ID 的可靠來源。
 
 ## 結論
 
@@ -96,12 +96,22 @@ Codex actual cloud model: gpt-5.5
 
 除非未來 `codex exec` 提供公開穩定欄位，或 `fleet-review` 改成直接呼叫 Responses API 並保存 `response.model`。
 
-## 後續修改方向
+## 目前實作狀態
 
-`fleet-review/SKILL.md` 後續應做以下調整：
+目前版本已完成以下調整：
 
-1. 移除 prompt 中的 `CODEX_MODEL: <你實際使用的模型 ID>` 要求。
-2. 在執行 `codex exec` 前由 wrapper 設定 `CODEX_REQUESTED_MODEL="gpt-5.5"`。
-3. 在 Codex 輸出後由 wrapper 追加 `CODEX_REQUESTED_MODEL`。
-4. 若需要，內部可保留 `CODEX_MODEL_SOURCE` 並從 CLI transcript header 解析 `model:` 作為 debug metadata，但不可視為權威雲端模型 ID，也不可預設輸出給一般使用者。
-5. 最終報告使用 `requested: gpt-5.5`，避免讓使用者誤以為已取得雲端實際 response metadata。
+1. `fleet-review/SKILL.md` 已移除 Codex prompt 中的 `CODEX_MODEL: <你實際使用的模型 ID>` 要求。
+2. wrapper 在執行 `codex exec` 前設定 `CODEX_REQUESTED_MODEL="gpt-5.5"`。
+3. Codex 輸出後由 wrapper 追加 `CODEX_REQUESTED_MODEL: gpt-5.5`。
+4. 內部仍可保留 `CODEX_MODEL_SOURCE`、`CODEX_CLI_HEADER_MODEL`、`CODEX_CLI_VERSION` 作為 debug metadata，但不可視為權威雲端模型 ID，也不可預設輸出給一般使用者。
+5. 最終報告使用 `Codex（requested: gpt-5.5）`，避免讓使用者誤以為已取得雲端實際 response metadata。
+6. `fleet-review/test/run-test.sh` 與 `fleet-review/evals/run-eval.sh` 皆驗證一般輸出包含 `CODEX_REQUESTED_MODEL: gpt-5.5`，且不包含 `CODEX_MODEL_SOURCE:`。
+
+## 測試覆蓋
+
+目前測試與 eval 覆蓋以下模型資訊規則：
+
+1. bugs fixture 與 clean fixture 都必須輸出 `CODEX_REQUESTED_MODEL: gpt-5.5`。
+2. 一般輸出不得包含 `CODEX_MODEL_SOURCE:`。
+3. Codex 代理失敗時會輸出 `CODEX_FAILED: exit_code=...` 與 `CODEX_REQUESTED_MODEL: gpt-5.5`，正常報告需 assert 不包含 `CODEX_FAILED`。
+4. 最終報告中的 Codex 顯示格式為 `Codex（requested: gpt-5.5）`。
