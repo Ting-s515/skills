@@ -31,9 +31,14 @@
       "text": "文件標題格式符合「# Lab NN：<主題>」，含 Lab 編號（標題第一行應為 `# Lab 01：...` 這樣的格式）",
       "passed": false,
       "evidence": "第 1 行標題為 '# Apache Kafka Consumer Group 機制 Lab 文件'，不符合「# Lab NN：<主題>」格式，缺少 Lab 編號"
+    },
+    {
+      "text": "若包含環境啟動指令（如 docker compose up），指令從 repo 根目錄執行，未出現「cd docs/」等路徑前綴",
+      "passed": true,
+      "evidence": "第 97 行 `docker compose up -d`、第 103 行 `docker compose ps` 均從工作目錄直接執行，未出現 `cd docs/` 等路徑前綴。（注意：此 assertion 為負面測試，兩種配置皆通過，辨別力低。）"
     }
   ],
-  "pass_count": 0,
-  "total_count": 6,
-  "pass_rate": 0.0
+  "pass_count": 1,
+  "total_count": 7,
+  "pass_rate": 0.14
 }

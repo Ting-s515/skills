@@ -1,0 +1,46 @@
+{
+  "eval_id": 1,
+  "configuration": "with_skill",
+  "run": 2,
+  "skill_version_note": "SKILL.md 已更新包含課程目錄結構規則（docs/ vs repo 根目錄），本次為重新執行驗證",
+  "expectations": [
+    {
+      "text": "有做文件類型判斷，輸出 Lab 格式（非隨意參考文件格式）——文件應有 Lab 結構：目標、步驟群、學習重點回顧等，而非純參考手冊",
+      "passed": true,
+      "evidence": "第 1 行標題「# Lab 01：Docker Volume 的使用方式」，包含 Step 1～Step 7 步驟群、練習題、完成檢查、本 Lab 的學習重點回顧，完整 Lab 結構。"
+    },
+    {
+      "text": "包含 mermaid 流程圖（語法為 ```mermaid 開頭）",
+      "passed": true,
+      "evidence": "第 11 行「你會做出什麼」節有 flowchart LR mermaid 圖；「本 Lab 的學習重點回顧」節有第二個 flowchart LR mermaid 圖。"
+    },
+    {
+      "text": "文件開頭有「目標：」（在文件前幾行出現 \"目標：\"）",
+      "passed": true,
+      "evidence": "第 3 行：「目標：學會建立與掛載 Docker Volume，讓容器資料在容器重啟或刪除後仍然保留。」"
+    },
+    {
+      "text": "技術術語加反引號（如 `docker volume`、`Named Volume` 等有加反引號）",
+      "passed": true,
+      "evidence": "`Named Volume`、`Bind Mount`、`docker volume create`、`docker volume rm`、`docker volume prune`、`--mount`、`-v`、`docker-compose.yaml`、`/data/hello.txt` 等均有反引號。"
+    },
+    {
+      "text": "文件標題格式符合「# Lab NN：<主題>」，含 Lab 編號（第一行應為 `# Lab 01：...` 這樣的格式）",
+      "passed": true,
+      "evidence": "第 1 行：「# Lab 01：Docker Volume 的使用方式」，符合「# Lab NN：<主題>」格式。"
+    },
+    {
+      "text": "環境指令（如 docker compose up、docker compose ps）從 repo 根目錄執行，未出現「cd docs/」等路徑前綴",
+      "passed": true,
+      "evidence": "練習 2 明確寫道「從 repo 根目錄執行（不要 cd docs/ 後執行）」；全文 `docker compose up`、`docker compose down` 均無 `cd docs/` 前綴。"
+    },
+    {
+      "text": "有說明或暗示 docker-compose.yaml 屬於 repo 根目錄，而非放在 docs/ 目錄內",
+      "passed": true,
+      "evidence": "（1）「課程環境說明」節：「若你在課程 repo 中看到 docker-compose.yaml，該檔案放在 repo 根目錄（和 docs/ 同層），不在 docs/ 裡面。」（2）練習 2：「這份 docker-compose.yaml 應放在 repo 根目錄（與 docs/ 同層），不要放在 docs/ 內。」（3）完成檢查：「你知道 docker-compose.yaml 屬於 repo 根目錄，不放在 docs/ 內。」（4）學習重點回顧：「docker-compose.yaml 屬於 repo 根目錄…不能放在 docs/ 內。」—— 四處明確說明，完整通過。"
+    }
+  ],
+  "pass_count": 7,
+  "total_count": 7,
+  "pass_rate": 1.0
+}

@@ -26,9 +26,14 @@
       "text": "課程路線中的 Lab 路徑符合「NN-topic.md」命名格式（如 01-init-repo.md、00-concepts.md 等，兩位數字開頭 + 連字號 + 主題名）",
       "passed": false,
       "evidence": "文件中不存在任何課程路線或 Lab 路徑連結，因此無法核對命名格式。全文無任何 NN-topic.md 格式的檔案路徑。"
+    },
+    {
+      "text": "有說明教學文件（Lab、README 等）放在 docs/ 目錄，或課程路線路徑格式符合 docs/ 位置（如 docs/01-xxx.md）",
+      "passed": false,
+      "evidence": "文件以單一大型教學文件呈現，無課程路線章節，未包含任何 Lab 路徑連結，無法確認 docs/ 目錄位置規範。"
     }
   ],
   "pass_count": 0,
-  "total_count": 5,
+  "total_count": 6,
   "pass_rate": 0.0
 }

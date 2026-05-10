@@ -26,9 +26,19 @@
       "text": "文件標題格式符合「# Lab NN：<主題>」，含 Lab 編號（第一行應為 `# Lab 01：...` 這樣的格式）",
       "passed": false,
       "evidence": "第 1 行為「# Docker Volume 使用方式教材」，不包含「Lab」關鍵字與編號，不符合「# Lab NN：<主題>」格式要求。"
+    },
+    {
+      "text": "環境指令（如 docker compose up、docker compose ps）從 repo 根目錄執行，未出現「cd docs/」等路徑前綴",
+      "passed": true,
+      "evidence": "第 250-253 行 `docker compose up -d` 直接執行，未出現 `cd docs/` 等路徑前綴。（注意：此 assertion 為負面測試，兩種配置皆通過，辨別力低。）"
+    },
+    {
+      "text": "有說明或暗示 docker-compose.yaml 屬於 repo 根目錄，而非放在 docs/ 目錄內",
+      "passed": false,
+      "evidence": "第 6.3 節（第 224-254 行）展示 docker-compose.yml 設定範例，但全文未提及該檔案應放置於 repo 根目錄的規範。與 with_skill 同樣未通過，此 assertion 對當前 eval 提示詞的辨別力低。"
     }
   ],
-  "pass_count": 1,
-  "total_count": 5,
-  "pass_rate": 0.2
+  "pass_count": 2,
+  "total_count": 7,
+  "pass_rate": 0.286
 }

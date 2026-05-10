@@ -7,6 +7,8 @@
     "包含 mermaid 流程圖",
     "文件開頭有「目標：」",
     "技術術語加反引號",
-    "文件標題格式符合「# Lab NN：<主題>」，含 Lab 編號"
+    "文件標題格式符合「# Lab NN：<主題>」，含 Lab 編號",
+    "環境指令（如 docker compose up、docker compose ps）從 repo 根目錄執行，未出現「cd docs/」等路徑前綴",
+    "有說明或暗示 docker-compose.yaml 屬於 repo 根目錄，而非放在 docs/ 目錄內"
   ]
 }

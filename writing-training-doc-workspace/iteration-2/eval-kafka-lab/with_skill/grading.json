@@ -25,15 +25,20 @@
     {
       "text": "包含「完成檢查」checklist（理解導向，非操作步驟）",
       "passed": true,
-      "evidence": "第 252 行：「## 完成檢查」；第 254–258 行共 5 條 checklist，皆以「你知道」或「你能解釋」或「你能在...找到...並解釋」開頭，屬理解導向而非操作指令"
+      "evidence": "第 252 行：「## 完成檢查」；第 254–258 行共 5 條 checklist，皆以「你知道」或「你能解釋」開頭，屬理解導向而非操作指令"
     },
     {
       "text": "文件標題格式符合「# Lab NN：<主題>」，含 Lab 編號（標題第一行應為 `# Lab 01：...` 這樣的格式）",
       "passed": true,
       "evidence": "第 1 行：「# Lab 01：認識 Consumer Group — 讓多個消費者一起分工處理訊息」，格式完全符合「# Lab NN：<主題>」"
+    },
+    {
+      "text": "若包含環境啟動指令（如 docker compose up），指令從 repo 根目錄執行，未出現「cd docs/」等路徑前綴",
+      "passed": true,
+      "evidence": "第 33 行 `docker compose up -d`、第 40 行 `docker compose ps` 均直接從工作目錄執行，全文未出現 `cd docs/` 等路徑前綴。"
     }
   ],
-  "pass_count": 6,
-  "total_count": 6,
+  "pass_count": 7,
+  "total_count": 7,
   "pass_rate": 1.0
 }
