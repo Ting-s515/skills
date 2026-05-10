@@ -21,9 +21,14 @@
       "text": "包含「課程設計主旨」章節，說明做中學原則",
       "passed": false,
       "evidence": "無「課程設計主旨」章節，也未提及做中學方法論，直接進入課程內容"
+    },
+    {
+      "text": "課程路線中的 Lab 路徑符合「NN-topic.md」命名格式（如 01-xxx.md）",
+      "passed": false,
+      "evidence": "無課程路線 Lab 路徑清單，使用模組名稱表格（模組 1-5），無 .md 路徑連結，無法驗證命名格式"
     }
   ],
   "pass_count": 1,
-  "total_count": 4,
-  "pass_rate": 0.25
+  "total_count": 5,
+  "pass_rate": 0.2
 }

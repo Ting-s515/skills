@@ -15,9 +15,9 @@
       "run_number": 1,
       "result": {
         "pass_rate": 1.0,
-        "passed": 5,
+        "passed": 6,
         "failed": 0,
-        "total": 5,
+        "total": 6,
         "time_seconds": 91.0,
         "tokens": 24438,
         "errors": 0
@@ -27,7 +27,8 @@
         {"text": "包含「你會做出什麼」章節與 mermaid 流程圖", "passed": true, "evidence": "第 9-22 行：完整的 mermaid flowchart LR"},
         {"text": "包含至少一個「Step N：」步驟群格式", "passed": true, "evidence": "Step 1 到 Step 6，每個 Step 後有說明："},
         {"text": "包含「本 Lab 的學習重點回顧」章節，含 mermaid 與文字說明", "passed": true, "evidence": "第 285-316 行：完整學習重點回顧，含第二個 mermaid"},
-        {"text": "包含「完成檢查」checklist（理解導向，非操作步驟）", "passed": true, "evidence": "第 264-272 行：6 項理解型 checklist"}
+        {"text": "包含「完成檢查」checklist（理解導向，非操作步驟）", "passed": true, "evidence": "第 264-272 行：6 項理解型 checklist"},
+        {"text": "文件標題格式符合「# Lab NN：<主題>」，含 Lab 編號", "passed": true, "evidence": "第 1 行：# Lab 01：Kafka Consumer Group 機制，符合 Lab NN：格式"}
       ],
       "notes": []
     },
@@ -37,10 +38,10 @@
       "configuration": "without_skill",
       "run_number": 1,
       "result": {
-        "pass_rate": 0.2,
+        "pass_rate": 0.17,
         "passed": 1,
-        "failed": 4,
-        "total": 5,
+        "failed": 5,
+        "total": 6,
         "time_seconds": 78.4,
         "tokens": 20571,
         "errors": 0
@@ -50,7 +51,8 @@
         {"text": "包含「你會做出什麼」章節與 mermaid 流程圖", "passed": false, "evidence": "使用 ASCII art 示意圖，無 mermaid，無「你會做出什麼」章節"},
         {"text": "包含至少一個「Step N：」步驟群格式", "passed": true, "evidence": "Step 1-7 含在「## Lab 操作步驟」內"},
         {"text": "包含「本 Lab 的學習重點回顧」章節，含 mermaid 與文字說明", "passed": false, "evidence": "有「重點整理」章節（表格格式），非規範結構，無 mermaid"},
-        {"text": "包含「完成檢查」checklist（理解導向，非操作步驟）", "passed": false, "evidence": "有「驗收問題」（思考題），非 checklist 格式"}
+        {"text": "包含「完成檢查」checklist（理解導向，非操作步驟）", "passed": false, "evidence": "有「驗收問題」（思考題），非 checklist 格式"},
+        {"text": "文件標題格式符合「# Lab NN：<主題>」，含 Lab 編號", "passed": false, "evidence": "第 1 行：# Apache Kafka Consumer Group 機制 Lab，無 Lab 編號，不符合 Lab NN：格式"}
       ],
       "notes": []
     },
@@ -61,9 +63,9 @@
       "run_number": 1,
       "result": {
         "pass_rate": 1.0,
-        "passed": 4,
+        "passed": 5,
         "failed": 0,
-        "total": 4,
+        "total": 5,
         "time_seconds": 75.1,
         "tokens": 23702,
         "errors": 0
@@ -72,7 +74,8 @@
         {"text": "有做文件類型判斷，輸出 Lab 格式（非隨意參考文件格式）", "passed": true, "evidence": "判斷為「實作 Lab」，輸出完整 Lab 結構"},
         {"text": "包含 mermaid 流程圖", "passed": true, "evidence": "兩個 mermaid flowchart LR（你會做出什麼 + 學習重點回顧）"},
         {"text": "文件開頭有「目標：」", "passed": true, "evidence": "第 3 行：目標：建立 Docker Volume..."},
-        {"text": "技術術語加反引號", "passed": true, "evidence": "`Named Volume`、`Bind Mount`、`-v`、`docker volume create` 均有反引號"}
+        {"text": "技術術語加反引號", "passed": true, "evidence": "`Named Volume`、`Bind Mount`、`-v`、`docker volume create` 均有反引號"},
+        {"text": "文件標題格式符合「# Lab NN：<主題>」，含 Lab 編號", "passed": true, "evidence": "第 1 行：# Lab 01：Docker Volume 的使用方式，符合 Lab NN：格式"}
       ],
       "notes": []
     },
@@ -82,10 +85,10 @@
       "configuration": "without_skill",
       "run_number": 1,
       "result": {
-        "pass_rate": 0.25,
+        "pass_rate": 0.2,
         "passed": 1,
-        "failed": 3,
-        "total": 4,
+        "failed": 4,
+        "total": 5,
         "time_seconds": 85.3,
         "tokens": 21141,
         "errors": 0
@@ -94,7 +97,8 @@
         {"text": "有做文件類型判斷，輸出 Lab 格式（非隨意參考文件格式）", "passed": false, "evidence": "輸出完整參考手冊格式（含目錄、三種類型比較、進階操作），非教學 Lab 結構"},
         {"text": "包含 mermaid 流程圖", "passed": false, "evidence": "使用 ASCII art（Host↔Container 示意圖），無 mermaid"},
         {"text": "文件開頭有「目標：」", "passed": false, "evidence": "開頭為「# Docker Volume 使用方式教材」，無「目標：」行"},
-        {"text": "技術術語加反引號", "passed": true, "evidence": "`-v`、`--mount`、`docker volume create` 均有反引號"}
+        {"text": "技術術語加反引號", "passed": true, "evidence": "`-v`、`--mount`、`docker volume create` 均有反引號"},
+        {"text": "文件標題格式符合「# Lab NN：<主題>」，含 Lab 編號", "passed": false, "evidence": "第 1 行：# Docker Volume 使用方式教材，無 Lab 編號，不符合 Lab NN：格式"}
       ],
       "notes": []
     },
@@ -105,9 +109,9 @@
       "run_number": 1,
       "result": {
         "pass_rate": 1.0,
-        "passed": 4,
+        "passed": 5,
         "failed": 0,
-        "total": 4,
+        "total": 5,
         "time_seconds": 59.7,
         "tokens": 22565,
         "errors": 0
@@ -116,7 +120,8 @@
         {"text": "產出符合 SKILL.md README 結構的課程總覽", "passed": true, "evidence": "完整 README：課程目標、設計主旨、環境表格、課程路線、操作原則、學習目標、mermaid 課程地圖"},
         {"text": "包含「課程路線」章節，列出至少 3 個 Lab（有序列表含路徑連結）", "passed": true, "evidence": "7 個 Lab 依序列出（Lab 00-05 + 速查表），每項含相對路徑連結"},
         {"text": "包含「完成課程後你應該能做到」章節", "passed": true, "evidence": "第 61-67 行：6 條學習目標 bullet list"},
-        {"text": "包含「課程設計主旨」章節，說明做中學原則", "passed": true, "evidence": "第 7-10 行：明確說明「做中學」原則"}
+        {"text": "包含「課程設計主旨」章節，說明做中學原則", "passed": true, "evidence": "第 7-10 行：明確說明「做中學」原則，強調先執行後解釋"},
+        {"text": "課程路線中的 Lab 路徑符合「NN-topic.md」命名格式（如 01-xxx.md）", "passed": true, "evidence": "第 33-46 行：00-git-concepts.md、01-init-repo.md、02-remote-push.md 等，均符合 NN-topic.md 格式"}
       ],
       "notes": []
     },
@@ -126,10 +131,10 @@
       "configuration": "without_skill",
       "run_number": 1,
       "result": {
-        "pass_rate": 0.25,
+        "pass_rate": 0.2,
         "passed": 1,
-        "failed": 3,
-        "total": 4,
+        "failed": 4,
+        "total": 5,
         "time_seconds": 88.6,
         "tokens": 20824,
         "errors": 0
@@ -138,7 +143,8 @@
         {"text": "產出符合 SKILL.md README 結構的課程總覽", "passed": false, "evidence": "產出完整課程內容文件（含模組詳細步驟），而非課程總覽 README"},
         {"text": "包含「課程路線」章節，列出至少 3 個 Lab（有序列表含路徑連結）", "passed": false, "evidence": "有「課程總覽」表格（模組名稱+時間），非 Lab 清單格式，無路徑連結"},
         {"text": "包含「完成課程後你應該能做到」章節", "passed": true, "evidence": "第 11-17 行：「課程目標」章節含 4 條學習目標（語義符合）"},
-        {"text": "包含「課程設計主旨」章節，說明做中學原則", "passed": false, "evidence": "無「課程設計主旨」章節，未提及做中學方法論"}
+        {"text": "包含「課程設計主旨」章節，說明做中學原則", "passed": false, "evidence": "無「課程設計主旨」章節，未提及做中學方法論"},
+        {"text": "課程路線中的 Lab 路徑符合「NN-topic.md」命名格式（如 01-xxx.md）", "passed": false, "evidence": "無課程路線 Lab 路徑清單，使用模組名稱表格（模組 1-5），無 .md 路徑連結，無法驗證命名格式"}
       ],
       "notes": []
     }
@@ -150,12 +156,12 @@
       "tokens": {"mean": 23568, "stddev": 770, "min": 22565, "max": 24438}
     },
     "without_skill": {
-      "pass_rate": {"mean": 0.23, "stddev": 0.024, "min": 0.2, "max": 0.25},
+      "pass_rate": {"mean": 0.19, "stddev": 0.014, "min": 0.17, "max": 0.2},
       "time_seconds": {"mean": 84.1, "stddev": 4.25, "min": 78.4, "max": 88.6},
       "tokens": {"mean": 20845, "stddev": 233, "min": 20571, "max": 21141}
     },
     "delta": {
-      "pass_rate": "+0.77",
+      "pass_rate": "+0.81",
       "time_seconds": "-8.8",
       "tokens": "+2723"
     }
@@ -163,8 +169,9 @@
   "notes": [
     "「Step N：步驟群」在兩個配置都通過（1/1）- 此 assertion 辨別力低，未來可移除或改為更嚴格版本",
     "「技術術語加反引號」在兩個配置都通過 - 此為 Claude 基本行為，非 skill 帶來的差異",
-    "with_skill 在所有 eval 完全通過（100%），與 without_skill 平均 23% 有顯著差距",
+    "with_skill 在所有 eval 完全通過（100%），與 without_skill 平均 19% 有顯著差距（原 23%，因新增檔名規則 assertion 後重新計算）",
     "with_skill 執行時間平均比 without_skill 少 8.8 秒，同時 token 使用多 2723（因為讀取 SKILL.md）",
-    "模糊請求（Docker eval）的文件類型判斷是 skill 最大價值：without_skill 直接輸出參考手冊，with_skill 正確選擇 Lab 格式"
+    "模糊請求（Docker eval）的文件類型判斷是 skill 最大價值：without_skill 直接輸出參考手冊，with_skill 正確選擇 Lab 格式",
+    "新增「文件標題格式」assertion（Lab NN：格式）與「課程路線路徑格式」assertion（NN-topic.md）：兩項均為 skill 規範的課程檔名規則，with_skill 全通過，without_skill 全失敗"
   ]
 }

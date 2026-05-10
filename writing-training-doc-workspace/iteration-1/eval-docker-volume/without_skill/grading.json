@@ -21,9 +21,14 @@
       "text": "技術術語（Volume、mount）加反引號",
       "passed": true,
       "evidence": "`-v`、`--mount`、`docker volume create`、`Named Volume` 均有反引號"
+    },
+    {
+      "text": "文件標題格式符合「# Lab NN：<主題>」，含 Lab 編號",
+      "passed": false,
+      "evidence": "第 1 行：# Docker Volume 使用方式教材，無 Lab 編號，不符合 Lab NN：格式"
     }
   ],
   "pass_count": 1,
-  "total_count": 4,
-  "pass_rate": 0.25
+  "total_count": 5,
+  "pass_rate": 0.2
 }

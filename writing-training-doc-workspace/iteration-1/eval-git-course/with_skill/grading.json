@@ -21,9 +21,14 @@
       "text": "包含「課程設計主旨」章節，說明做中學原則",
       "passed": true,
       "evidence": "第 7-10 行：明確說明「做中學」原則，強調先執行後解釋"
+    },
+    {
+      "text": "課程路線中的 Lab 路徑符合「NN-topic.md」命名格式（如 01-xxx.md）",
+      "passed": true,
+      "evidence": "第 33-46 行：00-git-concepts.md、01-init-repo.md、02-remote-push.md 等，均符合 NN-topic.md 格式"
     }
   ],
-  "pass_count": 4,
-  "total_count": 4,
+  "pass_count": 5,
+  "total_count": 5,
   "pass_rate": 1.0
 }
