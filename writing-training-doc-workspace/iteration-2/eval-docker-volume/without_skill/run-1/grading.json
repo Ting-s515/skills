@@ -1,0 +1,34 @@
+{
+  "eval_id": 1,
+  "configuration": "without_skill",
+  "expectations": [
+    {
+      "text": "有做文件類型判斷，輸出 Lab 格式（非隨意參考文件格式）——文件應有 Lab 結構：目標、步驟群、學習重點回顧等，而非純參考手冊",
+      "passed": false,
+      "evidence": "第 1 行標題為「# Docker Volume 使用方式教材」，文件以章節編號（1~10 節）組織內容，屬於參考手冊風格。雖有「學習目標」與「練習題」，但無 Lab 編號步驟群、無「學習重點回顧」小節，不符合 Lab 格式。"
+    },
+    {
+      "text": "包含 mermaid 流程圖（語法為 ```mermaid 開頭）",
+      "passed": false,
+      "evidence": "全文未出現任何 ```mermaid 區塊。第 19-21 行與第 25-27 行使用純文字 ASCII 示意說明資料流，並非 mermaid 語法。"
+    },
+    {
+      "text": "文件開頭有「目標：」（在文件前幾行出現 \"目標：\"）",
+      "passed": false,
+      "evidence": "第 3 行為「## 學習目標」（無冒號跟在同行的說明），第 5 行開始為條列式內容。全文未出現「目標：」此確切字串。"
+    },
+    {
+      "text": "技術術語加反引號（如 `docker volume`、`Named Volume` 等有加反引號）",
+      "passed": true,
+      "evidence": "第 63 行出現 `docker volume inspect`、第 90 行出現 `-v <volume名稱>:<容器內路徑>`、第 101 行出現 `--mount`、第 160 行出現 `src/`、第 254 行出現 `myproject_postgres-data` 等，技術術語皆有加反引號。"
+    },
+    {
+      "text": "文件標題格式符合「# Lab NN：<主題>」，含 Lab 編號（第一行應為 `# Lab 01：...` 這樣的格式）",
+      "passed": false,
+      "evidence": "第 1 行為「# Docker Volume 使用方式教材」，不包含「Lab」關鍵字與編號，不符合「# Lab NN：<主題>」格式要求。"
+    }
+  ],
+  "pass_count": 1,
+  "total_count": 5,
+  "pass_rate": 0.2
+}
