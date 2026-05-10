@@ -1,137 +1,272 @@
-<!--
-  【AI 閱讀說明】
-  此文檔是「writing-training-doc」技能的風格範例，以 NiFi 課程為具體示範。
+# 通用實作課程風格文檔
 
-  使用規則：
-  1. 只萃取「結構、原則、語氣」，不套用任何 NiFi 專有術語（Processor、Relationship、FlowFile、auto-terminate 等）。
-  2. 凡是 NiFi 特有的概念，替換成對應目標工具的通用詞（元件、設定、連線、排程等）。
-  3. 技能產出的文件必須適用於任何技術工具（Docker、Kubernetes、CI/CD、資料庫等），不能綁死於特定框架。
-  4. 若本範例與 SKILL.md 的通用原則衝突，以 SKILL.md 為準。
--->
+本文件用來維護技術課程 repo 的寫作風格、教材結構與檔案分層規則。目標是讓任何工具或框架的課程都能用同一套方式設計：學員先完成可執行、可觀察的小流程，再用結果反推概念。
 
-# NiFi 實作入門課程
+## 核心原則
 
-這組課程用目前專案的 Docker Compose NiFi 環境練習，目標是讓你能在公司專案中看懂、建立、排錯與維護基本資料流。
-
-本課程不先大量講理論。每一章都會要求你在 NiFi UI 建一個小流程，跑資料，觀察 queue、attributes、content、bulletin、provenance，再把結果和實務概念對起來。
-
-每個 Lab 最下方都有「本 Lab 的學習重點回顧」，用來說明整條流程在做什麼、每個 Processor 負責什麼，以及這個練習對公司專案的意義。
-
-## 課程設計主旨
-
-本課程採用「做中學」設計。每個主題都應該先讓你完成一個可執行、可觀察的小流程，再用該流程反推 NiFi 名詞、設定與排錯觀念。
-
-課程編排原則：
-
-- 先實作，再解釋。不要先堆大量理論，最後才操作。
-- 每個 Lab 都要有明確輸入、處理步驟、輸出或觀察點。
-- 每次只引入少量新概念，並且要能在 UI、queue、log 或 provenance 中看得到。
-- 理論說明要服務於當前實作，不寫和當前 Lab 無關的大段背景知識。
-- 每個 Lab 結尾要回顧整條 flow 在做什麼，避免只照步驟完成卻不知道流程意義。
-- 每個 Step 都要用「新手是否能從上一個 Step 的狀態直接照做」來檢查；若前一步留下的設定會影響下一步，必須明確寫出要保留、修改或刪除哪些設定。
-- NiFi UI 若提供多個獨立 property，就依照 property 語意分開填，不要把外部工具或 SQL 慣用的完整字串硬塞進單一欄位。例如 MSSQL 在 `PutDatabaseRecord` 要分開填 `Database Name`、`Schema Name`、`Table Name`，不要把 `dbo.table_name` 全部填到 `Table Name`。
+- 先實作，再解釋。
+- 每個 Lab 都要有明確輸入、操作步驟、輸出或觀察點。
+- 每次只引入少量新概念，且概念必須能在指令輸出、UI、log、response、queue、dashboard 或其他可觀察結果中看到。
+- 理論說明要服務於當前 Lab，不寫和當前操作無關的大段背景知識。
+- 每個 Lab 結尾要回顧整條流程在做什麼，避免學員只照步驟完成卻不知道流程意義。
+- 每個 Step 都要用「新手是否能從上一個 Step 的狀態直接照做」來檢查。
+- 若前一步留下的設定、資料、狀態或執行結果會影響下一步，必須明確寫出要保留、修改或刪除哪些內容。
 - 補充文檔只用來釐清容易誤解的概念，不取代 Lab 的實作主線。
 
-課程檔名規則：
+## 目錄分層規則
 
-- 一般主線 Lab 使用 `NN-topic.md`，例如 `01-first-flow.md`。
-- 若某個 Lab 需要延伸成系列課程，改用 `NN-00-topic.md` 作為主課，後續用 `NN-01-topic.md`、`NN-02-topic.md` 擴充。
-- 文件標題仍使用人類可讀的課程編號，例如 `# Lab 06：...`、`# Lab 06-1：...`、`# Lab 06-2：...`。
-- 範例：
-  - `06-00-database-integration.md` 對應 `Lab 06`
-  - `06-01-database-read-copy.md` 對應 `Lab 06-1`
-  - 未來可新增 `06-02-xxx.md` 對應 `Lab 06-2`
+原則：`docs/` 只放主要教學內容；可執行資產與環境設定放在 repo 根目錄或根目錄下的功能資料夾。
 
-## 使用環境
+| 位置 | 放置內容 | 說明 |
+| --- | --- | --- |
+| repo 根目錄 | 環境入口與單檔設定 | 例如 `.env`、`docker-compose.yaml`、工具設定檔 |
+| repo 根目錄功能資料夾 | 課程會用到的可執行資產 | 例如 `mock-api/`、`scripts/`、`sample-data/` |
+| `docs/` | 主要教學內容文檔 | 例如 Lab、速查表、補充說明、課程 README |
 
-先確認容器已啟動：
+## 教學內容
+
+教學內容是學員閱讀的主要文檔，應放在 `docs/` 內。
+
+適合放在 `docs/` 的檔案：
+
+- 課程總覽，例如 `README.md`
+- Lab 文件，例如 `01-first-workflow.md`
+- 名詞導讀，例如 `00-core-concepts.md`
+- 速查表，例如 `99-cheatsheet.md`
+- 補充說明，例如 `supplement-*.md`
+- 環境操作教學，例如 `environment-setup.md`
+
+判斷標準：
+
+- 檔案主要用途是「教學說明」。
+- 學員主要用閱讀方式使用。
+- 即使不執行，也能作為課程內容被理解。
+
+## 可執行資產與環境設定
+
+可執行資產是輔助上課操作的檔案，不是主要教學內容，應放在 repo 根目錄或根目錄下的功能資料夾。
+
+適合放在 repo 根目錄的檔案：
+
+- `.env`
+- `docker-compose.yaml`
+- 單一工具設定檔
+- 其他單檔環境設定
+
+適合放在 repo 根目錄功能資料夾的內容：
+
+- `mock-api/`
+- `scripts/`
+- `sample-data/`
+- `fixtures/`
+- 其他會包含多個檔案的可執行範例或輔助資源
+
+判斷標準：
+
+- 檔案主要用途是「讓課程環境跑起來」。
+- 學員會透過指令、服務或程式執行它。
+- 它屬於上課輔助教材，不是主要閱讀內容。
+
+## `.env` 維護規則
+
+若 `.env` 只包含課程必要且非敏感的環境預設值，可以提交到 repo。
+
+適合提交的 `.env` 內容：
+
+- Docker image 版本
+- 課程固定 port
+- 非敏感的 feature flag
+- 課程用服務名稱
+
+不應提交的內容：
+
+- 密碼
+- token
+- 個人本機路徑
+- 私有服務連線字串
+- 任何無法公開分享的設定
+
+個人覆寫設定請使用 `.env.local` 或 `.env.*.local`，並在 `.gitignore` 排除。
+
+## 指令撰寫規則
+
+課程中的環境指令預設都從 repo 根目錄執行，也就是包含 `docker-compose.yaml` 或主要環境入口檔的目錄。
+
+正確寫法：
 
 ```powershell
-docker compose start
+docker compose up -d
 docker compose ps
 ```
 
-開啟：
+若需要檢查工具設定，指令也應從 repo 根目錄執行：
 
-- NiFi UI：`https://localhost:8443/nifi`
-- NiFi Registry UI：`http://localhost:18080/nifi-registry`
+```powershell
+docker compose run --rm --no-deps <service-name> <check-command>
+```
 
-登入帳密請看本機 `.env`，不要把實際密碼寫進文件或 commit。
+避免寫法：
 
-注意：課程中的 `docker compose ...` 指令都要在專案根目錄執行，也就是目前包含 `docker-compose.yaml` 的工作目錄。若在其他目錄執行，可能會出現 `no such service: nifi` 或找不到 compose 專案。
+```powershell
+cd docs\<course-name>
+docker compose up -d
+```
 
-## 課程路線
+原因是 `docs/` 只放教學內容，不應成為環境啟動入口。
 
-建議照順序完成：
+## 文件命名規則
 
-1. [Lab 00：NiFi 基本名詞導讀](00-basic-terms.md)
-2. [Lab 01：建立第一個 Flow，理解 Processor、Connection、Queue](01-first-flow.md)
-3. [Lab 02：FlowFile、Attribute、Expression Language 與路由](02-flowfile-attributes-routing.md)
-4. [Lab 03：CSV Reader/Writer 與 ConvertRecord](03-csv-record-reader-writer.md)
-5. [Lab 04：QueryRecord 與 Record 層級資料篩選](04-query-record-filtering.md)
-6. [Lab 05：UpdateRecord、RecordPath 與欄位轉換](05-update-record-recordpath.md)
-7. [Lab 06：本地 MSSQL 資料庫整合入門](06-00-database-integration.md)
-8. [Lab 06-1：從 MSSQL 讀取資料表資訊並複製資料](06-01-database-read-copy.md)
-9. [Lab 07：版本管理、排錯與日常操作](07-versioning-debug-operations.md)
-10. [Lab 08：Processor 排程與執行控制](08-scheduling.md)
-11. [Lab 09：NiFi Cluster 入門與多節點執行觀念](09-clustering.md)
-12. [Lab 10：Query、Formatter 與 Expression Language 實戰](10-query-format-expression-language.md)
-13. [速查表：常用 Processor 與排錯關鍵字](99-cheatsheet.md)
+| 文件類型 | 命名慣例 | 說明 |
+| --- | --- | --- |
+| 課程總覽 | `README.md` | 課程目標、環境、路線 |
+| 名詞導讀 | `00-<topic>.md` | 在實作前先對齊核心名詞 |
+| 主線 Lab | `01-<topic>.md`、`02-<topic>.md` | 按學習順序排列 |
+| 系列 Lab 主課 | `NN-00-<topic>.md` | 當某主題需要拆成多章 |
+| 系列 Lab 子課 | `NN-01-<topic>.md`、`NN-02-<topic>.md` | 延伸主課 |
+| 補充說明 | `supplement-<topic>.md` | 釐清 Lab 中容易誤解的觀念 |
+| 速查表 | `99-cheatsheet.md` | 常用指令、設定、排錯索引 |
 
-## 補充閱讀
+文件標題仍使用人類可讀的課程編號，例如：
 
-- [Auto-terminate 完整說明](supplement-auto-terminate.md)
-- [JDBC Driver Jar 完整說明](supplement-jdbc-driver.md)
-- [NiFi REST API Endpoint 清單](supplement-api-endpoints.md)
+- `# Lab 01：建立第一個流程`
+- `# Lab 06：資料整合入門`
+- `# Lab 06-1：讀取資料並觀察輸出`
 
-## 每個 Lab 的操作原則
+## Lab 文件結構
 
-- 每個 Lab 建議建立獨立 Process Group，例如 `training-lab-01`。
-- Processor 先保持 stopped，全部 validation 通過後再 start。
-- 練習時不要讓 `GenerateFlowFile` 跑太快，建議設定 `Run Schedule = 60 sec`，確認流程後再手動 stop。
-- 每個 Lab 結束後，先清空 queue 或保留成排錯練習，不要讓測試資料一直累積。
-- 改 Controller Service 後，若 Processor 顯示 invalid，先確認 service 是否已 `Enabled`。
-- 練習題若會沿用同一個 Processor，必須先確認上一題留下的 dynamic property、relationship、auto-terminate 或排程設定是否需要清除。
+每個 Lab 建議使用以下固定結構。
 
-## 官方文件依據
+```markdown
+# Lab NN：<主題>
 
-本課程內容已對照 Apache NiFi 2.x 官方文件與元件文件：
+目標：<一句話說明這個 Lab 要達成什麼>
 
-- NiFi User Guide：https://nifi.apache.org/nifi-docs/user-guide.html
-- NiFi Administration Guide：https://nifi.apache.org/docs/nifi-docs/html/administration-guide.html
-- Expression Language Guide：https://nifi.apache.org/docs/nifi-docs/html/expression-language-guide.html
-- RecordPath Guide：https://nifi.apache.org/nifi-docs/record-path-guide.html
-- CSVReader：https://nifi.apache.org/components/org.apache.nifi.csv.CSVReader/
-- CSVRecordSetWriter：https://nifi.apache.org/components/org.apache.nifi.csv.CSVRecordSetWriter/
-- ConvertRecord：https://nifi.apache.org/components/org.apache.nifi.processors.standard.ConvertRecord/
-- QueryRecord：https://nifi.apache.org/components/org.apache.nifi.processors.standard.QueryRecord/
-- UpdateRecord：https://nifi.apache.org/components/org.apache.nifi.processors.standard.UpdateRecord/
-- DBCPConnectionPool：https://nifi.apache.org/components/org.apache.nifi.dbcp.DBCPConnectionPool/
-- ExecuteSQLRecord：https://nifi.apache.org/components/org.apache.nifi.processors.standard.ExecuteSQLRecord/
-- PutDatabaseRecord：https://nifi.apache.org/components/org.apache.nifi.processors.standard.PutDatabaseRecord/
-- Microsoft JDBC Driver for SQL Server：https://learn.microsoft.com/en-us/sql/connect/jdbc/microsoft-jdbc-driver-for-sql-server
-- SQL Server INFORMATION_SCHEMA.COLUMNS：https://learn.microsoft.com/en-us/sql/relational-databases/system-information-schema-views/columns-transact-sql
-- NiFi Registry：https://nifi.apache.org/registry.html
-- GitHubFlowRegistryClient：https://nifi.apache.org/components/org.apache.nifi.github.GitHubFlowRegistryClient/
-- GitLabFlowRegistryClient：https://nifi.apache.org/components/org.apache.nifi.gitlab.GitLabFlowRegistryClient/
-- GitHub Personal Access Tokens：https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
+預估時間：N 分鐘。
 
-## 你應該完成到什麼程度
+## 你會做出什麼
 
-完成後你應該能做到：
+<用流程圖或文字說明完成後的整體資料流或操作流>
 
-- 看懂一條 NiFi flow 的資料怎麼走。
-- 看懂 FlowFile、Processor、Connection、Relationship、Queue、Controller Service、Provenance 等基本名詞。
-- 判斷 Processor invalid 是缺 property、Controller Service disabled，還是 relationship 沒處理。
-- 用 FlowFile Attribute 做基本路由。
-- 用 CSVReader/CSVRecordSetWriter 處理 CSV。
-- 用 QueryRecord 對 Record 做 SQL-like 篩選。
-- 用 UpdateRecord + RecordPath 修改欄位。
-- 用 Expression Language 對 record 欄位做字串替換、遮罩與日期格式化。
-- 建立 DBCPConnectionPool，理解 MSSQL JDBC driver、URL、帳密與 validation 的關係。
-- 用 ExecuteSQLRecord 從 MSSQL 查 table metadata 與資料列。
-- 用 ExecuteSQLRecord + PutDatabaseRecord 做本地 DB 到本地 DB 的資料複製。
-- 設定 Timer driven、CRON driven、Concurrent Tasks 與基本執行策略。
-- 看懂 cluster 中 `All Nodes`、`Primary Node`、connection load balancing 與 cluster state 的基本影響。
-- 用 queue、bulletin、provenance、logs 找錯。
+## Step 1：<動詞 + 對象>
 
+1. <操作>
+2. <操作>
+3. <驗證>
+
+說明：<只說明和這一步直接相關的原因>
+
+## 練習題
+
+### 練習 1：<題目>
+
+<說明練習要改什麼、保留什麼、清除什麼>
+
+確認方式：
+
+1. <驗證方式>
+
+## 完成檢查
+
+- 你知道 <概念> 的用途。
+- 你能辨識 <設定或行為>。
+
+## 常見錯誤
+
+- <錯誤現象>：<原因與解法>
+
+## 本 Lab 的學習重點回顧
+
+<重畫或重述整條流程，說明每個節點的責任與實務意義>
+```
+
+## Step 撰寫規則
+
+- 每個 Step 只處理一個主要操作目的。
+- Step 標題使用「動詞 + 對象」，例如「啟動課程環境」、「檢查設定檔」、「呼叫 API」。
+- 指令要給完整可執行版本，不讓學員猜工作目錄。
+- 修改設定前要說明修改哪個檔案。
+- 修改設定後要提供驗證指令。
+- 若某個 Step 會覆蓋或影響後續練習，必須寫出還原方式。
+
+## 練習題撰寫規則
+
+- 練習題應從「改一個參數觀察行為差異」開始。
+- 題目要明確說明沿用上一題哪些設定。
+- 題目要明確說明需要清除、保留或還原哪些設定。
+- 每個練習都要有確認方式。
+- 練習題不應引入太多未教過的新概念。
+
+## 完成檢查規則
+
+完成檢查列出學員完成後應該理解的事，不列操作步驟。
+
+適合寫法：
+
+- 你知道 `<concept>` 的用途。
+- 你能分辨 `<setting-a>` 與 `<setting-b>` 的差異。
+- 你知道修改設定後要先驗證再重啟服務。
+
+避免寫法：
+
+- 執行 `docker compose up -d`。
+- 打開某個檔案。
+- 複製某段設定。
+
+## 常見錯誤規則
+
+常見錯誤格式：
+
+```markdown
+- <錯誤現象>：<原因與解法>
+```
+
+寫作重點：
+
+- 先描述學員看得到的錯誤現象。
+- 再說明最可能的原因。
+- 最後給出可執行的修正方式。
+
+## 學習重點回顧規則
+
+每個 Lab 結尾必須回顧整條流程。
+
+回顧應包含：
+
+- 這個 Lab 建立了什麼流程。
+- 每個節點或元件負責什麼。
+- 資料或請求如何流動。
+- 這個練習在實際專案中的意義。
+
+避免只寫「本章介紹了某功能」這種抽象總結。
+
+## Mermaid 規則
+
+- 流程圖優先使用 `flowchart LR`。
+- 多層判斷或階層流程可使用 `flowchart TD`。
+- Mermaid 內不要使用 `\n`，若需要換行使用 `<br/>`。
+- 箭頭標籤用關係名稱，例如 `-- request -->`、`-- response -->`、`-- failure -->`。
+- 圖中的節點名稱應能對應到 Lab 文字中的名詞。
+
+## 語氣與用詞
+
+- 全文使用繁體中文。
+- 技術術語、指令、檔案路徑、設定 key 保留英文並加反引號。
+- 語氣直接、精確、不繞彎。
+- 不堆疊抽象理論。
+- 不使用和當前 Lab 無關的產品介紹或行銷語句。
+- 不在課程中使用特定工具的專有名詞作為通用模板。
+
+## 官方文件與查證規則
+
+若課程內容涉及工具版本、CLI 行為、設定格式、API、參數名稱或支援能力，必須查證官方文件或本機指令。
+
+課程文檔可以在最後列出參考依據：
+
+```markdown
+## 參考依據
+
+- <官方文件名稱>：<URL>
+- <官方 CLI help 或版本資訊>
+```
+
+不要用未查證的記憶寫版本、參數或支援狀態。

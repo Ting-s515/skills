@@ -39,7 +39,66 @@ description: 為任何技術工具或框架產出結構化實作課程文件（L
 | 速查表 | 常用元件、指令、排錯索引 | `99-cheatsheet.md` |
 | 補充說明 | 深度釐清特定觀念，被 Lab 引用 | `supplement-<topic>.md` |
 
-### 課程檔名規則
+---
+
+## 課程目錄結構
+
+原則：`docs/` 只放主要教學內容；可執行資產與環境設定放在 repo 根目錄或根目錄下的功能資料夾。
+
+| 位置 | 放置內容 | 範例 |
+| --- | --- | --- |
+| repo 根目錄 | 環境入口與單檔設定 | `.env`、`docker-compose.yaml`、工具設定檔 |
+| repo 根目錄功能資料夾 | 課程會用到的可執行資產 | `mock-api/`、`scripts/`、`sample-data/` |
+| `docs/` | 主要教學內容文檔 | Lab、速查表、補充說明、課程 README |
+
+### 教學內容（放 `docs/`）
+
+判斷標準：
+- 檔案主要用途是「教學說明」
+- 學員主要用閱讀方式使用
+- 即使不執行，也能作為課程內容被理解
+
+適合放在 `docs/` 的檔案：`README.md`、`01-first-workflow.md`、`00-core-concepts.md`、`99-cheatsheet.md`、`supplement-*.md`、`environment-setup.md`
+
+### 可執行資產與環境設定（放 repo 根目錄）
+
+判斷標準：
+- 檔案主要用途是「讓課程環境跑起來」
+- 學員會透過指令、服務或程式執行它
+- 屬於上課輔助教材，不是主要閱讀內容
+
+- **根目錄單檔**：`.env`、`docker-compose.yaml`、單一工具設定檔
+- **根目錄功能資料夾**：`mock-api/`、`scripts/`、`sample-data/`、`fixtures/`
+
+### `.env` 規則
+
+若 `.env` 只包含課程必要且非敏感的環境預設值，可以提交到 repo。
+
+適合提交：Docker image 版本、課程固定 port、非敏感的 feature flag、課程用服務名稱
+
+不應提交：密碼、token、個人本機路徑、私有服務連線字串
+
+個人覆寫設定使用 `.env.local` 或 `.env.*.local`，並在 `.gitignore` 排除。
+
+### 指令撰寫規則
+
+課程中的環境指令預設從 repo 根目錄執行（包含 `docker-compose.yaml` 或主要環境入口檔的目錄）。
+
+正確寫法：
+```powershell
+docker compose up -d
+docker compose run --rm --no-deps <service-name> <check-command>
+```
+
+避免寫法（`docs/` 不應成為環境啟動入口）：
+```powershell
+cd docs\<course-name>
+docker compose up -d
+```
+
+---
+
+## 課程檔名規則
 
 - 一般主線 Lab 使用 `NN-topic.md`，例如 `01-first-flow.md`。
 - 若某個 Lab 需要延伸成系列課程，改用 `NN-00-topic.md` 作為主課，後續用 `NN-01-topic.md`、`NN-02-topic.md` 擴充。
@@ -330,3 +389,5 @@ flowchart LR
 - [ ] 沒有多餘的理論段落（只寫和當前 Lab 直接相關的內容）
 - [ ] 每個 Step 已確認新手能從上一 Step 狀態直接銜接；有影響下一步的設定已明確標示保留／修改／刪除
 - [ ] 沿用同一元件的練習題，已在題目開頭說明哪些上一題的設定（如自訂屬性、關聯關係、排程等）需要清除或保留
+- [ ] 教學內容（Lab、README、速查表）放在 `docs/`，可執行資產（`.env`、`docker-compose.yaml`、`scripts/`）放在 repo 根目錄
+- [ ] 課程環境指令從 repo 根目錄執行，未使用 `cd docs/...` 作為指令入口
