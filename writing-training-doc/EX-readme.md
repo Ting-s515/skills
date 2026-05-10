@@ -29,7 +29,18 @@
 - 理論說明要服務於當前實作，不寫和當前 Lab 無關的大段背景知識。
 - 每個 Lab 結尾要回顧整條 flow 在做什麼，避免只照步驟完成卻不知道流程意義。
 - 每個 Step 都要用「新手是否能從上一個 Step 的狀態直接照做」來檢查；若前一步留下的設定會影響下一步，必須明確寫出要保留、修改或刪除哪些設定。
+- NiFi UI 若提供多個獨立 property，就依照 property 語意分開填，不要把外部工具或 SQL 慣用的完整字串硬塞進單一欄位。例如 MSSQL 在 `PutDatabaseRecord` 要分開填 `Database Name`、`Schema Name`、`Table Name`，不要把 `dbo.table_name` 全部填到 `Table Name`。
 - 補充文檔只用來釐清容易誤解的概念，不取代 Lab 的實作主線。
+
+課程檔名規則：
+
+- 一般主線 Lab 使用 `NN-topic.md`，例如 `01-first-flow.md`。
+- 若某個 Lab 需要延伸成系列課程，改用 `NN-00-topic.md` 作為主課，後續用 `NN-01-topic.md`、`NN-02-topic.md` 擴充。
+- 文件標題仍使用人類可讀的課程編號，例如 `# Lab 06：...`、`# Lab 06-1：...`、`# Lab 06-2：...`。
+- 範例：
+  - `06-00-database-integration.md` 對應 `Lab 06`
+  - `06-01-database-read-copy.md` 對應 `Lab 06-1`
+  - 未來可新增 `06-02-xxx.md` 對應 `Lab 06-2`
 
 ## 使用環境
 
@@ -59,14 +70,18 @@ docker compose ps
 4. [Lab 03：CSV Reader/Writer 與 ConvertRecord](03-csv-record-reader-writer.md)
 5. [Lab 04：QueryRecord 與 Record 層級資料篩選](04-query-record-filtering.md)
 6. [Lab 05：UpdateRecord、RecordPath 與欄位轉換](05-update-record-recordpath.md)
-7. [Lab 06：資料庫整合入門：DBCPConnectionPool 與 PutDatabaseRecord](06-database-integration.md)
-8. [Lab 07：版本管理、排錯與日常操作](07-versioning-debug-operations.md)
-9. [Lab 08：Processor 排程與執行控制](08-scheduling.md)
-10. [速查表：常用 Processor 與排錯關鍵字](99-cheatsheet.md)
+7. [Lab 06：本地 MSSQL 資料庫整合入門](06-00-database-integration.md)
+8. [Lab 06-1：從 MSSQL 讀取資料表資訊並複製資料](06-01-database-read-copy.md)
+9. [Lab 07：版本管理、排錯與日常操作](07-versioning-debug-operations.md)
+10. [Lab 08：Processor 排程與執行控制](08-scheduling.md)
+11. [Lab 09：NiFi Cluster 入門與多節點執行觀念](09-clustering.md)
+12. [Lab 10：Query、Formatter 與 Expression Language 實戰](10-query-format-expression-language.md)
+13. [速查表：常用 Processor 與排錯關鍵字](99-cheatsheet.md)
 
 ## 補充閱讀
 
 - [Auto-terminate 完整說明](supplement-auto-terminate.md)
+- [JDBC Driver Jar 完整說明](supplement-jdbc-driver.md)
 - [NiFi REST API Endpoint 清單](supplement-api-endpoints.md)
 
 ## 每個 Lab 的操作原則
@@ -83,6 +98,7 @@ docker compose ps
 本課程內容已對照 Apache NiFi 2.x 官方文件與元件文件：
 
 - NiFi User Guide：https://nifi.apache.org/nifi-docs/user-guide.html
+- NiFi Administration Guide：https://nifi.apache.org/docs/nifi-docs/html/administration-guide.html
 - Expression Language Guide：https://nifi.apache.org/docs/nifi-docs/html/expression-language-guide.html
 - RecordPath Guide：https://nifi.apache.org/nifi-docs/record-path-guide.html
 - CSVReader：https://nifi.apache.org/components/org.apache.nifi.csv.CSVReader/
@@ -91,8 +107,14 @@ docker compose ps
 - QueryRecord：https://nifi.apache.org/components/org.apache.nifi.processors.standard.QueryRecord/
 - UpdateRecord：https://nifi.apache.org/components/org.apache.nifi.processors.standard.UpdateRecord/
 - DBCPConnectionPool：https://nifi.apache.org/components/org.apache.nifi.dbcp.DBCPConnectionPool/
+- ExecuteSQLRecord：https://nifi.apache.org/components/org.apache.nifi.processors.standard.ExecuteSQLRecord/
 - PutDatabaseRecord：https://nifi.apache.org/components/org.apache.nifi.processors.standard.PutDatabaseRecord/
+- Microsoft JDBC Driver for SQL Server：https://learn.microsoft.com/en-us/sql/connect/jdbc/microsoft-jdbc-driver-for-sql-server
+- SQL Server INFORMATION_SCHEMA.COLUMNS：https://learn.microsoft.com/en-us/sql/relational-databases/system-information-schema-views/columns-transact-sql
 - NiFi Registry：https://nifi.apache.org/registry.html
+- GitHubFlowRegistryClient：https://nifi.apache.org/components/org.apache.nifi.github.GitHubFlowRegistryClient/
+- GitLabFlowRegistryClient：https://nifi.apache.org/components/org.apache.nifi.gitlab.GitLabFlowRegistryClient/
+- GitHub Personal Access Tokens：https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
 
 ## 你應該完成到什麼程度
 
@@ -105,6 +127,11 @@ docker compose ps
 - 用 CSVReader/CSVRecordSetWriter 處理 CSV。
 - 用 QueryRecord 對 Record 做 SQL-like 篩選。
 - 用 UpdateRecord + RecordPath 修改欄位。
-- 建立 DBCPConnectionPool，理解 JDBC driver、URL、帳密與 validation 的關係。
+- 用 Expression Language 對 record 欄位做字串替換、遮罩與日期格式化。
+- 建立 DBCPConnectionPool，理解 MSSQL JDBC driver、URL、帳密與 validation 的關係。
+- 用 ExecuteSQLRecord 從 MSSQL 查 table metadata 與資料列。
+- 用 ExecuteSQLRecord + PutDatabaseRecord 做本地 DB 到本地 DB 的資料複製。
 - 設定 Timer driven、CRON driven、Concurrent Tasks 與基本執行策略。
+- 看懂 cluster 中 `All Nodes`、`Primary Node`、connection load balancing 與 cluster state 的基本影響。
 - 用 queue、bulletin、provenance、logs 找錯。
+

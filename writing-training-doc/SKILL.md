@@ -39,6 +39,16 @@ description: 為任何技術工具或框架產出結構化實作課程文件（L
 | 速查表 | 常用元件、指令、排錯索引 | `99-cheatsheet.md` |
 | 補充說明 | 深度釐清特定觀念，被 Lab 引用 | `supplement-<topic>.md` |
 
+### 課程檔名規則
+
+- 一般主線 Lab 使用 `NN-topic.md`，例如 `01-first-flow.md`。
+- 若某個 Lab 需要延伸成系列課程，改用 `NN-00-topic.md` 作為主課，後續用 `NN-01-topic.md`、`NN-02-topic.md` 擴充。
+- 文件標題仍使用人類可讀的課程編號，例如 `# Lab 06：...`、`# Lab 06-1：...`、`# Lab 06-2：...`。
+- 範例：
+  - `06-00-database-integration.md` 對應 `Lab 06`
+  - `06-01-database-read-copy.md` 對應 `Lab 06-1`
+  - 未來可新增 `06-02-xxx.md` 對應 `Lab 06-2`
+
 ---
 
 ## 實作 Lab 文件結構
@@ -305,7 +315,7 @@ flowchart LR
 
 **延伸閱讀**：補充文件用相對路徑引用：`延伸閱讀：[<標題>](supplement-<topic>.md)`
 
-**Lab 編號**：`00` 起跳，主流 Lab 從 `01` 開始，速查表慣例用 `99`。
+**Lab 編號**：`00` 起跳，主流 Lab 從 `01` 開始，速查表慣例用 `99`。系列課程用 `NN-00`、`NN-01`、`NN-02` 擴充，詳見「課程檔名規則」。
 
 ---
 
