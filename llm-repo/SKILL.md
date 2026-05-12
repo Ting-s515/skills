@@ -1,6 +1,5 @@
 ---
 name: llm-repo
-disable-model-invocation: true
 description: 此技能需要時才手動呼叫，在當前 context 中載入本地知識庫（位於 `wiki/` 資料夾）的相關頁面內容，並以此為基礎回答使用者問題。
 ---
 
