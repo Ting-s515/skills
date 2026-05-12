@@ -1,0 +1,27 @@
+{
+  "eval_id": 3,
+  "eval_name": "missing-topic-fallback",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "執行了 Bash 指令以解析 wiki 根目錄絕對路徑",
+      "passed": true,
+      "evidence": "trace.md 步驟1：Bash — echo ~/.claude/llm-repo/wiki，結果 /c/Users/theon.lin/.claude/llm-repo/wiki"
+    },
+    {
+      "text": "成功讀取 index.md",
+      "passed": true,
+      "evidence": "trace.md 步驟2：Read — index.md，掃描 38 頁，未找到 Rust 相關頁面"
+    },
+    {
+      "text": "沒有錯誤地讀取無關的 wiki 頁面（不應讀取 oop.md 等不相關頁面）",
+      "passed": true,
+      "evidence": "trace.md Files Read 區段只有 index.md；步驟三（讀取相關頁面）被跳過，無任何其他頁面讀取紀錄"
+    },
+    {
+      "text": "回答說明了 wiki 中無此主題，並以自身知識補充，且明確區分哪部分是補充推論",
+      "passed": true,
+      "evidence": "response.md 第3行：wiki 知識庫（共 38 頁）中目前沒有 Rust 相關頁面；第133行：以上內容為模型自身知識補充，wiki 知識庫目前無 Rust 相關頁面"
+    }
+  ]
+}

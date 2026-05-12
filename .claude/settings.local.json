@@ -20,7 +20,13 @@
       "PowerShell(& python $scriptPath $iterPath --skill-name \"writing-training-doc\" 2>&1)",
       "PowerShell($scriptPath = \"C:\\\\Users\\\\theon.lin\\\\.claude\\\\plugins\\\\cache\\\\claude-plugins-official\\\\skill-creator\\\\unknown\\\\skills\\\\skill-creator\\\\scripts\\\\aggregate_benchmark.py\")",
       "PowerShell($iterPath = \"C:\\\\Users\\\\theon.lin\\\\.claude\\\\skills\\\\writing-training-doc-workspace\\\\iteration-1\")",
-      "PowerShell(Get-Command *)"
+      "PowerShell(Get-Command *)",
+      "Bash(mkdir -p \"C:\\\\Users\\\\theon.lin\\\\.claude\\\\skills\\\\llm-repo-workspace\\\\iteration-1\\\\basic-docker-search\\\\with_skill\\\\outputs\")",
+      "Bash(mkdir -p \"C:\\\\Users\\\\theon.lin\\\\.claude\\\\skills\\\\llm-repo-workspace\\\\iteration-1\\\\basic-docker-search\\\\without_skill\\\\outputs\")",
+      "Bash(mkdir -p \"C:\\\\Users\\\\theon.lin\\\\.claude\\\\skills\\\\llm-repo-workspace\\\\iteration-1\\\\keycloak-backend-multipage\\\\with_skill\\\\outputs\")",
+      "Bash(mkdir -p \"C:\\\\Users\\\\theon.lin\\\\.claude\\\\skills\\\\llm-repo-workspace\\\\iteration-1\\\\keycloak-backend-multipage\\\\without_skill\\\\outputs\")",
+      "Bash(mkdir -p \"C:\\\\Users\\\\theon.lin\\\\.claude\\\\skills\\\\llm-repo-workspace\\\\iteration-1\\\\missing-topic-fallback\\\\with_skill\\\\outputs\")",
+      "PowerShell(python --version)"
     ]
   }
 }

@@ -1,0 +1,11 @@
+{
+  "eval_id": 3,
+  "eval_name": "missing-topic-fallback",
+  "prompt": "use llm-repo 解釋 Rust 的 ownership 機制是什麼",
+  "assertions": [
+    { "id": "a3-1", "description": "執行了 Bash 指令以解析 wiki 根目錄絕對路徑" },
+    { "id": "a3-2", "description": "成功讀取 index.md" },
+    { "id": "a3-3", "description": "沒有錯誤地讀取無關的 wiki 頁面（不應讀取 oop.md 等不相關頁面）" },
+    { "id": "a3-4", "description": "回答說明了 wiki 中無此主題，並以自身知識補充，且明確區分哪部分是補充推論" }
+  ]
+}

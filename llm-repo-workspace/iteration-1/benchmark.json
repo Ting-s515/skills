@@ -1,0 +1,212 @@
+{
+  "metadata": {
+    "skill_name": "llm-repo",
+    "skill_path": "C:\\Users\\theon.lin\\.claude\\skills\\llm-repo",
+    "executor_model": "claude-sonnet-4-6",
+    "analyzer_model": "claude-sonnet-4-6",
+    "timestamp": "2026-05-12T00:00:00Z",
+    "evals_run": [1, 2, 3],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "basic-docker-search",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 39.8,
+        "tokens": 24882,
+        "tool_calls": 7,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "執行了 Bash 指令 echo ~/.claude/llm-repo/wiki 以取得 wiki 根目錄",
+          "passed": true,
+          "evidence": "trace.md 步驟1：Bash — echo ~/.claude/llm-repo/wiki，結果 /c/Users/theon.lin/.claude/llm-repo/wiki"
+        },
+        {
+          "text": "成功讀取 index.md（路徑包含 llm-repo/wiki/index.md）",
+          "passed": true,
+          "evidence": "trace.md 步驟2：Read — index.md，識別出 docker.md"
+        },
+        {
+          "text": "識別並讀取了 docker.md 頁面（路徑包含 pages/docker.md）",
+          "passed": true,
+          "evidence": "trace.md 步驟3：Read — pages/docker.md"
+        },
+        {
+          "text": "回答中包含 Docker 指令相關內容，且明確引用 wiki 資料來源（如 [[docker]]）",
+          "passed": true,
+          "evidence": "response.md 第3行：根據 `[[docker]]` wiki 頁面；第62行：wiki 頁面：`[[docker]]`"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "basic-docker-search",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": null,
+        "passed": null,
+        "failed": null,
+        "total": 0,
+        "time_seconds": 25.1,
+        "tokens": 20464,
+        "tool_calls": 2,
+        "errors": 0
+      },
+      "expectations": [],
+      "notes": ["Baseline run — no assertions graded; qualitative comparison only"]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "keycloak-backend-multipage",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 46.3,
+        "tokens": 26064,
+        "tool_calls": 8,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "執行了 Bash 指令以解析 wiki 根目錄絕對路徑",
+          "passed": true,
+          "evidence": "trace.md 步驟1：Bash — echo ~/.claude/llm-repo/wiki"
+        },
+        {
+          "text": "成功讀取 index.md，列出 wiki 頁面索引",
+          "passed": true,
+          "evidence": "trace.md 步驟2：Read — index.md，識別出 keycloak-backend.md、keycloak-integration.md"
+        },
+        {
+          "text": "識別並讀取了 keycloak-backend.md（路徑包含 pages/keycloak-backend.md）",
+          "passed": true,
+          "evidence": "trace.md 步驟3：Read — pages/keycloak-backend.md"
+        },
+        {
+          "text": "回答包含 JWT 驗證或 CurrentUserMiddleware 相關內容",
+          "passed": true,
+          "evidence": "回答包含 ValidateIssuer/Audience/Lifetime/ClockSkew 與 CurrentUserMiddleware 執行順序"
+        },
+        {
+          "text": "回答明確引用 wiki 來源（如 [[keycloak-backend]]）",
+          "passed": true,
+          "evidence": "根據 `[[keycloak-backend]]` 與 `[[keycloak-integration]]`"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "keycloak-backend-multipage",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": null,
+        "passed": null,
+        "failed": null,
+        "total": 0,
+        "time_seconds": 46.9,
+        "tokens": 21709,
+        "tool_calls": 3,
+        "errors": 0
+      },
+      "expectations": [],
+      "notes": ["Baseline run — no assertions graded; qualitative comparison only"]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "missing-topic-fallback",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 57.1,
+        "tokens": 24601,
+        "tool_calls": 6,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "執行了 Bash 指令以解析 wiki 根目錄絕對路徑",
+          "passed": true,
+          "evidence": "trace.md 步驟1：Bash — echo ~/.claude/llm-repo/wiki"
+        },
+        {
+          "text": "成功讀取 index.md",
+          "passed": true,
+          "evidence": "trace.md 步驟2：Read — index.md，掃描 38 頁，未找到 Rust 相關頁面"
+        },
+        {
+          "text": "沒有錯誤地讀取無關的 wiki 頁面（不應讀取 oop.md 等不相關頁面）",
+          "passed": true,
+          "evidence": "trace.md Files Read 僅 index.md；步驟三被跳過，無其他頁面讀取"
+        },
+        {
+          "text": "回答說明了 wiki 中無此主題，並以自身知識補充，且明確區分哪部分是補充推論",
+          "passed": true,
+          "evidence": "response.md 第3行：wiki 知識庫目前無 Rust 相關頁面；第133行：以上內容為模型自身知識補充"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "missing-topic-fallback",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": null,
+        "passed": null,
+        "failed": null,
+        "total": 0,
+        "time_seconds": 34.4,
+        "tokens": 20377,
+        "tool_calls": 2,
+        "errors": 0
+      },
+      "expectations": [],
+      "notes": ["Baseline run — no assertions graded; qualitative comparison only"]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0},
+      "time_seconds": {"mean": 47.7, "stddev": 8.7, "min": 39.8, "max": 57.1},
+      "tokens": {"mean": 25182, "stddev": 738, "min": 24601, "max": 26064}
+    },
+    "without_skill": {
+      "pass_rate": {"mean": 0.0, "stddev": 0.0, "min": 0.0, "max": 0.0},
+      "time_seconds": {"mean": 35.5, "stddev": 11.0, "min": 25.1, "max": 46.9},
+      "tokens": {"mean": 20850, "stddev": 699, "min": 20377, "max": 21709}
+    },
+    "delta": {
+      "pass_rate": "+1.00",
+      "time_seconds": "+12.2",
+      "tokens": "+4332"
+    }
+  },
+  "notes": [
+    "with_skill 全部 13 個 assertion 皆通過（pass_rate 100%）",
+    "wiki 目錄定位（echo ~/.claude/llm-repo/wiki）在所有 3 個 eval 中均成功執行",
+    "without_skill baseline 無 assertion 評分，僅用於定性比較",
+    "Eval3（Rust fallback）時間較長（57.1s），因模型需自行生成完整補充說明"
+  ]
+}

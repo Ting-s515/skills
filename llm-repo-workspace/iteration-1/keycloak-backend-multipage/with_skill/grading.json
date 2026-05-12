@@ -1,0 +1,32 @@
+{
+  "eval_id": 2,
+  "eval_name": "keycloak-backend-multipage",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "執行了 Bash 指令以解析 wiki 根目錄絕對路徑",
+      "passed": true,
+      "evidence": "trace.md 步驟1：Bash — echo ~/.claude/llm-repo/wiki，結果 /c/Users/theon.lin/.claude/llm-repo/wiki"
+    },
+    {
+      "text": "成功讀取 index.md，列出 wiki 頁面索引",
+      "passed": true,
+      "evidence": "trace.md 步驟2：Read — index.md，識別出 keycloak-backend.md、keycloak-integration.md"
+    },
+    {
+      "text": "識別並讀取了 keycloak-backend.md（路徑包含 pages/keycloak-backend.md）",
+      "passed": true,
+      "evidence": "trace.md 步驟3：Read — C:\\Users\\theon.lin\\.claude\\llm-repo\\wiki\\pages\\keycloak-backend.md"
+    },
+    {
+      "text": "回答包含 JWT 驗證或 CurrentUserMiddleware 相關內容",
+      "passed": true,
+      "evidence": "agent 結果摘要提及 JWT 驗證參數（ValidateIssuer/Audience/Lifetime/ClockSkew）與 CurrentUserMiddleware 執行順序"
+    },
+    {
+      "text": "回答明確引用 wiki 來源（如 [[keycloak-backend]]）",
+      "passed": true,
+      "evidence": "agent 結果摘要：根據 `[[keycloak-backend]]` 與 `[[keycloak-integration]]`"
+    }
+  ]
+}

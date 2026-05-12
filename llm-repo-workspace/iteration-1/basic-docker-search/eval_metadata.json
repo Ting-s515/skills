@@ -1,0 +1,11 @@
+{
+  "eval_id": 1,
+  "eval_name": "basic-docker-search",
+  "prompt": "use llm-repo 搜尋 Docker 相關知識，告訴我常用指令有哪些",
+  "assertions": [
+    { "id": "a1-1", "description": "執行了 Bash 指令 echo ~/.claude/llm-repo/wiki 以取得 wiki 根目錄" },
+    { "id": "a1-2", "description": "成功讀取 index.md（路徑包含 llm-repo/wiki/index.md）" },
+    { "id": "a1-3", "description": "識別並讀取了 docker.md 頁面（路徑包含 pages/docker.md）" },
+    { "id": "a1-4", "description": "回答中包含 Docker 指令相關內容，且明確引用 wiki 資料來源（如 [[docker]]）" }
+  ]
+}

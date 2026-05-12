@@ -1,0 +1,27 @@
+{
+  "eval_id": 1,
+  "eval_name": "basic-docker-search",
+  "configuration": "with_skill",
+  "expectations": [
+    {
+      "text": "執行了 Bash 指令 echo ~/.claude/llm-repo/wiki 以取得 wiki 根目錄",
+      "passed": true,
+      "evidence": "trace.md 步驟1：Bash — echo ~/.claude/llm-repo/wiki，結果 /c/Users/theon.lin/.claude/llm-repo/wiki"
+    },
+    {
+      "text": "成功讀取 index.md（路徑包含 llm-repo/wiki/index.md）",
+      "passed": true,
+      "evidence": "trace.md 步驟2：Read — C:\\Users\\theon.lin\\.claude\\llm-repo\\wiki\\index.md，識別出 docker.md"
+    },
+    {
+      "text": "識別並讀取了 docker.md 頁面（路徑包含 pages/docker.md）",
+      "passed": true,
+      "evidence": "trace.md 步驟3：Read — C:\\Users\\theon.lin\\.claude\\llm-repo\\wiki\\pages\\docker.md"
+    },
+    {
+      "text": "回答中包含 Docker 指令相關內容，且明確引用 wiki 資料來源（如 [[docker]]）",
+      "passed": true,
+      "evidence": "response.md 第3行：根據 `[[docker]]` wiki 頁面；第62行：wiki 頁面：`[[docker]]`（`pages/docker.md`）"
+    }
+  ]
+}
