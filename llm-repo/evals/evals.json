@@ -1,0 +1,81 @@
+{
+  "skill_name": "llm-repo",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "use llm-repo 搜尋 Docker 相關知識，告訴我常用指令有哪些",
+      "expected_output": "技能應執行 bash 解析 wiki 根目錄、讀取 index.md、識別 docker.md 並讀取後回答，且回答中引用來源",
+      "files": [],
+      "assertions": [
+        {
+          "id": "a1-1",
+          "description": "執行了 Bash 指令 echo ~/.claude/llm-repo/wiki 以取得 wiki 根目錄"
+        },
+        {
+          "id": "a1-2",
+          "description": "成功讀取 index.md（路徑包含 llm-repo/wiki/index.md）"
+        },
+        {
+          "id": "a1-3",
+          "description": "識別並讀取了 docker.md 頁面（路徑包含 pages/docker.md）"
+        },
+        {
+          "id": "a1-4",
+          "description": "回答中包含 Docker 指令相關內容，且明確引用 wiki 資料來源（如 [[docker]]）"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "use llm-repo 我想了解 Keycloak 在 .NET 後端如何驗證 JWT，有什麼 Middleware 設定",
+      "expected_output": "技能應執行 bash 解析目錄、讀取 index.md、識別 keycloak-backend.md 並讀取後回答，包含 JWT 驗證與 Middleware 設定細節",
+      "files": [],
+      "assertions": [
+        {
+          "id": "a2-1",
+          "description": "執行了 Bash 指令以解析 wiki 根目錄絕對路徑"
+        },
+        {
+          "id": "a2-2",
+          "description": "成功讀取 index.md，列出 wiki 頁面索引"
+        },
+        {
+          "id": "a2-3",
+          "description": "識別並讀取了 keycloak-backend.md（路徑包含 pages/keycloak-backend.md）"
+        },
+        {
+          "id": "a2-4",
+          "description": "回答包含 JWT 驗證或 CurrentUserMiddleware 相關內容"
+        },
+        {
+          "id": "a2-5",
+          "description": "回答明確引用 wiki 來源（如 [[keycloak-backend]]）"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "use llm-repo 解釋 Rust 的 ownership 機制是什麼",
+      "expected_output": "技能應執行 bash 解析目錄、讀取 index.md，在找不到對應頁面後，以自身知識補充回答，並說明哪部分是補充推論而非 wiki 內容",
+      "files": [],
+      "assertions": [
+        {
+          "id": "a3-1",
+          "description": "執行了 Bash 指令以解析 wiki 根目錄絕對路徑"
+        },
+        {
+          "id": "a3-2",
+          "description": "成功讀取 index.md"
+        },
+        {
+          "id": "a3-3",
+          "description": "沒有錯誤地讀取無關的 wiki 頁面（不應讀取 oop.md 等不相關頁面）"
+        },
+        {
+          "id": "a3-4",
+          "description": "回答說明了 wiki 中無此主題，並以自身知識補充，且明確區分哪部分是補充推論"
+        }
+      ]
+    }
+  ]
+}
