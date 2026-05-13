@@ -45,6 +45,7 @@ description: >
 | `.cs` | C# | `references/csharp-example-test.cs` |
 | `.java` | Java | `references/java-example-test.java` |
 | `.py` | Python | `references/python-example-test.py` |
+| `.dart` | Flutter/Dart | `references/flutter-example.dart` |
 
 **執行步驟：**
 1. 取得目標檔案的副檔名
@@ -216,6 +217,43 @@ class TestUserService:
         assert result["id"] == 1
 ```
 
+### 🐦 Flutter/Dart (.dart)
+| 項目 | 規範 |
+|------|------|
+| 框架 | flutter_test + mocktail |
+| 檔案命名 | `[class_name]_test.dart` |
+| 輸出位置 | `test/` 資料夾，保持與 lib 相同結構 |
+| Mock 工具 | mocktail（`class MockX extends Mock implements X {}`） |
+| 斷言風格 | `expect(result, equals(expected))` |
+
+**結構範例：**
+```dart
+void main() {
+  late CartService cartService;
+  late MockProductRepository mockProductRepo;
+
+  setUp(() {
+    mockProductRepo = MockProductRepository();
+    cartService = CartService(mockProductRepo);
+  });
+
+  group('CartService', () {
+    group('addItem', () {
+      test('GivenProductExists_WhenAddItem_ShouldAddToCart', () {
+        // Given
+        when(() => mockProductRepo.findById(1)).thenReturn(product);
+
+        // When
+        final result = cartService.addItem(1, 2);
+
+        // Then
+        expect(result.items, hasLength(1));
+      });
+    });
+  });
+}
+```
+
 ---
 
 ## Mock 使用原則
@@ -274,5 +312,6 @@ class TestUserService:
 - **C#**: `references/csharp-example-test.cs`
 - **Java**: `references/java-example-test.java`
 - **Python**: `references/python-example-test.py`
+- **Flutter/Dart**: `references/flutter-example.dart`
 
 **注意**：撰寫測試前必須先讀取對應語言的範例，確保遵循一致的風格與結構。
