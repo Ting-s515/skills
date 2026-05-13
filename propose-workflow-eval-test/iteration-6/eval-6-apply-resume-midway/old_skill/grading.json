@@ -1,0 +1,50 @@
+{
+  "expectations": [
+    {
+      "text": "T1 狀態不變（仍為 [x][cr]）",
+      "passed": true,
+      "evidence": "outputs/03-tasks.md 中 T1 仍為 - [x][cr] T1:。"
+    },
+    {
+      "text": "T2 從 [x] 更新為 [x][cr]",
+      "passed": true,
+      "evidence": "outputs/03-tasks.md 中 T2 為 - [x][cr] T2:，舊版 apply 補跑 code review 後正確更新。"
+    },
+    {
+      "text": "T3 從 [ ] 更新為 [x][cr]",
+      "passed": true,
+      "evidence": "outputs/03-tasks.md 中 T3 為 - [x][cr] T3:，T3 實作後執行 code review 並更新。"
+    },
+    {
+      "text": "BDD 測試在 code review 前執行",
+      "passed": false,
+      "evidence": "舊版 apply 無 BDD 步驟，project/ 下無任何 .test.ts 檔案。"
+    },
+    {
+      "text": "02-gherkin.md 未被修改",
+      "passed": true,
+      "evidence": "outputs/02-gherkin.md 與原始 fixture 內容完全相同。"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 1,
+    "total": 5,
+    "pass_rate": 0.80
+  },
+  "timing": {
+    "executor_duration_seconds": 128.9
+  },
+  "claims": [
+    {
+      "claim": "舊版 apply 在 resume-midway 情境的 [x][cr] 更新可靠",
+      "type": "quality",
+      "verified": true,
+      "evidence": "T1/T2/T3 全部正確更新為 [x][cr]，與 iteration-5 eval-6 old_skill 結果一致（0.80）"
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "舊版 apply 在 resume-midway 情境表現穩定（iteration-5 與 iteration-6 均 0.80），[x][cr] 更新可靠，缺少 BDD 步驟為預期行為。"
+  }
+}

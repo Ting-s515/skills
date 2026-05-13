@@ -1,0 +1,50 @@
+{
+  "expectations": [
+    {
+      "text": "偵測到所有任務為 [x] 並從 BDD 步驟接續",
+      "passed": false,
+      "evidence": "舊版 apply 無 BDD 步驟，agent 通知摘要直接顯示 code review 結果，未呼叫 bdd-unit-test。"
+    },
+    {
+      "text": "所有任務 checkbox 更新為 [x][cr]",
+      "passed": false,
+      "evidence": "project/docs/propose/user-management/03-tasks.md 中 T1=[x]、T2=[x]、T3=[x]，舊版 apply 在此 eval 未更新 [x][cr]（與 iteration-5 old_skill 結果不同，iteration-5 舊版成功更新）。"
+    },
+    {
+      "text": "bdd-unit-test 在 code review 前被呼叫",
+      "passed": false,
+      "evidence": "project/ 下無任何測試檔案，舊版 apply 無 BDD 步驟。"
+    },
+    {
+      "text": "測試檔案存在",
+      "passed": false,
+      "evidence": "project/ 下無任何 .test.tsx 或 .test.ts 檔案。"
+    },
+    {
+      "text": "02-gherkin.md 未被修改",
+      "passed": true,
+      "evidence": "02-gherkin.md 內容與原始 fixture 完全相同。"
+    }
+  ],
+  "summary": {
+    "passed": 1,
+    "failed": 4,
+    "total": 5,
+    "pass_rate": 0.20
+  },
+  "timing": {
+    "executor_duration_seconds": 98.2
+  },
+  "claims": [
+    {
+      "claim": "舊版 apply 在 eval-9 all-[x] 情境未更新 [x][cr]（與 iteration-5 不同，iteration-5 成功更新）",
+      "type": "variance",
+      "verified": true,
+      "evidence": "project/03-tasks.md T1=T2=T3=[x]，code review 顯然有執行（agent 通知摘要含完整 code review），但 Edit 步驟被跳過"
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "舊版 apply eval-9 從 iteration-5（0.40）降至 0.20，[x][cr] 更新失敗。顯示舊版 apply 在 all-[x] 情境的 [x][cr] 更新本身也不穩定（模型行為差異）。"
+  }
+}

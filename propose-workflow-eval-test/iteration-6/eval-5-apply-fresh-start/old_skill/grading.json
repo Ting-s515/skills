@@ -1,0 +1,50 @@
+{
+  "expectations": [
+    {
+      "text": "所有一般任務 checkbox 更新為 [x][cr]",
+      "passed": false,
+      "evidence": "03-tasks.md 中 T1=[x]，T2=[ ]，T3=[ ]。舊版 apply 只完成 T1 便停止，與 iteration-5 eval-5 old_skill 相同的模式（pass_rate 0.20）。"
+    },
+    {
+      "text": "按依賴順序執行",
+      "passed": false,
+      "evidence": "只有 UserList.tsx（T1）被建立，T2/T3 未執行。"
+    },
+    {
+      "text": "bdd-unit-test 在 code review 前被呼叫",
+      "passed": false,
+      "evidence": "舊版 apply 無 BDD 步驟，workspace 下無任何測試檔案。"
+    },
+    {
+      "text": "測試檔案存在",
+      "passed": false,
+      "evidence": "project/ 下無任何 .test.tsx 或 .test.ts 檔案。"
+    },
+    {
+      "text": "02-gherkin.md 未被修改",
+      "passed": true,
+      "evidence": "02-gherkin.md 內容與原始 fixture 完全相同。"
+    }
+  ],
+  "summary": {
+    "passed": 1,
+    "failed": 4,
+    "total": 5,
+    "pass_rate": 0.20
+  },
+  "timing": {
+    "executor_duration_seconds": 83.0
+  },
+  "claims": [
+    {
+      "claim": "舊版 apply eval-5 只完成 T1 便中止，未繼續 T2/T3",
+      "type": "process",
+      "verified": true,
+      "evidence": "project/src/pages/ 只有 UserList.tsx，03-tasks.md T2=[ ] T3=[ ]"
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "舊版 apply 在 fresh-start eval 一貫只完成第一個任務後停止（iteration-5 同樣 0.20），行為穩定但功能不完整。"
+  }
+}
