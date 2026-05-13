@@ -84,7 +84,7 @@
     {
       "id": 5,
       "prompt": "apply fixtures/eval-5-apply-fresh-start/docs/propose/user-management/",
-      "expected_output": "逐一實作 T1、T2、T3，每個任務完成後更新 checkbox 為 [x]，code review subagent 後更新為 [x][cr]；[manual] T_test 不被執行，保持 [ ] 狀態",
+      "expected_output": "逐一實作 T1、T2、T3，每個任務完成後更新 checkbox 為 [x]；所有任務完成後使用 Skill tool 呼叫 bdd-unit-test，依 02-gherkin.md 撰寫測試並執行，通過後執行 code review subagent，最終更新為 [x][cr]",
       "files": [
         "fixtures/eval-5-apply-fresh-start/docs/propose/user-management/01-flow.md",
         "fixtures/eval-5-apply-fresh-start/docs/propose/user-management/02-gherkin.md",
@@ -100,15 +100,23 @@
           "check": "T2 在 T1 完成後才執行，T3 在 T2 完成後才執行"
         },
         {
-          "name": "[manual] T_test 不被執行（保持 [ ]）",
-          "check": "03-tasks.md 中 T_test 仍為 - [ ] [manual] T_test:，未被變更為 [x] 或 [x][cr]"
+          "name": "bdd-unit-test 在 code review 前被呼叫",
+          "check": "對話輸出中，Skill tool 呼叫 bdd-unit-test 或測試執行動作出現在 code-reviewer subagent 啟動之前"
+        },
+        {
+          "name": "測試檔案存在",
+          "check": "輸出中存在以 .test.tsx、.test.ts 或 .spec.ts 結尾的測試檔案"
+        },
+        {
+          "name": "02-gherkin.md 未被修改",
+          "check": "02-gherkin.md 內容與原始 fixture 完全相同，未被更動"
         }
       ]
     },
     {
       "id": 6,
       "prompt": "繼續實作 fixtures/eval-6-apply-resume-midway/docs/propose/notification-fix/",
-      "expected_output": "告知 T1 已完成（含 cr），T2 僅實作完成需補跑 code review → 補跑後更新為 [x][cr] → 再實作 T3；[manual] T_test 不被執行",
+      "expected_output": "告知 T1 已完成（含 cr），T2 僅實作完成，T3 尚未開始；繼續實作 T3 → 所有任務完成後呼叫 bdd-unit-test 依 02-gherkin.md 撰寫測試並執行 → 通過後執行 code review，最終所有任務更新為 [x][cr]",
       "files": [
         "fixtures/eval-6-apply-resume-midway/docs/propose/notification-fix/01-flow.md",
         "fixtures/eval-6-apply-resume-midway/docs/propose/notification-fix/02-gherkin.md",
@@ -128,12 +136,46 @@
           "check": "03-tasks.md 中 T3 為 - [x][cr] T3:"
         },
         {
-          "name": "輸出說明補跑 T2 code review",
-          "check": "對話輸出提及 T2 已完成但 code review 未執行，現在補跑"
+          "name": "BDD 測試在 code review 前執行",
+          "check": "對話輸出中，Skill tool 呼叫 bdd-unit-test 或測試執行動作出現在 code-reviewer subagent 啟動之前"
         },
         {
-          "name": "[manual] T_test 不被執行（保持 [ ]）",
-          "check": "03-tasks.md 中 T_test 仍為 - [ ] [manual] T_test:，未被執行"
+          "name": "02-gherkin.md 未被修改",
+          "check": "02-gherkin.md 內容與原始 fixture 完全相同，未被更動"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "繼續完成 fixtures/eval-9-apply-resume-all-tasks-done/docs/propose/user-management/",
+      "expected_output": "讀取 03-tasks.md 發現所有任務皆為 [x]（無 [x][cr]），從步驟一接續：呼叫 bdd-unit-test 依 02-gherkin.md 撰寫測試並執行，通過後執行 code review subagent，最終將 T1、T2、T3 全部更新為 [x][cr]",
+      "files": [
+        "fixtures/eval-9-apply-resume-all-tasks-done/docs/propose/user-management/01-flow.md",
+        "fixtures/eval-9-apply-resume-all-tasks-done/docs/propose/user-management/02-gherkin.md",
+        "fixtures/eval-9-apply-resume-all-tasks-done/docs/propose/user-management/03-tasks.md",
+        "fixtures/eval-9-apply-resume-all-tasks-done/src/pages/UserList.tsx",
+        "fixtures/eval-9-apply-resume-all-tasks-done/src/pages/UserDetail.tsx"
+      ],
+      "assertions": [
+        {
+          "name": "偵測到所有任務為 [x] 並從 BDD 步驟接續",
+          "check": "對話輸出說明所有任務實作已完成，從撰寫 BDD 測試步驟繼續，而非重新執行任何任務"
+        },
+        {
+          "name": "所有任務 checkbox 更新為 [x][cr]",
+          "check": "03-tasks.md 中 T1、T2、T3 格式為 - [x][cr] Tx:"
+        },
+        {
+          "name": "bdd-unit-test 在 code review 前被呼叫",
+          "check": "對話輸出中，Skill tool 呼叫 bdd-unit-test 或測試執行動作出現在 code-reviewer subagent 啟動之前"
+        },
+        {
+          "name": "測試檔案存在",
+          "check": "輸出中存在以 .test.tsx、.test.ts 或 .spec.ts 結尾的測試檔案"
+        },
+        {
+          "name": "02-gherkin.md 未被修改",
+          "check": "02-gherkin.md 內容與原始 fixture 完全相同，未被更動"
         }
       ]
     },
