@@ -65,7 +65,7 @@ description: >
 
 ## 全部完成後
 
-所有一般任務（無 `[manual]` 標記）皆為 `[x]` 後，依序執行以下三個步驟：
+所有一般任務（無 `[manual]` 標記）皆為 `[x]` 後，依序執行以下兩個步驟：
 
 ### 步驟一：撰寫 BDD 行為測試
 
@@ -76,21 +76,15 @@ description: >
 - 測試撰寫完成後，執行測試指令
 - 若測試失敗，自動分析錯誤並修正**實作程式碼**（不修改 `02-gherkin.md`），重複執行直到所有測試通過
 
-### 步驟二：Code Review
+### 步驟二：Code Review 與完成更新
 
-測試全數通過後，使用 Agent tool 開啟 subagent：
+測試全數通過後，使用 Agent tool 開啟 subagent，**prompt 必須明確包含以下三點**：
 
-- 傳入規格文檔路徑：`{root}/docs/propose/<feature-name>/`（含三份文檔）
-- 使用 Skill tool 呼叫 `code-reviewer` skill 執行審查，審查範圍涵蓋整個 feature 的架構與完整實作
+1. 規格文檔路徑：`{root}/docs/propose/<feature-name>/`（含三份文檔）
+2. 使用 Skill tool 呼叫 `code-reviewer` skill 執行審查，審查範圍涵蓋整個 feature 的架構與完整實作
+3. **code review 完成後，用 Edit tool 將 `{root}/docs/propose/<feature-name>/03-tasks.md` 所有一般任務的 `[x]` 改為 `[x][cr]`**（`[manual]` 任務不動），然後回傳 code review 結果摘要
 
-### 步驟三：更新完成狀態
-
-> ⚠️ **subagent 回傳不等於流程完成**。收到 code review 結果後，必須完成以下兩個動作才算結束：
-
-- [ ] **動作 A**：用 Edit tool 開啟 `03-tasks.md`，將所有一般任務的 `[x]` 改為 `[x][cr]`（`[manual]` 任務不動）
-- [ ] **動作 B**：向使用者回覆完成訊息，附上 code review 結果摘要
-
-動作 A 必須先於動作 B 執行。若跳過動作 A 直接回覆使用者，視為流程未完成。
+收到 subagent 結果後，向使用者回覆完成訊息，附上 code review 結果摘要。
 
 ---
 
@@ -101,5 +95,5 @@ description: >
 - 讀取 `03-tasks.md`，依整體狀態決定行動：
   - 所有任務皆為 `[x][cr]`：全部完成，告知使用者即可
   - 存在 `[ ]` 任務：從第一個 `[ ]` 繼續實作，完成後再執行 BDD 測試 → code review 的完整流程
-  - 所有任務皆為 `[x]`（無 `[x][cr]`）：實作已完成但後續流程未執行，從「步驟一：撰寫 BDD 行為測試」接續執行，通過後再跑 code review，code review subagent 回傳後**必須立即用 Edit tool 將所有 `[x]` 更新為 `[x][cr]`**，確認檔案已更新後才可宣告完成
+  - 所有任務皆為 `[x]`（無 `[x][cr]`）：實作已完成但後續流程未執行，從「步驟一：撰寫 BDD 行為測試」接續執行，通過後再跑「步驟二：Code Review 與完成更新」（subagent prompt 需包含 Edit [x]→[x][cr] 的指示，同上）
 - 告知使用者目前進度，例如：「T1、T2 已完成實作，T3 尚未開始，從 T3 繼續實作」
