@@ -2,7 +2,7 @@
 name: propose-sync
 description: >
   掃描專案 docs/propose/（或 frontend/docs/propose/、backend/docs/propose/）下所有功能資料夾，
-  判斷 03-tasks.md 是否全部任務已完成（[x][cr]），
+  判斷 03-tasks.md 是否全部任務已完成（[x][bdd]），
   並將已完成的功能同步更新至使用者指定的規格需求文檔最上方的 ## 已完成 區塊。
   觸發情境包含但不限於：「propose-sync」、「同步完成狀態」、「更新規格文檔已完成功能」、
   「哪些功能已經實作完成」、「幫我把完成的 propose 同步回規格文檔」。
@@ -36,8 +36,8 @@ description: >
 
 **完成判斷規則：**
 
-- 所有非 `[manual]` 任務全部符合 `[x][cr]` 格式 → 視為已完成（`[manual]` 任務不納入判斷）
-- 有任何非 `[manual]` 任務為 `[ ]` 或僅有 `[x]` 未有 `[cr]` → 視為未完成
+- 所有非 `[manual]` 任務全部符合 `[x][bdd]` 格式 → 視為已完成（`[manual]` 任務不納入判斷）
+- 有任何非 `[manual]` 任務為 `[ ]` 或僅有 `[x]` 未有 `[bdd]` → 視為未完成
 - `03-tasks.md` 不存在 → 視為未完成
 
 掃描完成後**直接進入 Step 3 更新規格文檔**，無需等待使用者確認。
