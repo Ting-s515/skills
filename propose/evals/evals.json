@@ -1,0 +1,121 @@
+{
+  "skill_name": "propose",
+  "evals": [
+    {
+      "id": 1,
+      "name": "basic-new-features",
+      "prompt": "依照規格文檔 propose/evals/files/spec-basic.md 規劃功能實作方案，這是後端功能。",
+      "expected_output": "為商品管理與訂單管理各建立一個功能資料夾（含 01-flow.md、02-gherkin.md、03-tasks.md），在規格文檔寫入 > propose: 標記，輸出 propose 完成摘要。",
+      "files": ["evals/files/spec-basic.md"],
+      "assertions": [
+        {
+          "name": "建立商品管理 01-flow.md",
+          "check": "transcript shows writing 01-flow.md for a 商品管理 or product-management feature folder"
+        },
+        {
+          "name": "建立商品管理 02-gherkin.md",
+          "check": "transcript shows writing 02-gherkin.md for 商品管理 or product-management feature"
+        },
+        {
+          "name": "建立商品管理 03-tasks.md",
+          "check": "transcript shows writing 03-tasks.md for 商品管理 or product-management feature"
+        },
+        {
+          "name": "建立訂單管理 01-flow.md",
+          "check": "transcript shows writing 01-flow.md for a 訂單管理 or order feature folder"
+        },
+        {
+          "name": "建立訂單管理 02-gherkin.md",
+          "check": "transcript shows writing 02-gherkin.md for 訂單管理 or order feature"
+        },
+        {
+          "name": "建立訂單管理 03-tasks.md",
+          "check": "transcript shows writing 03-tasks.md for 訂單管理 or order feature"
+        },
+        {
+          "name": "規格文檔寫入 > propose: 標記",
+          "check": "spec-basic.md now contains one or more '> propose:' markers after the run"
+        },
+        {
+          "name": "輸出 propose 完成摘要",
+          "check": "output contains 'propose 完成' or a summary listing the created feature folders"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "skip-existing-proposals",
+      "prompt": "按照規格文檔做 propose：propose/evals/files/spec-partial.md（後端）",
+      "expected_output": "只為訂單管理建立新功能資料夾（3 份文檔），已有 > propose: 標記的商品管理被跳過不重複提案。",
+      "files": ["evals/files/spec-partial.md"],
+      "assertions": [
+        {
+          "name": "只處理一個新功能（訂單管理）",
+          "check": "output or transcript indicates only one new feature (訂單管理 or order-related) is processed; confirmation list shows 1 new feature"
+        },
+        {
+          "name": "商品管理被跳過",
+          "check": "transcript or output explicitly indicates 商品管理 or product-management was skipped because it already has a > propose: marker"
+        },
+        {
+          "name": "為訂單管理建立三份文檔",
+          "check": "transcript shows creating 01-flow.md, 02-gherkin.md, and 03-tasks.md for the order management feature"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "bug-fix-routing",
+      "prompt": "fix bug，規格在 propose/evals/files/spec-bugfix.md（後端）",
+      "expected_output": "[quick-fix] 項目（分頁設定、toast 文字）列入直接實作清單不建立 folder；[propose] 項目（transaction 保護）建立功能資料夾含 3 份文檔；無標記項目（SQL 特殊字元）被自動判斷歸類。",
+      "files": ["evals/files/spec-bugfix.md"],
+      "assertions": [
+        {
+          "name": "[quick-fix] 項目列入直接實作清單不建立 folder",
+          "check": "output shows 分頁設定 and toast 文字 bugs listed under direct quick-fix implementation, not as a feature folder"
+        },
+        {
+          "name": "[propose] 項目建立功能資料夾",
+          "check": "transcript shows creating a fix-* folder with 3 docs for the transaction/batch-update/rollback bug"
+        },
+        {
+          "name": "無標記項目被自動歸類",
+          "check": "the SQL special character bug (no label) is classified as either quick-fix or propose with a brief reasoning"
+        },
+        {
+          "name": "輸出包含分流分類說明",
+          "check": "output clearly distinguishes between quick-fix items and propose items with separate sections"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "mixed-spec",
+      "prompt": "開始 propose propose/evals/files/spec-mixed.md（後端）",
+      "expected_output": "跳過 ## 已完成 中的使用者認證和權限管理；跳過已有 > propose: 標記的商品管理和訂單管理；只為報表匯出建立新功能資料夾；登入頁 [quick-fix] 列入直接實作；並發庫存 [propose] 建立功能資料夾。",
+      "files": ["evals/files/spec-mixed.md"],
+      "assertions": [
+        {
+          "name": "## 已完成 中功能被跳過",
+          "check": "transcript or output indicates 使用者認證 and 權限管理 are skipped because they are in ## 已完成"
+        },
+        {
+          "name": "已提案功能被跳過",
+          "check": "transcript or output indicates 商品管理 and 訂單管理 are skipped because they already have > propose: markers"
+        },
+        {
+          "name": "報表匯出建立功能資料夾含三份文檔",
+          "check": "transcript shows creating 01-flow.md, 02-gherkin.md, 03-tasks.md for 報表匯出 or report-export feature"
+        },
+        {
+          "name": "登入 Enter 鍵 [quick-fix] 列入直接實作",
+          "check": "output shows 登入頁面 Enter 鍵 bug listed as a quick-fix direct implementation item"
+        },
+        {
+          "name": "並發庫存 [propose] 建立功能資料夾",
+          "check": "transcript shows creating a fix-* folder for the 並發下單/race-condition/庫存 bug"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "skill_name": "propose-sync",
+  "evals": [
+    {
+      "id": 1,
+      "name": "sync-mixed-status",
+      "prompt": "propose-sync，規格文檔：propose-sync/evals/files/workspace-mixed/spec.md",
+      "expected_output": "掃描 feature-done（全 [x][bdd]）和 feature-incomplete（有 [ ] 和 [x] 任務）；在規格文檔 ## 已完成 區塊只列出 feature-done（商品管理），不包含 feature-incomplete（訂單管理）。",
+      "files": [
+        "evals/files/workspace-mixed/spec.md",
+        "evals/files/workspace-mixed/docs/propose/feature-done/03-tasks.md",
+        "evals/files/workspace-mixed/docs/propose/feature-incomplete/03-tasks.md"
+      ],
+      "assertions": [
+        {
+          "name": "## 已完成 區塊存在",
+          "check": "workspace-mixed/spec.md contains a '## 已完成' section after the run"
+        },
+        {
+          "name": "feature-done（商品管理）加入 ## 已完成",
+          "check": "spec.md ## 已完成 table contains feature-done folder path or 商品管理"
+        },
+        {
+          "name": "feature-incomplete（訂單管理）不在 ## 已完成",
+          "check": "spec.md ## 已完成 table does NOT contain feature-incomplete folder path or 訂單管理"
+        },
+        {
+          "name": "輸出 propose-sync 完成訊息",
+          "check": "output contains 'propose-sync 完成' or equivalent sync completion message"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "create-no-existing-block",
+      "prompt": "propose-sync，規格文檔：propose-sync/evals/files/workspace-no-block/spec.md",
+      "expected_output": "規格文檔原本沒有 ## 已完成 區塊，propose-sync 在文檔最頂部插入 ## 已完成 表格，列入 feature-complete（報表匯出）功能，原有功能說明內容保留完整。",
+      "files": [
+        "evals/files/workspace-no-block/spec.md",
+        "evals/files/workspace-no-block/docs/propose/feature-complete/03-tasks.md"
+      ],
+      "assertions": [
+        {
+          "name": "在文檔頂部建立 ## 已完成 區塊",
+          "check": "workspace-no-block/spec.md now contains '## 已完成' section, ideally at or near the top of the file"
+        },
+        {
+          "name": "feature-complete（報表匯出）列入 ## 已完成",
+          "check": "spec.md ## 已完成 table contains feature-complete folder path or 報表匯出"
+        },
+        {
+          "name": "原有功能說明內容保留",
+          "check": "spec.md still contains the original '## 報表匯出' section and its description after ## 已完成 is added"
+        }
+      ]
+    }
+  ]
+}
