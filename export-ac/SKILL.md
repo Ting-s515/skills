@@ -1,12 +1,9 @@
 ---
 name: export-ac
 description: >
-  仿照 TDD 作法，在實作前先對照需求文檔產出 Acceptance Criteria（AC）行為規格文件，
-  作為 AI 實作迭代的「完成標準」——實作持續迭代直到所有行為測試通過為止。
-  產出包含需求背景、In/Out Scope、Gherkin 格式驗收條件（AC-001, AC-002...）、測試策略的標準 AC.md，
-  後續由 ac-to-test 將 AC 轉為測試骨架，再交給 AI 實作。
-  手動觸發：輸入「export-ac」或「產出 AC」並提供需求文檔路徑。
-disable-model-invocation: true
+  只有當使用者訊息中明確出現「export-ac」或「產出 AC」關鍵字時，才可載入此技能，
+  功能：仿照 TDD 作法，在實作前先對照需求文檔產出 Acceptance Criteria（AC）行為規格文件，
+  產出包含需求背景、In/Out Scope、Gherkin 格式驗收條件（AC-001, AC-002...）、測試策略的標準 AC.md。
 ---
 
 # Export AC（Acceptance Criteria）
