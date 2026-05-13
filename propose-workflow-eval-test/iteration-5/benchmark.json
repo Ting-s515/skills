@@ -1,0 +1,170 @@
+{
+  "metadata": {
+    "skill_name": "apply",
+    "skill_path": "C:/Users/tenns/.claude/skills/apply",
+    "baseline_path": "C:/Users/tenns/.claude/skills/propose-workflow-eval-test/skill-snapshot-apply-old",
+    "timestamp": "2026-05-13T22:30:00Z",
+    "evals_run": [5, 6, 9],
+    "iteration": 5,
+    "notes": "新版 apply 新增 BDD 測試步驟（bdd-unit-test → 測試通過 → code review → [x][cr]）。與舊版（per-task code review，無 BDD）對比。"
+  },
+  "runs": [
+    {
+      "eval_id": 5,
+      "eval_name": "apply-fresh-start",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.80,
+        "passed": 4,
+        "failed": 1,
+        "total": 5,
+        "time_seconds": 178.0,
+        "tokens": 52968,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "所有一般任務 checkbox 更新為 [x][cr]", "passed": false, "evidence": "03-tasks.md T1/T2/T3 均為 [x]，code review 後未執行 Edit"},
+        {"text": "按依賴順序執行", "passed": true, "evidence": "T1→T2→T3 順序正確，實作檔案依序建立"},
+        {"text": "bdd-unit-test 在 code review 前被呼叫", "passed": true, "evidence": "__tests__/UserList.test.tsx 與 UserDetail.test.tsx 存在"},
+        {"text": "測試檔案存在", "passed": true, "evidence": "src/pages/__tests__/ 下存在兩個測試檔案"},
+        {"text": "02-gherkin.md 未被修改", "passed": true, "evidence": "gherkin 內容與 fixture 完全相同"}
+      ]
+    },
+    {
+      "eval_id": 5,
+      "eval_name": "apply-fresh-start",
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.20,
+        "passed": 1,
+        "failed": 4,
+        "total": 5,
+        "time_seconds": 96.8,
+        "tokens": 38950,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "所有一般任務 checkbox 更新為 [x][cr]", "passed": false, "evidence": "T1=[x], T2=[ ], T3=[ ]，只完成 T1"},
+        {"text": "按依賴順序執行", "passed": false, "evidence": "只執行 T1，T2/T3 未被執行"},
+        {"text": "bdd-unit-test 在 code review 前被呼叫", "passed": false, "evidence": "無 BDD 步驟，無測試檔案"},
+        {"text": "測試檔案存在", "passed": false, "evidence": "workspace 下無任何測試檔案"},
+        {"text": "02-gherkin.md 未被修改", "passed": true, "evidence": "gherkin 內容與 fixture 完全相同"}
+      ]
+    },
+    {
+      "eval_id": 6,
+      "eval_name": "apply-resume-midway",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.60,
+        "passed": 3,
+        "failed": 2,
+        "total": 5,
+        "time_seconds": 131.0,
+        "tokens": 46800,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "T1 狀態不變（仍為 [x][cr]）", "passed": true, "evidence": "T1 仍為 [x][cr]，未被重新執行"},
+        {"text": "T2 從 [x] 更新為 [x][cr]", "passed": false, "evidence": "T2 仍為 [x]，code review 後未 Edit"},
+        {"text": "T3 從 [ ] 更新為 [x][cr]", "passed": false, "evidence": "T3 為 [x]（已實作），但未更新至 [x][cr]"},
+        {"text": "BDD 測試在 code review 前執行", "passed": true, "evidence": "__tests__/NotificationService.test.ts 存在"},
+        {"text": "02-gherkin.md 未被修改", "passed": true, "evidence": "gherkin 內容與 fixture 完全相同"}
+      ]
+    },
+    {
+      "eval_id": 6,
+      "eval_name": "apply-resume-midway",
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.80,
+        "passed": 4,
+        "failed": 1,
+        "total": 5,
+        "time_seconds": 148.9,
+        "tokens": 37510,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "T1 狀態不變（仍為 [x][cr]）", "passed": true, "evidence": "T1 仍為 [x][cr]"},
+        {"text": "T2 從 [x] 更新為 [x][cr]", "passed": true, "evidence": "outputs/03-tasks.md T2=[x][cr]"},
+        {"text": "T3 從 [ ] 更新為 [x][cr]", "passed": true, "evidence": "outputs/03-tasks.md T3=[x][cr]"},
+        {"text": "BDD 測試在 code review 前執行", "passed": false, "evidence": "舊版無 BDD 步驟，無測試檔案"},
+        {"text": "02-gherkin.md 未被修改", "passed": true, "evidence": "gherkin 內容與 fixture 完全相同"}
+      ]
+    },
+    {
+      "eval_id": 9,
+      "eval_name": "apply-resume-all-tasks-done",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.80,
+        "passed": 4,
+        "failed": 1,
+        "total": 5,
+        "time_seconds": 185.6,
+        "tokens": 57161,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "偵測到所有任務為 [x] 並從 BDD 步驟接續", "passed": true, "evidence": "未重新實作任務，直接進入 BDD 步驟"},
+        {"text": "所有任務 checkbox 更新為 [x][cr]", "passed": false, "evidence": "03-tasks.md T1/T2/T3 均為 [x]，Edit 步驟遺漏"},
+        {"text": "bdd-unit-test 在 code review 前被呼叫", "passed": true, "evidence": "__tests__/UserList.test.tsx 與 UserDetail.test.tsx 存在"},
+        {"text": "測試檔案存在", "passed": true, "evidence": "src/pages/__tests__/ 下存在兩個測試檔案"},
+        {"text": "02-gherkin.md 未被修改", "passed": true, "evidence": "gherkin 內容與 fixture 完全相同"}
+      ]
+    },
+    {
+      "eval_id": 9,
+      "eval_name": "apply-resume-all-tasks-done",
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.40,
+        "passed": 2,
+        "failed": 3,
+        "total": 5,
+        "time_seconds": 109.2,
+        "tokens": 36650,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "偵測到所有任務為 [x] 並從 BDD 步驟接續", "passed": false, "evidence": "舊版直接補跑 code review，無 BDD 步驟"},
+        {"text": "所有任務 checkbox 更新為 [x][cr]", "passed": true, "evidence": "outputs/03-tasks.md T1/T2/T3 均為 [x][cr]"},
+        {"text": "bdd-unit-test 在 code review 前被呼叫", "passed": false, "evidence": "無 BDD 步驟，無測試檔案"},
+        {"text": "測試檔案存在", "passed": false, "evidence": "outputs/ 下無任何測試檔案"},
+        {"text": "02-gherkin.md 未被修改", "passed": true, "evidence": "gherkin 內容與 fixture 完全相同"}
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {"mean": 0.73, "stddev": 0.10, "min": 0.60, "max": 0.80},
+      "time_seconds": {"mean": 164.9, "stddev": 27.9, "min": 131.0, "max": 185.6},
+      "tokens": {"mean": 52310, "stddev": 5223, "min": 46800, "max": 57161}
+    },
+    "old_skill": {
+      "pass_rate": {"mean": 0.47, "stddev": 0.31, "min": 0.20, "max": 0.80},
+      "time_seconds": {"mean": 118.3, "stddev": 27.2, "min": 96.8, "max": 148.9},
+      "tokens": {"mean": 37703, "stddev": 1125, "min": 36650, "max": 38950}
+    },
+    "delta": {
+      "pass_rate": "+0.27",
+      "time_seconds": "+46.6",
+      "tokens": "+14607"
+    }
+  },
+  "notes": [
+    "with_skill 在所有 eval 中穩定產出 BDD 測試檔案，old_skill 從未產出。這是新功能的核心差異。",
+    "with_skill 有系統性的 [x][cr] 更新失敗問題（3/3 eval 都失敗）：code review 子 agent 確實執行，但主 agent 未完成後續 Edit 步驟。",
+    "old_skill 在 eval-5 中只完成 T1（pass_rate 0.20），可能因等待使用者確認的設計造成；eval-6、eval-9 表現正常（0.80、0.40）。",
+    "02-gherkin.md 唯讀保護：所有 6 個 eval 均通過，新版 apply 正確遵守 gherkin 唯讀規則。",
+    "BDD 測試品質：NotificationService 測試發現了重試次數邊界條件邏輯 bug（retryCount 語意不一致），顯示 BDD 步驟有實際價值。",
+    "效能代價：with_skill 平均多花 46.6 秒、14607 tokens，主要因 BDD 測試步驟增加。"
+  ]
+}

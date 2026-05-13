@@ -1,0 +1,11 @@
+# 任務清單：通知信修復
+
+## 參考文檔
+- 結構化流程：`docs/propose/notification-fix/01-flow.md`
+- 驗收條件：`docs/propose/notification-fix/02-gherkin.md`
+
+## 任務
+
+- [x][cr] T1: 在 OrderService 訂單狀態更新後加入通知觸發點（影響：`src/services/OrderService.ts`）
+- [x] T2: 實作 NotificationService.sendOrderStatusEmail()，處理各狀態的 email 模板（影響：`src/services/NotificationService.ts`）
+- [x] T3: 加入通知失敗時的重試機制與錯誤 log（影響：`src/services/NotificationService.ts`）（依賴 T2）

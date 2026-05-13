@@ -1,0 +1,27 @@
+{
+  "eval_id": 9,
+  "eval_name": "apply-resume-all-tasks-done",
+  "prompt": "繼續完成 fixtures/eval-9-apply-resume-all-tasks-done/docs/propose/user-management/",
+  "assertions": [
+    {
+      "text": "偵測到所有任務為 [x] 並從 BDD 步驟接續",
+      "check": "對話輸出說明所有任務實作已完成，從撰寫 BDD 測試步驟繼續，而非重新執行任何任務"
+    },
+    {
+      "text": "所有任務 checkbox 更新為 [x][cr]",
+      "check": "03-tasks.md 中 T1、T2、T3 格式為 - [x][cr] Tx:"
+    },
+    {
+      "text": "bdd-unit-test 在 code review 前被呼叫",
+      "check": "對話輸出中，Skill tool 呼叫 bdd-unit-test 或測試執行動作出現在 code-reviewer subagent 啟動之前"
+    },
+    {
+      "text": "測試檔案存在",
+      "check": "輸出中存在以 .test.tsx、.test.ts 或 .spec.ts 結尾的測試檔案"
+    },
+    {
+      "text": "02-gherkin.md 未被修改",
+      "check": "02-gherkin.md 內容與原始 fixture 完全相同，未被更動"
+    }
+  ]
+}

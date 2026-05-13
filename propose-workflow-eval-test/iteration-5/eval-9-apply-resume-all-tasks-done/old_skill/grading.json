@@ -1,0 +1,50 @@
+{
+  "expectations": [
+    {
+      "text": "偵測到所有任務為 [x] 並從 BDD 步驟接續",
+      "passed": false,
+      "evidence": "舊版 apply 無 BDD 步驟，直接從 all-[x] 狀態補跑 code review，未呼叫 bdd-unit-test。transcript.md 確認此行為。"
+    },
+    {
+      "text": "所有任務 checkbox 更新為 [x][cr]",
+      "passed": true,
+      "evidence": "outputs/03-tasks.md 中 T1=[x][cr]、T2=[x][cr]、T3=[x][cr]，舊版 apply 成功完成 checkbox 更新。"
+    },
+    {
+      "text": "bdd-unit-test 在 code review 前被呼叫",
+      "passed": false,
+      "evidence": "outputs/ 下不存在任何 .test.tsx 或 .test.ts 檔案，舊版 apply 無 BDD 步驟。"
+    },
+    {
+      "text": "測試檔案存在",
+      "passed": false,
+      "evidence": "outputs/ 及 workspace 下不存在任何測試檔案。"
+    },
+    {
+      "text": "02-gherkin.md 未被修改",
+      "passed": true,
+      "evidence": "outputs/02-gherkin.md 與原始 fixture 內容完全相同。"
+    }
+  ],
+  "summary": {
+    "passed": 2,
+    "failed": 3,
+    "total": 5,
+    "pass_rate": 0.40
+  },
+  "timing": {
+    "executor_duration_seconds": 109.2
+  },
+  "claims": [
+    {
+      "claim": "舊版 apply 在 all-[x] 情境直接補跑 code review（無 BDD 步驟）",
+      "type": "process",
+      "verified": true,
+      "evidence": "transcript.md 記錄：識別 T1/T2/T3 皆為 [x]，直接補跑 code review，更新為 [x][cr]"
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "舊版 apply 在 checkbox 狀態更新上可靠，但缺少 BDD 步驟。eval-9 清楚展示了新舊版本對 all-[x] 狀態的不同處理方式。"
+  }
+}

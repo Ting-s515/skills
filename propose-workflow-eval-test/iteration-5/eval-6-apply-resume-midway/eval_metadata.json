@@ -1,0 +1,27 @@
+{
+  "eval_id": 6,
+  "eval_name": "apply-resume-midway",
+  "prompt": "繼續實作 fixtures/eval-6-apply-resume-midway/docs/propose/notification-fix/",
+  "assertions": [
+    {
+      "text": "T1 狀態不變（仍為 [x][cr]）",
+      "check": "03-tasks.md 中 T1 仍為 - [x][cr] T1:"
+    },
+    {
+      "text": "T2 從 [x] 更新為 [x][cr]",
+      "check": "03-tasks.md 中 T2 為 - [x][cr] T2:"
+    },
+    {
+      "text": "T3 從 [ ] 更新為 [x][cr]",
+      "check": "03-tasks.md 中 T3 為 - [x][cr] T3:"
+    },
+    {
+      "text": "BDD 測試在 code review 前執行",
+      "check": "對話輸出中，Skill tool 呼叫 bdd-unit-test 或測試執行動作出現在 code-reviewer subagent 啟動之前"
+    },
+    {
+      "text": "02-gherkin.md 未被修改",
+      "check": "02-gherkin.md 內容與原始 fixture 完全相同，未被更動"
+    }
+  ]
+}
