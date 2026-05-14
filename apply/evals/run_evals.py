@@ -1,21 +1,32 @@
 #!/usr/bin/env python3
 """Run apply behavior evals using codex or claude CLI.
 
-Usage: python evals/run_evals.py [eval-id] [--jobs 3] [--timeout 1800]
+Usage:
+  python evals/run_evals.py [options] [eval-id]
+
+Options:
+  --jobs N          Parallel workers (default: 3)
+  --timeout N       Per-run timeout in seconds (default: 1800)
+  --with-skill-only Only run with_skill configuration
+  --output-dir DIR  Directory that stores eval run artifacts
+  --dry-run         Create metadata without invoking the AI CLI
+
+Note: apply modifies files in the workspace. Parallel runs on the same repo
+may interfere with each other. Use workspace copy isolation for stable results.
 """
 
 from __future__ import annotations
 
 import argparse
-import datetime as dt
 import json
 import os
-import signal
 import shutil
+import signal
 import subprocess
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -23,7 +34,10 @@ from typing import Any
 SCRIPT_DIR = Path(__file__).resolve().parent
 EVALS_JSON = SCRIPT_DIR / "evals.json"
 RUNS_DIR = SCRIPT_DIR / "eval-runs"
+
+DEFAULT_JOBS = 3
 DEFAULT_TIMEOUT_SECONDS = 30 * 60
+CONFIGURATIONS = ["with_skill", "without_skill"]
 
 
 def fail(message: str) -> None:
@@ -34,24 +48,11 @@ def fail(message: str) -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run apply behavior evals.")
     parser.add_argument("eval_id", nargs="?", help="Optional eval id to run")
-    parser.add_argument("--jobs", type=int, default=3, help="Max eval runs to execute in parallel")
-    parser.add_argument(
-        "--timeout",
-        type=int,
-        default=DEFAULT_TIMEOUT_SECONDS,
-        help="Per-run timeout in seconds",
-    )
-    parser.add_argument(
-        "--output-dir",
-        type=Path,
-        default=RUNS_DIR,
-        help="Directory that stores eval run artifacts",
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Create metadata and summary without invoking the AI CLI",
-    )
+    parser.add_argument("--jobs", type=int, default=DEFAULT_JOBS, help="Max parallel runs")
+    parser.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT_SECONDS, help="Per-run timeout in seconds")
+    parser.add_argument("--output-dir", type=Path, default=RUNS_DIR, help="Eval run artifacts directory")
+    parser.add_argument("--with-skill-only", action="store_true", help="Only run with_skill configuration")
+    parser.add_argument("--dry-run", action="store_true", help="Create metadata without invoking the AI CLI")
     return parser.parse_args()
 
 
@@ -67,6 +68,7 @@ def detect_runner() -> tuple[str, list[str]]:
         return "claude", [claude, "-p"]
 
     fail("neither codex nor claude CLI found")
+    return "", []  # unreachable, satisfies type checker
 
 
 def safe_name(value: str) -> str:
@@ -81,12 +83,11 @@ def safe_name(value: str) -> str:
 
 def next_iteration_dir(output_dir: Path) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
-    existing = []
-    for child in output_dir.iterdir():
-        if child.is_dir() and child.name.startswith("iteration-"):
-            suffix = child.name.removeprefix("iteration-")
-            if suffix.isdigit():
-                existing.append(int(suffix))
+    existing = [
+        int(d.name.removeprefix("iteration-"))
+        for d in output_dir.iterdir()
+        if d.is_dir() and d.name.startswith("iteration-") and d.name.removeprefix("iteration-").isdigit()
+    ]
     return output_dir / f"iteration-{max(existing, default=0) + 1}"
 
 
@@ -95,11 +96,10 @@ def write_json(path: Path, data: dict[str, Any]) -> None:
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
-def kill_process_tree(process: subprocess.Popen[str]) -> None:
+def kill_process_tree(process: subprocess.Popen) -> None:
     if process.poll() is not None:
         return
-
-    # Windows child processes can survive Popen.kill(); taskkill keeps timeout cleanup local to this run.
+    # Windows child processes can survive Popen.kill(); taskkill keeps cleanup local to this run.
     if os.name == "nt":
         subprocess.run(
             ["taskkill", "/PID", str(process.pid), "/T", "/F"],
@@ -107,79 +107,80 @@ def kill_process_tree(process: subprocess.Popen[str]) -> None:
             stderr=subprocess.DEVNULL,
             check=False,
         )
-        return
+    else:
+        os.killpg(os.getpgid(process.pid), signal.SIGKILL)
 
-    os.killpg(os.getpgid(process.pid), signal.SIGKILL)
 
-
-def run_prompt(
+def run_single(
     runner_name: str,
     command_prefix: list[str],
     prompt: str,
     run_dir: Path,
-    timeout_seconds: int,
+    timeout: int,
     dry_run: bool,
 ) -> dict[str, Any]:
-    started = dt.datetime.now(dt.timezone.utc)
-    started_monotonic = time.monotonic()
-    output_log = run_dir / "output.log"
-    last_message = run_dir / "last-message.md"
-    if runner_name == "codex":
-        command = [*command_prefix, "--output-last-message", str(last_message), prompt]
-    else:
-        command = [*command_prefix, prompt]
-
     run_dir.mkdir(parents=True, exist_ok=True)
+    log_path = run_dir / "output.log"
+    last_message_path = run_dir / "last-message.md"
+
+    if runner_name == "codex":
+        cmd = [*command_prefix, "--output-last-message", str(last_message_path), prompt]
+    else:
+        cmd = [*command_prefix, prompt]
+
+    start_dt = datetime.now(timezone.utc)
+    start_ts = time.monotonic()
 
     if dry_run:
-        output_log.write_text("[dry-run] " + " ".join(command) + "\n", encoding="utf-8")
-        last_message.write_text("[dry-run] AI CLI was not invoked.\n", encoding="utf-8")
-        ended = dt.datetime.now(dt.timezone.utc)
+        log_path.write_text("[dry-run] " + " ".join(cmd) + "\n", encoding="utf-8")
+        last_message_path.write_text("[dry-run] AI CLI was not invoked.\n", encoding="utf-8")
         return {
-            "started_at": started.isoformat(),
-            "ended_at": ended.isoformat(),
-            "duration_seconds": round(time.monotonic() - started_monotonic, 3),
+            "start": start_dt.isoformat(),
+            "end": datetime.now(timezone.utc).isoformat(),
+            "duration_seconds": round(time.monotonic() - start_ts, 3),
             "exit_code": 0,
             "timed_out": False,
-            "timeout_seconds": timeout_seconds,
-            "output_log": str(output_log),
-            "last_message": str(last_message),
+            "timeout_setting": timeout,
+            "output_log": str(log_path),
+            "last_message": str(last_message_path),
         }
 
     timed_out = False
-    process: subprocess.Popen[str] | None = None
+    exit_code = -1
 
-    with output_log.open("w", encoding="utf-8", errors="replace") as log:
-        log.write("$ " + " ".join(command) + "\n\n")
-        log.flush()
+    with log_path.open("w", encoding="utf-8", errors="replace") as log_file:
+        log_file.write("$ " + " ".join(cmd) + "\n\n")
+        log_file.flush()
         process = subprocess.Popen(
-            command,
-            stdout=log,
+            cmd,
+            stdout=log_file,
             stderr=subprocess.STDOUT,
             text=True,
             start_new_session=os.name != "nt",
         )
         try:
-            exit_code = process.wait(timeout=timeout_seconds)
+            exit_code = process.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
             timed_out = True
             kill_process_tree(process)
             exit_code = process.wait()
-            log.write(f"\n[timeout] killed process after {timeout_seconds} seconds\n")
+            log_file.write(f"\n[timeout] killed process after {timeout}s\n")
 
-    if not last_message.exists():
-        last_message.write_text(output_log.read_text(encoding="utf-8", errors="replace"), encoding="utf-8")
+    if not last_message_path.exists():
+        last_message_path.write_text(
+            log_path.read_text(encoding="utf-8", errors="replace"),
+            encoding="utf-8",
+        )
 
-    ended = dt.datetime.now(dt.timezone.utc)
     return {
-        "started_at": started.isoformat(),
-        "ended_at": ended.isoformat(),
-        "duration_seconds": round(time.monotonic() - started_monotonic, 3),
+        "start": start_dt.isoformat(),
+        "end": datetime.now(timezone.utc).isoformat(),
+        "duration_seconds": round(time.monotonic() - start_ts, 3),
         "exit_code": exit_code,
         "timed_out": timed_out,
-        "timeout_seconds": timeout_seconds,
-        "output_log": str(output_log),
-        "last_message": str(last_message),
+        "timeout_setting": timeout,
+        "output_log": str(log_path),
+        "last_message": str(last_message_path),
     }
 
 
@@ -189,125 +190,164 @@ def run_eval_case(
     runner_name: str,
     command_prefix: list[str],
     iteration_dir: Path,
-    timeout_seconds: int,
+    timeout: int,
+    configurations: list[str],
     dry_run: bool,
-) -> dict[str, Any]:
+) -> list[dict[str, Any]]:
     eval_id = str(eval_case.get("id", index))
     name = eval_case.get("name") or f"eval-{eval_id}"
     prompt = eval_case.get("prompt")
     if not prompt:
         raise ValueError(f"eval {eval_id} is missing prompt")
 
-    eval_dir = iteration_dir / f"{eval_id}-{safe_name(name)}"
-    run_dir = eval_dir / "with_skill"
-    metadata = {
-        "eval_id": eval_id,
-        "eval_name": name,
-        "prompt": prompt,
-        "configuration": "with_skill",
-        "assertions": eval_case.get("assertions", []),
-        "expected_output": eval_case.get("expected_output"),
-        "files": eval_case.get("files", []),
-    }
-    write_json(eval_dir / "eval_metadata.json", metadata)
+    eval_dir = iteration_dir / safe_name(name)
+    write_json(
+        eval_dir / "eval_metadata.json",
+        {
+            "eval_id": eval_id,
+            "name": name,
+            "prompt": prompt,
+            "expected_output": eval_case.get("expected_output", ""),
+            "assertions": eval_case.get("assertions", []),
+            "files": eval_case.get("files", []),
+            "configurations": configurations,
+            "workspace_path": str(eval_dir),
+        },
+    )
 
-    print(f"[start] {name} -> {run_dir}")
-    timing = run_prompt(runner_name, command_prefix, prompt, run_dir, timeout_seconds, dry_run)
-    write_json(run_dir / "timing.json", timing)
+    rows: list[dict[str, Any]] = []
+    for config in configurations:
+        run_dir = eval_dir / config
+        effective_prompt = (
+            f"[baseline — do not apply any skill pattern] {prompt}"
+            if config == "without_skill"
+            else prompt
+        )
 
-    status = "timeout" if timing["timed_out"] else f"exit {timing['exit_code']}"
-    print(f"[done] {name}: {status}, {timing['duration_seconds']}s")
-    return {
-        "eval_id": eval_id,
-        "eval_name": name,
-        "configuration": "with_skill",
-        **timing,
-    }
+        print(f"  [start] {name}/{config}")
+        timing = run_single(runner_name, command_prefix, effective_prompt, run_dir, timeout, dry_run)
+        write_json(run_dir / "timing.json", timing)
+
+        status = "timeout" if timing["timed_out"] else ("pass" if timing["exit_code"] == 0 else "fail")
+        print(f"  [done]  {name}/{config} — exit={timing['exit_code']} {timing['duration_seconds']}s {status}")
+
+        rows.append(
+            {
+                "eval_id": eval_id,
+                "eval_name": name,
+                "configuration": config,
+                "exit_code": timing["exit_code"],
+                "duration_seconds": timing["duration_seconds"],
+                "timed_out": timing["timed_out"],
+                "output_log": timing["output_log"],
+                "status": status,
+            }
+        )
+    return rows
 
 
 def failed_result(
     eval_case: dict[str, Any],
     index: int,
     iteration_dir: Path,
-    timeout_seconds: int,
+    timeout: int,
     error: BaseException,
 ) -> dict[str, Any]:
     eval_id = str(eval_case.get("id", index))
     name = eval_case.get("name") or f"eval-{eval_id}"
-    run_dir = iteration_dir / f"{eval_id}-{safe_name(name)}" / "with_skill"
-    output_log = run_dir / "output.log"
-    started = dt.datetime.now(dt.timezone.utc).isoformat()
-
+    run_dir = iteration_dir / safe_name(name) / "with_skill"
     run_dir.mkdir(parents=True, exist_ok=True)
-    output_log.write_text(f"[runner-error] {type(error).__name__}: {error}\n", encoding="utf-8")
+
+    log_path = run_dir / "output.log"
+    log_path.write_text(f"[runner-error] {type(error).__name__}: {error}\n", encoding="utf-8")
+
+    now = datetime.now(timezone.utc).isoformat()
     result = {
         "eval_id": eval_id,
         "eval_name": name,
         "configuration": "with_skill",
-        "started_at": started,
-        "ended_at": dt.datetime.now(dt.timezone.utc).isoformat(),
-        "duration_seconds": 0,
         "exit_code": 1,
+        "duration_seconds": 0,
         "timed_out": False,
-        "timeout_seconds": timeout_seconds,
-        "output_log": str(output_log),
-        "last_message": str(run_dir / "last-message.md"),
+        "output_log": str(log_path),
+        "status": "fail",
         "error": f"{type(error).__name__}: {error}",
     }
-    write_json(run_dir / "timing.json", result)
+    write_json(run_dir / "timing.json", {"start": now, "end": now, **result, "timeout_setting": timeout})
     return result
 
 
-def print_summary(results: list[dict[str, Any]]) -> None:
+def sort_key(r: dict[str, Any]) -> tuple[int, int | str]:
+    eid = str(r["eval_id"])
+    return (0, int(eid)) if eid.isdigit() else (1, eid)
+
+
+def print_summary(results: list[dict[str, Any]]) -> bool:
+    if not results:
+        print("No results.")
+        return True
+
+    col_name = max(len(r["eval_name"]) for r in results)
+    col_cfg = max(len(r["configuration"]) for r in results)
+    sep = "-" * (col_name + col_cfg + 46)
+
     print()
-    print("=== summary ===")
-    print(f"{'eval':<24} {'config':<12} {'exit':<6} {'timeout':<8} {'seconds':<8} log")
-    for result in results:
+    print("=== SUMMARY ===")
+    print(sep)
+    print(f"{'EVAL':<{col_name}}  {'CONFIG':<{col_cfg}}  {'STATUS':<8}  {'EXIT':>4}  {'DURATION':>10}  LOG")
+    print(sep)
+
+    all_passed = True
+    for r in results:
+        if r["status"] != "pass":
+            all_passed = False
         print(
-            f"{result['eval_name']:<24} "
-            f"{result['configuration']:<12} "
-            f"{result['exit_code']!s:<6} "
-            f"{str(result['timed_out']):<8} "
-            f"{result['duration_seconds']!s:<8} "
-            f"{result['output_log']}"
+            f"{r['eval_name']:<{col_name}}  "
+            f"{r['configuration']:<{col_cfg}}  "
+            f"{r['status'].upper():<8}  "
+            f"{r['exit_code']:>4}  "
+            f"{r['duration_seconds']:>9.1f}s  "
+            f"{r['output_log']}"
         )
 
-
-def sort_key(result: dict[str, Any]) -> tuple[int, int | str]:
-    eval_id = str(result["eval_id"])
-    if eval_id.isdigit():
-        return (0, int(eval_id))
-    return (1, eval_id)
+    print(sep)
+    passed = sum(1 for r in results if r["status"] == "pass")
+    print(f"Result: {passed}/{len(results)} passed")
+    print()
+    return all_passed
 
 
 def main() -> int:
-    args = parse_args()
     if not EVALS_JSON.is_file():
         fail(f"evals.json not found at {EVALS_JSON}")
 
+    args = parse_args()
+    configurations = ["with_skill"] if args.with_skill_only else CONFIGURATIONS
+
     data = json.loads(EVALS_JSON.read_text(encoding="utf-8"))
-    target_id = args.eval_id
     evals = [
-        (index, eval_case)
-        for index, eval_case in enumerate(data.get("evals", []))
-        if not target_id or str(eval_case.get("id", index)) == target_id
+        (i, e)
+        for i, e in enumerate(data.get("evals", []))
+        if not args.eval_id or str(e.get("id", i)) == args.eval_id
     ]
     if not evals:
-        fail(f"no evals matched id: {target_id}")
+        fail(f"no evals matched id: {args.eval_id}")
 
     runner_name, command_prefix = detect_runner()
     iteration_dir = next_iteration_dir(args.output_dir)
     iteration_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"=== {data.get('skill_name', '<skill-name>')} evals ({len(evals)} selected) ===")
-    print(f"[output] {iteration_dir}")
-    print(f"[jobs] {args.jobs}")
-    print(f"[timeout] {args.timeout}s")
+    skill_name = data.get("skill_name", "<skill-name>")
+    print(f"=== {skill_name} evals ({len(evals)} cases × {len(configurations)} configs) ===")
+    print(f"[iteration] {iteration_dir}")
+    print(f"[jobs] {args.jobs}  [timeout] {args.timeout}s  [configs] {', '.join(configurations)}")
     if args.dry_run:
         print("[dry-run] AI CLI will not be invoked")
+    print()
 
+    all_rows: list[dict[str, Any]] = []
     max_workers = max(1, min(args.jobs, len(evals)))
-    results: list[dict[str, Any]] = []
+
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {
             executor.submit(
@@ -318,6 +358,7 @@ def main() -> int:
                 command_prefix,
                 iteration_dir,
                 args.timeout,
+                configurations,
                 args.dry_run,
             ): (index, eval_case)
             for index, eval_case in evals
@@ -325,29 +366,31 @@ def main() -> int:
         for future in as_completed(futures):
             index, eval_case = futures[future]
             try:
-                results.append(future.result())
+                all_rows.extend(future.result())
             except Exception as error:
                 result = failed_result(eval_case, index, iteration_dir, args.timeout, error)
-                print(f"[failed] {result['eval_name']}: {result['error']}")
-                results.append(result)
+                print(f"  [failed] {result['eval_name']}: {result['error']}")
+                all_rows.append(result)
 
-    results.sort(key=sort_key)
-    summary = {
-        "skill_name": data.get("skill_name", "<skill-name>"),
-        "configuration": "with_skill",
-        "runs": results,
-    }
-    write_json(iteration_dir / "summary.json", summary)
-    write_json(iteration_dir / "benchmark.json", summary)
-    print_summary(results)
+    all_rows.sort(key=sort_key)
+    all_passed = print_summary(all_rows)
 
-    failed = [result for result in results if result["timed_out"] or result["exit_code"] != 0]
-    if failed:
-        print()
-        print(f"Error: {len(failed)} eval run(s) failed", file=sys.stderr)
-        return 1
+    write_json(
+        iteration_dir / "benchmark.json",
+        {
+            "iteration": iteration_dir.name,
+            "skill_name": skill_name,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "total": len(all_rows),
+            "passed": sum(1 for r in all_rows if r["status"] == "pass"),
+            "failed": sum(1 for r in all_rows if r["status"] == "fail"),
+            "timeout": sum(1 for r in all_rows if r["status"] == "timeout"),
+            "results": all_rows,
+        },
+    )
+    print(f"[benchmark] {iteration_dir / 'benchmark.json'}")
 
-    return 0
+    return 0 if all_passed else 1
 
 
 if __name__ == "__main__":
