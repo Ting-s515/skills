@@ -18,149 +18,173 @@
 
 ## 插入內容
 
-Also create `evals/run_evals.sh` alongside `evals.json` so external tools (e.g. Codex CLI) can invoke the evals via shell. Use `jq` as an explicit dependency for JSON parsing.
+When creating eval tests, also create `evals/run_evals.py` alongside `evals.json` so external tools (e.g. Codex CLI) can invoke the evals cross-platform. Use Python's built-in `json` module for JSON parsing; do not require `jq`.
 
 建立腳本前，先在腳本上方加入此前置需求說明：
 
 ````markdown
 ### Eval runner 前置需求
 
-Eval runner 會使用 `jq` 讀取 `evals.json`。
+Eval runner 會使用 Python 讀取 `evals.json` 並執行 Codex/Claude CLI。
 
-執行 `evals/run_evals.sh` 前，請先安裝 `jq`：
-
-- macOS: `brew install jq`
-- Ubuntu/Debian: `sudo apt-get install jq`
-- Fedora: `sudo dnf install jq`
-- Windows/Git Bash: 交由 AI 統一設定，不要求使用者手動處理。
-
-Windows/Git Bash 成功設定紀錄（通用化，不寫死使用者名稱）：
-
-1. 確認 `winget` 已安裝 `jq`：
-   ```powershell
-   winget list jqlang.jq
-   ```
-2. 由 AI 在 PowerShell 找出 `jq.exe` 實際位置，不要假設 Windows 使用者名稱：
-   ```powershell
-   Get-ChildItem -Path "$env:LOCALAPPDATA\Microsoft\WinGet\Packages" -Recurse -Filter jq.exe -ErrorAction SilentlyContinue |
-     Select-Object -First 1 -ExpandProperty FullName
-   ```
-3. 將找到的 Windows 目錄轉成 Git Bash 可解析路徑，例如：
-   ```text
-   C:\Users\<user>\AppData\Local\Microsoft\WinGet\Packages\<jq-package>\jq.exe
-   → /c/Users/<user>/AppData/Local/Microsoft/WinGet/Packages/<jq-package>
-   ```
-4. 修正目前使用者的 `~/.bashrc`，加入轉換後的 Git Bash 目錄：
-   ```bash
-   export PATH="$PATH:<git-bash-jq-directory>"
-   ```
-5. 若 `.bashrc` 內有 Windows 路徑被斷行或重複追加，先整理成單行且去重。
-6. 用新的 Git Bash shell 驗證：
-   ```bash
-   jq --version
-   command -v jq
-   ```
-
-確認安裝是否成功：
+執行 `evals/run_evals.py` 前，請先確認 Python 可用：
 
 ```bash
-jq --version
+python --version
 ```
 
-為什麼使用 `jq`：Bash 沒有內建 JSON parser；Codex/Claude CLI 支援非互動式執行 prompt，但沒有原生的 `evals.json` runner。避免用 `grep`/`sed` 解析 JSON；使用 `jq` 才能穩定處理跳脫字元、陣列與缺失欄位。
+Windows 若 `python` 不可用，改用：
+
+```powershell
+py --version
+```
+
+為什麼使用 Python：Python 可在 Windows/macOS/Linux 以相同程式碼讀取 JSON、處理路徑並呼叫 CLI；避免依賴 Bash、`jq`、Git Bash 或平台特定 shell 語法。
 
 本地規則：Codex eval runner 必須固定使用 `--dangerously-bypass-approvals-and-sandbox`，不要改成 sandbox / approval 模式。這個 runner 預期只在一次性工作區或外部隔離環境中執行。
 ````
 
 Fill in the actual skill name in the header comment:
 
-```bash
-#!/usr/bin/env bash
-# Run <skill-name> behavior evals using codex or claude CLI
-# Each eval runs twice: with_skill (SKILL.md injected) and without_skill (baseline)
-# Usage: ./run_evals.sh [eval-id]   — omit id to run all
-set -e
+```python
+#!/usr/bin/env python3
+"""Run <skill-name> behavior evals using codex or claude CLI.
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-EVALS_JSON="$SCRIPT_DIR/evals.json"
-SKILL_MD="$SCRIPT_DIR/../SKILL.md"
-OUTPUT_DIR="$SCRIPT_DIR/../eval-results"
+Each eval runs twice: with_skill (SKILL.md injected) and without_skill (baseline).
+Usage: python evals/run_evals.py [eval-id]   # omit id to run all
+"""
 
-if ! command -v jq &>/dev/null; then
-    echo "Error: jq is required"
-    echo "Install jq first. On Windows/Git Bash, ask AI to configure ~/.bashrc with the WinGet jq.exe directory."
-    exit 1
-fi
+from __future__ import annotations
 
-if [ ! -f "$SKILL_MD" ]; then
-    echo "Error: SKILL.md not found at $SKILL_MD"
-    exit 1
-fi
+import json
+import shutil
+import subprocess
+import sys
+from pathlib import Path
 
-SKILL_INSTRUCTIONS="$(cat "$SKILL_MD")"
 
-# Auto-detect AI tool: prefer codex if available, fall back to claude
-if command -v codex &>/dev/null; then
-    ai_run() { codex exec --dangerously-bypass-approvals-and-sandbox "$1"; }
-    echo "[tool] codex"
-elif command -v claude &>/dev/null; then
-    ai_run() { claude -p "$1"; }
-    echo "[tool] claude"
-else
-    echo "Error: neither codex nor claude CLI found"
-    exit 1
-fi
+SCRIPT_DIR = Path(__file__).resolve().parent
+EVALS_JSON = SCRIPT_DIR / "evals.json"
+SKILL_MD = SCRIPT_DIR.parent / "SKILL.md"
+OUTPUT_DIR = SCRIPT_DIR.parent / "eval-results"
 
-run_with_skill() {
-    local full_prompt="$SKILL_INSTRUCTIONS
+
+def fail(message: str) -> None:
+    print(f"Error: {message}", file=sys.stderr)
+    raise SystemExit(1)
+
+
+def load_evals() -> dict:
+    if not EVALS_JSON.is_file():
+        fail(f"evals.json not found at {EVALS_JSON}")
+
+    with EVALS_JSON.open("r", encoding="utf-8") as file:
+        return json.load(file)
+
+
+def read_skill_instructions() -> str:
+    if not SKILL_MD.is_file():
+        fail(f"SKILL.md not found at {SKILL_MD}")
+
+    return SKILL_MD.read_text(encoding="utf-8")
+
+
+def detect_ai_tool() -> tuple[str, list[str]]:
+    codex = shutil.which("codex")
+    if codex:
+        print("[tool] codex")
+        return "codex", [codex, "exec", "--dangerously-bypass-approvals-and-sandbox"]
+
+    claude = shutil.which("claude")
+    if claude:
+        print("[tool] claude")
+        return "claude", [claude, "-p"]
+
+    fail("neither codex nor claude CLI found")
+
+
+def run_ai(command_prefix: list[str], prompt: str, output_file: Path) -> None:
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+
+    with output_file.open("w", encoding="utf-8") as file:
+        process = subprocess.Popen(
+            [*command_prefix, prompt],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+
+        if process.stdout is not None:
+            for line in process.stdout:
+                print(line, end="")
+                file.write(line)
+
+        return_code = process.wait()
+        if return_code != 0:
+            fail(f"AI CLI exited with code {return_code}")
+
+
+def run_with_skill(command_prefix: list[str], skill_instructions: str, prompt: str, output_file: Path) -> None:
+    full_prompt = f"""{skill_instructions}
 
 ---
 
 Apply the above skill instructions to this task:
 
-$1"
-    ai_run "$full_prompt"
-}
+{prompt}"""
+    run_ai(command_prefix, full_prompt, output_file)
 
-run_without_skill() {
-    ai_run "$1"
-}
 
-SKILL_NAME=$(jq -r '.skill_name' "$EVALS_JSON")
-EVAL_COUNT=$(jq '.evals | length' "$EVALS_JSON")
-TARGET_ID="${1:-}"
+def run_without_skill(command_prefix: list[str], prompt: str, output_file: Path) -> None:
+    run_ai(command_prefix, prompt, output_file)
 
-echo "=== $SKILL_NAME evals ($EVAL_COUNT total) ==="
 
-for i in $(seq 0 $((EVAL_COUNT - 1))); do
-    ID=$(jq -r ".evals[$i].id" "$EVALS_JSON")
-    NAME=$(jq -r ".evals[$i].name // \"eval-$ID\"" "$EVALS_JSON")
-    PROMPT=$(jq -r ".evals[$i].prompt" "$EVALS_JSON")
+def main() -> int:
+    data = load_evals()
+    skill_instructions = read_skill_instructions()
+    _tool_name, command_prefix = detect_ai_tool()
 
-    if [ -n "$TARGET_ID" ] && [ "$ID" != "$TARGET_ID" ]; then
-        continue
-    fi
+    skill_name = data.get("skill_name", "<skill-name>")
+    evals = data.get("evals", [])
+    target_id = sys.argv[1] if len(sys.argv) > 1 else None
 
-    EVAL_DIR="$OUTPUT_DIR/eval-$ID"
-    mkdir -p "$EVAL_DIR/with_skill" "$EVAL_DIR/without_skill"
+    print(f"=== {skill_name} evals ({len(evals)} total) ===")
 
-    echo ""
-    echo "=== [$ID] $NAME ==="
-    echo "Prompt: $PROMPT"
+    for index, eval_case in enumerate(evals):
+        eval_id = str(eval_case.get("id", index))
+        name = eval_case.get("name") or f"eval-{eval_id}"
+        prompt = eval_case.get("prompt")
 
-    echo ""
-    echo "--- with_skill ---"
-    run_with_skill "$PROMPT" | tee "$EVAL_DIR/with_skill/output.txt"
-    echo "--- end with_skill ---"
+        if target_id and eval_id != target_id:
+            continue
 
-    echo ""
-    echo "--- without_skill (baseline) ---"
-    run_without_skill "$PROMPT" | tee "$EVAL_DIR/without_skill/output.txt"
-    echo "--- end without_skill ---"
+        if not prompt:
+            fail(f"eval {eval_id} is missing prompt")
 
-    echo ""
-    echo "[results saved] $EVAL_DIR"
-done
+        eval_dir = OUTPUT_DIR / f"eval-{eval_id}"
+
+        print()
+        print(f"=== [{eval_id}] {name} ===")
+        print(f"Prompt: {prompt}")
+
+        print()
+        print("--- with_skill ---")
+        run_with_skill(command_prefix, skill_instructions, prompt, eval_dir / "with_skill" / "output.txt")
+        print("--- end with_skill ---")
+
+        print()
+        print("--- without_skill (baseline) ---")
+        run_without_skill(command_prefix, prompt, eval_dir / "without_skill" / "output.txt")
+        print("--- end without_skill ---")
+
+        print()
+        print(f"[results saved] {eval_dir}")
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
 ```
-
-Make the script executable: `chmod +x evals/run_evals.sh`.
