@@ -6,5 +6,5 @@
 
 ## 任務
 
-- [ ] T1: 實作 formatCurrency 函式（影響：`src/utils/currency.js`）
-- [ ] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
+- [x][bdd] T1: 實作 formatCurrency 函式（影響：`src/utils/currency.js`）
+- [x][bdd] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
