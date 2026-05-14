@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# [類型] 行為驗證測試（Behavior Validation Test）
+# [說明] 此腳本使用 fixture patch 呼叫真實 fleet-review 流程，
+#        並對輸出執行具名 assert（assert_contains / assert_not_contains）。
+#        屬於功能正確性驗證，不是 eval benchmark runner。
+# [注意] 不適用 MAINTENANCE.md 的 eval runner 規範（run_evals.py 命名、
+#        iteration-N/ 結構、timing.json、benchmark.json 等），請勿套用。
+# [對應] eval benchmark runner 請參考 fleet-review/evals/run_evals.py
 from __future__ import annotations
 
 from pathlib import Path

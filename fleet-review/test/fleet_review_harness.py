@@ -1,3 +1,8 @@
+# [類型] 行為驗證測試共用 Harness
+# [說明] 提供 Tracker、assert_contains、assert_not_contains、run_fleet_review 等工具，
+#        供 run-test.py（test/）與 run-eval.py（evals/）使用。
+#        屬於功能正確性驗證的基礎設施，不是 eval benchmark runner。
+# [注意] 不適用 MAINTENANCE.md 的 eval runner 規範，請勿套用。
 from __future__ import annotations
 
 import re
