@@ -50,17 +50,35 @@ if (Test-Path $localExt) {
     $skillMd = Join-Path $TARGET_DIR "SKILL.md"
     $anchor = 'references/schemas.md` for the full schema'
     $extLines = [System.IO.File]::ReadAllLines($localExt)
-    $sepIdx = ($extLines | Select-String -Pattern '^## 插入內容$' | Select-Object -First 1).LineNumber
-    if ($sepIdx) {
-        $insertContent = ($extLines | Select-Object -Skip $sepIdx) -join "`n"
-        $skillContent = [System.IO.File]::ReadAllText($skillMd)
-        $idx = $skillContent.IndexOf($anchor)
-        if ($idx -ge 0) {
-            $endOfLine = $skillContent.IndexOf("`n", $idx)
-            if ($endOfLine -lt 0) { $endOfLine = $skillContent.Length }
-            $skillContent = $skillContent.Substring(0, $endOfLine + 1) + $insertContent + "`n" + $skillContent.Substring($endOfLine + 1)
-            [System.IO.File]::WriteAllText($skillMd, $skillContent, [System.Text.Encoding]::UTF8)
-        }
+    $sepMatch = $extLines | Select-String -Pattern '^## 插入內容$' | Select-Object -First 1
+    if (-not $sepMatch) {
+        throw "找不到 local_extensions.md 的「## 插入內容」區塊，無法套用本地擴充。"
+    }
+
+    $insertContent = ($extLines | Select-Object -Skip $sepMatch.LineNumber) -join "`n"
+    if ([string]::IsNullOrWhiteSpace($insertContent)) {
+        throw "local_extensions.md 的「## 插入內容」區塊沒有可插入內容，無法套用本地擴充。"
+    }
+
+    $skillContent = [System.IO.File]::ReadAllText($skillMd)
+    $idx = $skillContent.IndexOf($anchor)
+    if ($idx -lt 0) {
+        throw "找不到 SKILL.md 錨點：$anchor，無法套用本地擴充。"
+    }
+
+    $endOfLine = $skillContent.IndexOf("`n", $idx)
+    if ($endOfLine -lt 0) { $endOfLine = $skillContent.Length }
+    $skillContent = $skillContent.Substring(0, $endOfLine + 1) + $insertContent + "`n" + $skillContent.Substring($endOfLine + 1)
+    $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+    [System.IO.File]::WriteAllText($skillMd, $skillContent, $utf8NoBom)
+    if (-not (Select-String -Path $skillMd -Pattern 'evals/run_evals\.sh' -Quiet)) {
+        throw "本地擴充未成功插入 SKILL.md。"
+    }
+    if (-not (Select-String -Path $skillMd -Pattern '本地規則：Codex eval runner' -Quiet)) {
+        throw "本地擴充缺少 Codex eval runner 本地規則。"
+    }
+    if (-not (Select-String -Path $skillMd -Pattern '--dangerously-bypass-approvals-and-sandbox' -Quiet)) {
+        throw "本地擴充缺少 Codex bypass sandbox 參數。"
     }
     Write-Host ">>> 已套用本地擴充 (local_extensions.md)"
 }

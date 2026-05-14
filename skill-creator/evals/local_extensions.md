@@ -41,6 +41,8 @@ jq --version
 ```
 
 為什麼使用 `jq`：Bash 沒有內建 JSON parser；Codex/Claude CLI 支援非互動式執行 prompt，但沒有原生的 `evals.json` runner。避免用 `grep`/`sed` 解析 JSON；使用 `jq` 才能穩定處理跳脫字元、陣列與缺失欄位。
+
+本地規則：Codex eval runner 必須固定使用 `--dangerously-bypass-approvals-and-sandbox`，不要改成 sandbox / approval 模式。這個 runner 預期只在一次性工作區或外部隔離環境中執行。
 ````
 
 Fill in the actual skill name in the header comment:
