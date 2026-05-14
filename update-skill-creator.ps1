@@ -55,7 +55,7 @@ if (Test-Path $localExt) {
         throw "找不到 local_extensions.md 的「## 插入內容」區塊，無法套用本地擴充。"
     }
 
-    $insertContent = ($extLines | Select-Object -Skip $sepMatch.LineNumber) -join "`n"
+    $insertContent = (($extLines | Select-Object -Skip $sepMatch.LineNumber) -join "`n").Trim("`r", "`n")
     if ([string]::IsNullOrWhiteSpace($insertContent)) {
         throw "local_extensions.md 的「## 插入內容」區塊沒有可插入內容，無法套用本地擴充。"
     }
@@ -68,7 +68,7 @@ if (Test-Path $localExt) {
 
     $endOfLine = $skillContent.IndexOf("`n", $idx)
     if ($endOfLine -lt 0) { $endOfLine = $skillContent.Length }
-    $skillContent = $skillContent.Substring(0, $endOfLine + 1) + $insertContent + "`n" + $skillContent.Substring($endOfLine + 1)
+    $skillContent = $skillContent.Substring(0, $endOfLine + 1) + "`n" + $insertContent + "`n" + $skillContent.Substring($endOfLine + 1)
     $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
     [System.IO.File]::WriteAllText($skillMd, $skillContent, $utf8NoBom)
     if (-not (Select-String -Path $skillMd -Pattern 'evals/run_evals\.py' -Quiet)) {

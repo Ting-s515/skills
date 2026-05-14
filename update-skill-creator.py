@@ -72,7 +72,7 @@ def apply_local_extension() -> None:
     if end_of_line < 0:
         end_of_line = len(skill_content)
 
-    updated = skill_content[: end_of_line + 1] + insert_content + "\n" + skill_content[end_of_line + 1 :]
+    updated = skill_content[: end_of_line + 1] + "\n" + insert_content + "\n" + skill_content[end_of_line + 1 :]
     skill_md.write_text(updated, encoding="utf-8", newline="\n")
 
     checks = {

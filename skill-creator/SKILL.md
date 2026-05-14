@@ -159,6 +159,7 @@ Save test cases to `evals/evals.json`. Don't write assertions yet — just the p
 ```
 
 See `references/schemas.md` for the full schema (including the `assertions` field, which you'll add later).
+
 When creating eval tests, also create `evals/run_evals.py` alongside `evals.json` so external tools (e.g. Codex CLI) can invoke the evals cross-platform. Use Python's built-in `json` module for JSON parsing; do not require `jq`.
 
 建立腳本前，先在腳本上方加入以下規則說明：
