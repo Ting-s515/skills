@@ -13,7 +13,7 @@ fi
 
 # Auto-detect AI tool: prefer codex if available, fall back to claude
 if command -v codex &>/dev/null; then
-    run_prompt() { codex --dangerously-bypass-approvals-and-sandbox "$1"; }
+    run_prompt() { codex exec --dangerously-bypass-approvals-and-sandbox "$1"; }
     echo "[tool] codex"
 elif command -v claude &>/dev/null; then
     run_prompt() { claude -p "$1"; }
