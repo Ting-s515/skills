@@ -40,7 +40,8 @@
       "Bash(mkdir -p 'C:\\\\Users\\\\theon.lin\\\\.claude\\\\skills\\\\apply-workspace\\\\iteration-1\\\\resume-partial\\\\with_skill')",
       "Bash(mkdir -p 'C:\\\\Users\\\\theon.lin\\\\.claude\\\\skills\\\\apply-workspace\\\\iteration-1\\\\skip-manual\\\\with_skill')",
       "Bash(cp -r 'C:\\\\Users\\\\theon.lin\\\\.claude\\\\skills\\\\apply\\\\evals\\\\files\\\\workspace-fresh\\\\.' 'C:\\\\Users\\\\theon.lin\\\\.claude\\\\skills\\\\apply-workspace\\\\iteration-1\\\\fresh-all-tasks\\\\with_skill\" *)",
-      "Bash(cp -r 'C:\\\\Users\\\\theon.lin\\\\.claude\\\\skills\\\\apply\\\\evals\\\\files\\\\workspace-manual\\\\.' 'C:\\\\Users\\\\theon.lin\\\\.claude\\\\skills\\\\apply-workspace\\\\iteration-1\\\\skip-manual\\\\with_skill\" *)"
+      "Bash(cp -r 'C:\\\\Users\\\\theon.lin\\\\.claude\\\\skills\\\\apply\\\\evals\\\\files\\\\workspace-manual\\\\.' 'C:\\\\Users\\\\theon.lin\\\\.claude\\\\skills\\\\apply-workspace\\\\iteration-1\\\\skip-manual\\\\with_skill\" *)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   }
 }
