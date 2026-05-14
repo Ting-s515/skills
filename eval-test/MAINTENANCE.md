@@ -12,6 +12,18 @@
 - 每個 run 會保存可回放的輸出、`timing.json`、`grading.json`。
 - 所有 run 完成後再彙整為 `benchmark.json` 與 reviewer HTML。
 
+## 命名規範
+
+| 項目 | 規定命名 | 說明 |
+|---|---|---|
+| eval runner 腳本 | `evals/run_evals.py` | 固定此檔名，`validate_structure.py` 依賴此路徑進行結構驗證 |
+| eval 定義檔 | `evals/evals.json` | runner 讀取的 eval case 清單 |
+| 輸出根目錄 | `evals/eval-runs/` | 所有 iteration 輸出放在此目錄下 |
+| 每輪輸出目錄 | `iteration-N/` | N 從 1 開始遞增，每次執行建立新的 |
+| eval case 目錄 | `<eval-name>/` | 使用 eval 的 `name` 欄位，經 `safe_name()` 轉換後直接作為目錄名，**不得加 id 前綴** |
+
+> 新增 skill 時，eval runner 腳本必須命名為 `run_evals.py`，否則 `validate_structure.py` 將靜默跳過（SKIP）而不驗證。
+
 ## 維護原則
 
 1. **每個 eval case 必須彼此隔離**
