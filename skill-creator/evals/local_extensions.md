@@ -32,7 +32,34 @@ Eval runner 會使用 `jq` 讀取 `evals.json`。
 - macOS: `brew install jq`
 - Ubuntu/Debian: `sudo apt-get install jq`
 - Fedora: `sudo dnf install jq`
-- Windows: `winget install jqlang.jq`
+- Windows/Git Bash: 交由 AI 統一設定，不要求使用者手動處理。
+
+Windows/Git Bash 成功設定紀錄（通用化，不寫死使用者名稱）：
+
+1. 確認 `winget` 已安裝 `jq`：
+   ```powershell
+   winget list jqlang.jq
+   ```
+2. 由 AI 在 PowerShell 找出 `jq.exe` 實際位置，不要假設 Windows 使用者名稱：
+   ```powershell
+   Get-ChildItem -Path "$env:LOCALAPPDATA\Microsoft\WinGet\Packages" -Recurse -Filter jq.exe -ErrorAction SilentlyContinue |
+     Select-Object -First 1 -ExpandProperty FullName
+   ```
+3. 將找到的 Windows 目錄轉成 Git Bash 可解析路徑，例如：
+   ```text
+   C:\Users\<user>\AppData\Local\Microsoft\WinGet\Packages\<jq-package>\jq.exe
+   → /c/Users/<user>/AppData/Local/Microsoft/WinGet/Packages/<jq-package>
+   ```
+4. 修正目前使用者的 `~/.bashrc`，加入轉換後的 Git Bash 目錄：
+   ```bash
+   export PATH="$PATH:<git-bash-jq-directory>"
+   ```
+5. 若 `.bashrc` 內有 Windows 路徑被斷行或重複追加，先整理成單行且去重。
+6. 用新的 Git Bash shell 驗證：
+   ```bash
+   jq --version
+   command -v jq
+   ```
 
 確認安裝是否成功：
 
@@ -61,7 +88,7 @@ OUTPUT_DIR="$SCRIPT_DIR/../eval-results"
 
 if ! command -v jq &>/dev/null; then
     echo "Error: jq is required"
-    echo "Install: brew install jq | sudo apt-get install jq | sudo dnf install jq | winget install jqlang.jq"
+    echo "Install jq first. On Windows/Git Bash, ask AI to configure ~/.bashrc with the WinGet jq.exe directory."
     exit 1
 fi
 
