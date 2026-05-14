@@ -44,4 +44,25 @@ if ((Get-ChildItem $EVALS_BACKUP -ErrorAction SilentlyContinue).Count -gt 0) {
 Pop-Location
 Remove-Item -Recurse -Force $TMP_DIR, $EVALS_BACKUP
 
+# 套用本地擴充（evals/local_extensions.md「## 插入內容」之後 → 插入 SKILL.md 錨點之後）
+$localExt = Join-Path $evalsDir "local_extensions.md"
+if (Test-Path $localExt) {
+    $skillMd = Join-Path $TARGET_DIR "SKILL.md"
+    $anchor = 'references/schemas.md` for the full schema'
+    $extLines = [System.IO.File]::ReadAllLines($localExt)
+    $sepIdx = ($extLines | Select-String -Pattern '^## 插入內容$' | Select-Object -First 1).LineNumber
+    if ($sepIdx) {
+        $insertContent = ($extLines | Select-Object -Skip $sepIdx) -join "`n"
+        $skillContent = [System.IO.File]::ReadAllText($skillMd)
+        $idx = $skillContent.IndexOf($anchor)
+        if ($idx -ge 0) {
+            $endOfLine = $skillContent.IndexOf("`n", $idx)
+            if ($endOfLine -lt 0) { $endOfLine = $skillContent.Length }
+            $skillContent = $skillContent.Substring(0, $endOfLine + 1) + $insertContent + "`n" + $skillContent.Substring($endOfLine + 1)
+            [System.IO.File]::WriteAllText($skillMd, $skillContent, [System.Text.Encoding]::UTF8)
+        }
+    }
+    Write-Host ">>> 已套用本地擴充 (local_extensions.md)"
+}
+
 Write-Host ">>> 完成！skill-creator 已更新至最新版本。"

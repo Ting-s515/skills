@@ -34,4 +34,24 @@ mkdir -p "$TARGET_DIR/evals/files"
 cd ~
 rm -rf "$TMP_DIR" "$EVALS_BACKUP"
 
+# 套用本地擴充（evals/local_extensions.md「## 插入內容」之後 → 插入 SKILL.md 錨點之後）
+LOCAL_EXT="$TARGET_DIR/evals/local_extensions.md"
+if [ -f "$LOCAL_EXT" ]; then
+    SKILL_MD="$TARGET_DIR/SKILL.md"
+    awk -v extfile="$LOCAL_EXT" '
+        /references\/schemas\.md.*for the full schema/ {
+            print
+            found_sep = 0
+            while ((getline line < extfile) > 0) {
+                if (!found_sep && line == "## 插入內容") { found_sep = 1; next }
+                if (found_sep) print line
+            }
+            close(extfile)
+            next
+        }
+        { print }
+    ' "$SKILL_MD" > "$SKILL_MD.tmp" && mv "$SKILL_MD.tmp" "$SKILL_MD"
+    echo ">>> 已套用本地擴充 (local_extensions.md)"
+fi
+
 echo ">>> 完成！skill-creator 已更新至最新版本。"
