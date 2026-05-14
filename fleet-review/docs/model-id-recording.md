@@ -105,7 +105,7 @@ Codex actual cloud model: gpt-5.5
 3. Codex 輸出後由 wrapper 追加 `CODEX_REQUESTED_MODEL: gpt-5.5`。
 4. 內部仍可保留 `CODEX_MODEL_SOURCE`、`CODEX_CLI_HEADER_MODEL`、`CODEX_CLI_VERSION` 作為 debug metadata，但不可視為權威雲端模型 ID，也不可預設輸出給一般使用者。
 5. 最終報告使用 `Codex（requested: gpt-5.5）`，避免讓使用者誤以為已取得雲端實際 response metadata。
-6. `fleet-review/test/run-test.sh` 與 `fleet-review/evals/run-eval.sh` 皆驗證一般輸出包含 `CODEX_REQUESTED_MODEL: gpt-5.5`，且不包含 `CODEX_MODEL_SOURCE:`。
+6. `fleet-review/test/run-test.py` 與 `fleet-review/evals/run-eval.py` 皆驗證一般輸出包含 `CODEX_REQUESTED_MODEL: gpt-5.5`，且不包含 `CODEX_MODEL_SOURCE:`。
 
 ## 測試覆蓋
 

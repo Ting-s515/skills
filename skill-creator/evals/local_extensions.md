@@ -5,7 +5,7 @@
 
 ## 運作流程
 
-1. 執行 `.\update-skill-creator.ps1`（或 `.sh`）→ 官方最新 SKILL.md 覆蓋進來
+1. 執行 `python .\update-skill-creator.py`（或 `.\update-skill-creator.ps1`）→ 官方最新 SKILL.md 覆蓋進來
 2. `evals/local_extensions.md` 因 `evals/` 保護機制而存活
 3. 腳本偵測錨點 `references/schemas.md` for the full schema，將「插入內容」插入其後
 4. 結果：官方更新 + 本地擴充同時保留

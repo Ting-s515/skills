@@ -4,15 +4,15 @@
 
 `local_extensions.md` 的存在目的：讓外部工具（Codex CLI）能在不依賴 Claude Code 子代理機制的情況下，執行與官方 skill-creator 等價的 eval 比對測試。
 
-**Why:** Claude Code 的官方 eval 流程依賴子代理並行執行，Codex CLI 沒有這個機制。`run_evals.sh` 作為 shell 橋接層，讓 Codex 也能獨立跑完整的 with_skill vs without_skill 比對。
+**Why:** Claude Code 的官方 eval 流程依賴子代理並行執行，Codex CLI 沒有這個機制。`run_evals.py` 作為跨平台橋接層，讓 Codex 也能獨立跑完整的 with_skill vs without_skill 比對。
 
-**修改原則：** 任何對 `run_evals.sh` 的修改都必須維持此對等性，不能讓兩種執行環境的行為產生語意差距。
+**修改原則：** 任何對 `run_evals.py` 的修改都必須維持此對等性，不能讓兩種執行環境的行為產生語意差距。
 
 ---
 
 ## 官方行為 vs 本地擴充對照表
 
-| 面向 | 官方 SKILL.md | run_evals.sh（本地擴充）|
+| 面向 | 官方 SKILL.md | run_evals.py（本地擴充）|
 |------|--------------|----------------------|
 | 執行方式 | Claude Code 子代理（並行） | Codex/claude CLI（循序） |
 | with_skill | 子代理載入 skill path | 注入完整 SKILL.md 到 prompt |
@@ -48,4 +48,4 @@
 - `evals/local_extensions.md` — 本地擴充定義（受保護，update-skill-creator 不覆蓋）
 - `evals/MAINTENANCE.md` — 本文件，維護指南
 - `SKILL.md` — 官方技能主檔（update-skill-creator 會覆蓋，但插入點保留本地擴充）
-- `update-skill-creator.ps1` / `.sh` — 更新腳本，負責合併官方更新與本地擴充
+- `update-skill-creator.py` / `.ps1` — 更新腳本，負責合併官方更新與本地擴充
