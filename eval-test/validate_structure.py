@@ -245,7 +245,7 @@ def main() -> int:
         status = "PASS" if passed else "FAIL"
         print(f"  {status:<6}  {skill}")
         for msg in errors:
-            print(f"           ✗ {msg}")
+            print(f"           x {msg}")
 
         if not passed:
             all_passed = False
