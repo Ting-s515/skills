@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-# [類型] skill-creator 內部工具（Trigger Evaluation）
-# [說明] 測試 skill description 是否能讓 Claude 正確觸發（讀取 skill），
-#        屬於 skill-creator 生態系的內部基礎設施。
-# [注意] 雖然檔名與 evals/run_evals.py 相似，但兩者完全不同：
-#        此腳本不產出 iteration-N/ 結構，不適用 MAINTENANCE.md eval runner 規範，
-#        請勿嘗試套用或升級為標準 run_evals.py 格式。
 """Run trigger evaluation for a skill description.
 
 Tests whether a skill's description causes Claude to trigger (read the skill)
