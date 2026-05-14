@@ -195,7 +195,7 @@ def run_eval_case(
     if not prompt:
         raise ValueError(f"eval {eval_id} is missing prompt")
 
-    eval_dir = iteration_dir / f"{eval_id}-{safe_name(name)}"
+    eval_dir = iteration_dir / safe_name(name)
     write_json(
         eval_dir / "eval_metadata.json",
         {
@@ -249,7 +249,7 @@ def failed_result(
 ) -> dict[str, Any]:
     eval_id = str(eval_case.get("id", index))
     name = eval_case.get("name") or f"eval-{eval_id}"
-    run_dir = iteration_dir / f"{eval_id}-{safe_name(name)}" / "with_skill"
+    run_dir = iteration_dir / safe_name(name) / "with_skill"
     run_dir.mkdir(parents=True, exist_ok=True)
 
     log_path = run_dir / "output.log"
