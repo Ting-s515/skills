@@ -10,7 +10,7 @@ Write-Host ">>> 拉取最新 skill-creator..."
 New-Item -ItemType Directory -Force -Path $TMP_DIR | Out-Null
 git clone --depth=1 --filter=blob:none --sparse $REPO_URL $TMP_DIR --quiet
 Push-Location $TMP_DIR
-git sparse-checkout set $SKILL_PATH --quiet
+git sparse-checkout set $SKILL_PATH
 
 Write-Host ">>> 覆蓋本地 $TARGET_DIR ..."
 

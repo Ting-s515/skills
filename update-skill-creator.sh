@@ -12,7 +12,7 @@ echo ">>> 拉取最新 skill-creator..."
 
 git clone --depth=1 --filter=blob:none --sparse "$REPO_URL" "$TMP_DIR" --quiet
 cd "$TMP_DIR"
-git sparse-checkout set "$SKILL_PATH" --quiet
+git sparse-checkout set "$SKILL_PATH"
 
 echo ">>> 覆蓋本地 $TARGET_DIR ..."
 
