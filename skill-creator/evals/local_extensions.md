@@ -50,11 +50,14 @@ Fill in the actual skill name in the header comment:
 ```bash
 #!/usr/bin/env bash
 # Run <skill-name> behavior evals using codex or claude CLI
+# Each eval runs twice: with_skill (SKILL.md injected) and without_skill (baseline)
 # Usage: ./run_evals.sh [eval-id]   — omit id to run all
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EVALS_JSON="$SCRIPT_DIR/evals.json"
+SKILL_MD="$SCRIPT_DIR/../SKILL.md"
+OUTPUT_DIR="$SCRIPT_DIR/../eval-results"
 
 if ! command -v jq &>/dev/null; then
     echo "Error: jq is required"
@@ -62,17 +65,39 @@ if ! command -v jq &>/dev/null; then
     exit 1
 fi
 
+if [ ! -f "$SKILL_MD" ]; then
+    echo "Error: SKILL.md not found at $SKILL_MD"
+    exit 1
+fi
+
+SKILL_INSTRUCTIONS="$(cat "$SKILL_MD")"
+
 # Auto-detect AI tool: prefer codex if available, fall back to claude
 if command -v codex &>/dev/null; then
-    run_prompt() { codex exec --dangerously-bypass-approvals-and-sandbox "$1"; }
+    ai_run() { codex exec --dangerously-bypass-approvals-and-sandbox "$1"; }
     echo "[tool] codex"
 elif command -v claude &>/dev/null; then
-    run_prompt() { claude -p "$1"; }
+    ai_run() { claude -p "$1"; }
     echo "[tool] claude"
 else
     echo "Error: neither codex nor claude CLI found"
     exit 1
 fi
+
+run_with_skill() {
+    local full_prompt="$SKILL_INSTRUCTIONS
+
+---
+
+Apply the above skill instructions to this task:
+
+$1"
+    ai_run "$full_prompt"
+}
+
+run_without_skill() {
+    ai_run "$1"
+}
 
 SKILL_NAME=$(jq -r '.skill_name' "$EVALS_JSON")
 EVAL_COUNT=$(jq '.evals | length' "$EVALS_JSON")
@@ -89,13 +114,25 @@ for i in $(seq 0 $((EVAL_COUNT - 1))); do
         continue
     fi
 
+    EVAL_DIR="$OUTPUT_DIR/eval-$ID"
+    mkdir -p "$EVAL_DIR/with_skill" "$EVAL_DIR/without_skill"
+
     echo ""
-    echo "--- [$ID] $NAME ---"
+    echo "=== [$ID] $NAME ==="
     echo "Prompt: $PROMPT"
+
     echo ""
-    run_prompt "$PROMPT"
+    echo "--- with_skill ---"
+    run_with_skill "$PROMPT" | tee "$EVAL_DIR/with_skill/output.txt"
+    echo "--- end with_skill ---"
+
     echo ""
-    echo "--- end [$ID] ---"
+    echo "--- without_skill (baseline) ---"
+    run_without_skill "$PROMPT" | tee "$EVAL_DIR/without_skill/output.txt"
+    echo "--- end without_skill ---"
+
+    echo ""
+    echo "[results saved] $EVAL_DIR"
 done
 ```
 
