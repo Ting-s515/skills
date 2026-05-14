@@ -1,13 +1,40 @@
 #!/usr/bin/env python3
-"""Validate that each skill's run_evals.py produces output conforming to
-the eval-test MAINTENANCE.md structure.
+"""
+==============================================================
+ eval 結構驗證工具 — validate_structure.py
+==============================================================
 
-Runs each script with --dry-run to generate artifacts without invoking
-the AI CLI, then checks the directory layout and JSON field completeness.
+【用途】
+  驗證各 skill 的 run_evals.py 在執行後，產出的目錄與檔案結構
+  是否符合 eval-test/MAINTENANCE.md 所定義的維護風格。
 
-Usage:
-  python eval-test/validate_structure.py            # check all skills
-  python eval-test/validate_structure.py propose    # check one skill
+  不依賴文檔人工比對，改以程式自動執行 --dry-run 並檢查：
+    - iteration-N/ 目錄是否建立
+    - benchmark.json 欄位是否齊備
+    - 每個 eval case 的 eval_metadata.json、with_skill/、without_skill/ 是否存在
+    - timing.json、output.log、last-message.md 是否齊備
+    - eval 目錄名是否為純 <eval-name>（無 id 前綴）
+
+【使用時機】
+  - 修改任何 skill 的 run_evals.py 之後
+  - 新增 skill 並建立 run_evals.py 之後
+  - MAINTENANCE.md 規範有異動，想確認所有腳本仍對齊時
+  - CI/CD 流程中作為結構回歸測試
+
+【使用方式】
+  # 驗證全部 skill
+  python eval-test/validate_structure.py
+
+  # 只驗證單一 skill
+  python eval-test/validate_structure.py propose
+
+  # 從專案根目錄執行（skills/）
+  python eval-test/validate_structure.py llm-repo
+
+【退出碼】
+  0 = 全部通過
+  1 = 至少一個 skill 不符合結構規範
+==============================================================
 """
 
 from __future__ import annotations
