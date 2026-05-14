@@ -41,7 +41,14 @@
       "Bash(mkdir -p 'C:\\\\Users\\\\theon.lin\\\\.claude\\\\skills\\\\apply-workspace\\\\iteration-1\\\\skip-manual\\\\with_skill')",
       "Bash(cp -r 'C:\\\\Users\\\\theon.lin\\\\.claude\\\\skills\\\\apply\\\\evals\\\\files\\\\workspace-fresh\\\\.' 'C:\\\\Users\\\\theon.lin\\\\.claude\\\\skills\\\\apply-workspace\\\\iteration-1\\\\fresh-all-tasks\\\\with_skill\" *)",
       "Bash(cp -r 'C:\\\\Users\\\\theon.lin\\\\.claude\\\\skills\\\\apply\\\\evals\\\\files\\\\workspace-manual\\\\.' 'C:\\\\Users\\\\theon.lin\\\\.claude\\\\skills\\\\apply-workspace\\\\iteration-1\\\\skip-manual\\\\with_skill\" *)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(mv ~/.claude/update-skill-creator.sh ~/. claude/skills/update-skill-creator.sh)",
+      "Bash(mv \"C:/Users/theon.lin/.claude/update-skill-creator.sh\" \"C:/Users/theon.lin/.claude/skills/update-skill-creator.sh\")",
+      "Bash(cp -r ~/.claude/skills/skill-creator/skills/skill-creator/. /tmp/sc-fix/)",
+      "Bash(rm -f ~/.claude/skills/skill-creator/LICENSE)",
+      "Bash(rm -f ~/.claude/skills/skill-creator/README.md)",
+      "Bash(rm -rf ~/.claude/skills/skill-creator/.claude-plugin)",
+      "Bash(rm -rf ~/.claude/skills/skill-creator/skills)"
     ]
   }
 }
