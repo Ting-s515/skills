@@ -1,4 +1,6 @@
 # 從 anthropics/claude-plugins-official 拉取最新 skill-creator 覆蓋本地
+# ./update-skill-creator.ps1
+
 $ErrorActionPreference = "Stop"
 
 $REPO_URL  = "https://github.com/anthropics/claude-plugins-official.git"
