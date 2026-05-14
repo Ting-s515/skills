@@ -18,7 +18,32 @@
 
 ## 插入內容
 
-Also create `evals/run_evals.sh` alongside `evals.json` so external tools (e.g. Codex CLI) can invoke the evals via shell. Fill in the actual skill name in the header comment:
+Also create `evals/run_evals.sh` alongside `evals.json` so external tools (e.g. Codex CLI) can invoke the evals via shell. Use `jq` as an explicit dependency for JSON parsing.
+
+建立腳本前，先在腳本上方加入此前置需求說明：
+
+````markdown
+### Eval runner 前置需求
+
+Eval runner 會使用 `jq` 讀取 `evals.json`。
+
+執行 `evals/run_evals.sh` 前，請先安裝 `jq`：
+
+- macOS: `brew install jq`
+- Ubuntu/Debian: `sudo apt-get install jq`
+- Fedora: `sudo dnf install jq`
+- Windows: `winget install jqlang.jq`
+
+確認安裝是否成功：
+
+```bash
+jq --version
+```
+
+為什麼使用 `jq`：Bash 沒有內建 JSON parser；Codex/Claude CLI 支援非互動式執行 prompt，但沒有原生的 `evals.json` runner。避免用 `grep`/`sed` 解析 JSON；使用 `jq` 才能穩定處理跳脫字元、陣列與缺失欄位。
+````
+
+Fill in the actual skill name in the header comment:
 
 ```bash
 #!/usr/bin/env bash
@@ -30,13 +55,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EVALS_JSON="$SCRIPT_DIR/evals.json"
 
 if ! command -v jq &>/dev/null; then
-    echo "Error: jq is required (brew install jq / apt install jq)"
+    echo "Error: jq is required"
+    echo "Install: brew install jq | sudo apt-get install jq | sudo dnf install jq | winget install jqlang.jq"
     exit 1
 fi
 
 # Auto-detect AI tool: prefer codex if available, fall back to claude
 if command -v codex &>/dev/null; then
-    run_prompt() { codex --dangerously-bypass-approvals-and-sandbox "$1"; }
+    run_prompt() { codex exec --dangerously-bypass-approvals-and-sandbox "$1"; }
     echo "[tool] codex"
 elif command -v claude &>/dev/null; then
     run_prompt() { claude -p "$1"; }
