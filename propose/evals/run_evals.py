@@ -36,19 +36,19 @@ def fail(message: str) -> None:
     raise SystemExit(1)
 
 
-def detect_runner() -> list[str]:
+def detect_runner() -> tuple[str, list[str]]:
     codex = shutil.which("codex")
     if codex:
         print("[tool] codex")
-        return [codex, "exec", "--dangerously-bypass-approvals-and-sandbox"]
+        return "codex", [codex, "exec", "--dangerously-bypass-approvals-and-sandbox"]
 
     claude = shutil.which("claude")
     if claude:
         print("[tool] claude")
-        return [claude, "-p"]
+        return "claude", [claude, "-p"]
 
     fail("neither codex nor claude CLI found")
-    return []  # unreachable, satisfies type checker
+    return "", []  # unreachable, satisfies type checker
 
 
 def next_iteration_dir() -> Path:
@@ -76,6 +76,7 @@ def kill_process_tree(pid: int) -> None:
 
 
 def run_single(
+    runner_name: str,
     command_prefix: list[str],
     prompt: str,
     run_dir: Path,
@@ -86,16 +87,25 @@ def run_single(
     last_message_path = run_dir / "last-message.md"
     timing_path = run_dir / "timing.json"
 
+    # codex supports --output-last-message to write the final assistant turn directly
+    if runner_name == "codex":
+        cmd = [*command_prefix, "--output-last-message", str(last_message_path), prompt]
+    else:
+        cmd = [*command_prefix, prompt]
+
     start_dt = datetime.now(timezone.utc)
     start_ts = time.monotonic()
     timed_out = False
     exit_code: int | None = None
 
     with log_path.open("w", encoding="utf-8") as log_file:
+        log_file.write("$ " + " ".join(cmd) + "\n\n")
+        log_file.flush()
         process = subprocess.Popen(
-            [*command_prefix, prompt],
+            cmd,
             stdout=log_file,
             stderr=subprocess.STDOUT,
+            start_new_session=sys.platform != "win32",
         )
         try:
             exit_code = process.wait(timeout=timeout)
@@ -110,15 +120,12 @@ def run_single(
 
     duration = time.monotonic() - start_ts
 
-    try:
-        content = log_path.read_text(encoding="utf-8", errors="replace")
-        lines = content.strip().splitlines()
-        last_message_path.write_text(
-            "\n".join(lines[-80:]) if lines else "",
-            encoding="utf-8",
-        )
-    except Exception:
-        last_message_path.write_text("", encoding="utf-8")
+    if not last_message_path.exists():
+        try:
+            content = log_path.read_text(encoding="utf-8", errors="replace")
+            last_message_path.write_text(content, encoding="utf-8")
+        except Exception:
+            last_message_path.write_text("", encoding="utf-8")
 
     timing_path.write_text(
         json.dumps(
@@ -147,6 +154,7 @@ def run_single(
 def run_eval_case(
     eval_case: dict,
     iteration_dir: Path,
+    runner_name: str,
     command_prefix: list[str],
     timeout: int,
     configurations: list[str],
@@ -202,7 +210,7 @@ def run_eval_case(
         )
 
         print(f"  [start] {name}/{config}")
-        result = run_single(command_prefix, effective_prompt, run_dir, timeout)
+        result = run_single(runner_name, command_prefix, effective_prompt, run_dir, timeout)
 
         status = (
             "timeout" if result["timed_out"]
@@ -333,7 +341,7 @@ def main() -> int:
         if not evals:
             fail(f"eval id '{opts['target_id']}' not found")
 
-    command_prefix = detect_runner()
+    runner_name, command_prefix = detect_runner()
 
     EVAL_RUNS_DIR.mkdir(parents=True, exist_ok=True)
     iteration_dir = next_iteration_dir()
@@ -361,6 +369,7 @@ def main() -> int:
             args=(
                 eval_case,
                 iteration_dir,
+                runner_name,
                 command_prefix,
                 opts["timeout"],
                 configurations,
@@ -384,6 +393,11 @@ def main() -> int:
         time.sleep(0.5)
         running = [t for t in running if t.is_alive()]
 
+    def sort_key(r: dict) -> tuple[int, int | str]:
+        eid = str(r["eval_id"])
+        return (0, int(eid)) if eid.isdigit() else (1, eid)
+
+    results.sort(key=sort_key)
     all_passed = print_summary(results)
     write_benchmark(iteration_dir, results)
 
