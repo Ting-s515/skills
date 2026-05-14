@@ -48,7 +48,8 @@
       "Bash(rm -f ~/.claude/skills/skill-creator/LICENSE)",
       "Bash(rm -f ~/.claude/skills/skill-creator/README.md)",
       "Bash(rm -rf ~/.claude/skills/skill-creator/.claude-plugin)",
-      "Bash(rm -rf ~/.claude/skills/skill-creator/skills)"
+      "Bash(rm -rf ~/.claude/skills/skill-creator/skills)",
+      "WebFetch(domain:developers.openai.com)"
     ]
   }
 }

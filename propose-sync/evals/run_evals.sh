@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run behavior evals using claude CLI
+# Run propose-sync behavior evals using codex or claude CLI
 # Usage: ./run_evals.sh [eval-id]   — omit id to run all
 set -e
 
@@ -8,6 +8,18 @@ EVALS_JSON="$SCRIPT_DIR/evals.json"
 
 if ! command -v jq &>/dev/null; then
     echo "Error: jq is required (brew install jq / apt install jq)"
+    exit 1
+fi
+
+# Auto-detect AI tool: prefer codex if available, fall back to claude
+if command -v codex &>/dev/null; then
+    run_prompt() { codex --dangerously-bypass-approvals-and-sandbox "$1"; }
+    echo "[tool] codex"
+elif command -v claude &>/dev/null; then
+    run_prompt() { claude -p "$1"; }
+    echo "[tool] claude"
+else
+    echo "Error: neither codex nor claude CLI found"
     exit 1
 fi
 
@@ -30,7 +42,7 @@ for i in $(seq 0 $((EVAL_COUNT - 1))); do
     echo "--- [$ID] $NAME ---"
     echo "Prompt: $PROMPT"
     echo ""
-    claude -p "$PROMPT"
+    run_prompt "$PROMPT"
     echo ""
     echo "--- end [$ID] ---"
 done
