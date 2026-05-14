@@ -5,10 +5,11 @@
 
 ## 運作流程
 
-1. 執行 `python .\update-skill-creator.py`（或 `.\update-skill-creator.ps1`）→ 官方最新 SKILL.md 覆蓋進來
-2. `evals/local_extensions.md` 因 `evals/` 保護機制而存活
-3. 腳本偵測錨點 `references/schemas.md` for the full schema，將「插入內容」插入其後
-4. 結果：官方更新 + 本地擴充同時保留
+1. 先確認 Python 可用：`python --version`（Windows 若不可用，改用 `py --version`）
+2. 執行 `python .\update-skill-creator.py`（Windows 可改用 `py .\update-skill-creator.py`；或執行 `.\update-skill-creator.ps1`）→ 官方最新 SKILL.md 覆蓋進來
+3. `evals/local_extensions.md` 因 `evals/` 保護機制而存活
+4. 腳本偵測錨點 `references/schemas.md` for the full schema，將「插入內容」插入其後
+5. 結果：官方更新 + 本地擴充同時保留
 
 ## 新增擴充方式
 
@@ -20,25 +21,9 @@
 
 When creating eval tests, also create `evals/run_evals.py` alongside `evals.json` so external tools (e.g. Codex CLI) can invoke the evals cross-platform. Use Python's built-in `json` module for JSON parsing; do not require `jq`.
 
-建立腳本前，先在腳本上方加入此前置需求說明：
+建立腳本前，先在腳本上方加入以下規則說明：
 
 ````markdown
-### Eval runner 前置需求
-
-Eval runner 會使用 Python 讀取 `evals.json` 並執行 Codex/Claude CLI。
-
-執行 `evals/run_evals.py` 前，請先確認 Python 可用：
-
-```bash
-python --version
-```
-
-Windows 若 `python` 不可用，改用：
-
-```powershell
-py --version
-```
-
 為什麼使用 Python：Python 可在 Windows/macOS/Linux 以相同程式碼讀取 JSON、處理路徑並呼叫 CLI；避免依賴 Bash、`jq`、Git Bash 或平台特定 shell 語法。
 
 本地規則：Codex eval runner 必須固定使用 `--dangerously-bypass-approvals-and-sandbox`，不要改成 sandbox / approval 模式。這個 runner 預期只在一次性工作區或外部隔離環境中執行。
