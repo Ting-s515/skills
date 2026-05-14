@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 從 anthropics/claude-plugins-official 拉取最新 skill-creator 覆蓋本地
-
+# ./update-skill-creator.ps1
 set -e
 
 REPO_URL="https://github.com/anthropics/claude-plugins-official.git"
