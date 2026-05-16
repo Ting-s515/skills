@@ -4,7 +4,7 @@ description: >
   當使用者提供 AC.md（Acceptance Criteria 驗收準則文件），並要求產出測試骨架時，必須載入此技能。
   從 AC 文件的每一條 Given/When/Then 直接對應產出測試案例，測試名稱帶 AC 編號（AC001_Given..._When..._Should...），
   作為實作前的行為邊界確認，所有測試預設失敗（紅燈），等實作完成後補上真實斷言。
-  支援 TypeScript、C#、Java、Python，依照使用者指定語言或詢問後產出對應語言的測試骨架。
+  支援多種語言（TypeScript、C#、Java、Python、Flutter/Dart 等），依照使用者指定語言或詢問後產出對應語言的測試骨架；無對應 reference 的語言則以 LLM 通用知識產出。
   觸發情境包含但不限於：「依照 AC 產出測試」、「ac-to-test」、「根據 AC.md 寫測試」。
   即使使用者只說「先把 AC 轉成測試」，只要有提供 AC.md 路徑或貼上 AC 內容，也應載入此技能。
   注意：此技能用於實作前（無實作檔）；若實作已完成需補測試，請使用 bdd-unit-test 技能。
@@ -24,7 +24,7 @@ description: >
 ## 輸入
 
 - **AC.md 路徑**（或直接貼上 AC 文件內容）
-- **目標語言**（TypeScript / C# / Java / Python）— 若未指定，詢問使用者
+- **目標語言**（TypeScript / C# / Java / Python / Flutter/Dart，或其他語言）— 若未指定，詢問使用者
 
 ## 執行步驟
 
@@ -36,24 +36,37 @@ description: >
 
 ## 語言判別規則
 
+根據使用者指定語言（或副檔名）判別，分兩條路徑處理：
+
+### 已知語言（有 reference 骨架）
+
 | 語言 | 載入 Reference | 輸出位置 | 檔案命名 |
 |------|--------------|---------|---------|
 | TypeScript | `references/typescript-skeleton.test.ts` | 同目錄的 `__tests__/` | `{feature-name}.test.ts` |
 | C# | `references/csharp-skeleton-test.cs` | 對應的 `.Tests` 專案資料夾 | `{FeatureName}Test.cs` |
 | Java | `references/java-skeleton-test.java` | `src/test/java/` 對應套件路徑 | `{FeatureName}Test.java` |
 | Python | `references/python-skeleton-test.py` | `tests/` 資料夾，保持與 src 相同結構 | `test_{feature_name}.py` |
+| Flutter/Dart | `references/dart-skeleton-test.dart` | `test/` 資料夾，保持與 lib 相同結構 | `{feature_name}_test.dart` |
 
 **執行說明：**
 - 判別語言後，**只讀取對應語言的 reference 檔**
 - 依照 reference 的骨架格式，將 AC 條目逐一對應填入
 
+### 未知語言（無 reference 骨架，fallback）
+
+語言不在上表時，直接以 LLM 通用知識處理：
+- 根據語言推斷其主流測試框架（如 `.go` → `testing` 套件、`.rb` → RSpec、`.swift` → XCTest）
+- 套用相同的 AC 編號命名規則（`AC001_Given..._When..._Should...`）與紅燈佔位原則
+- 依該語言慣例決定檔案命名與輸出位置
+- 不讀取任何 reference 檔案，不需告知使用者
+
 ## 檔案命名轉換
 
 去掉 `AC-` 前綴，依語言慣例轉換：
 
-| 輸入 AC 檔 | TypeScript | C# | Java | Python |
-|-----------|-----------|-----|------|--------|
-| `AC-coupon-apply.md` | `coupon-apply.test.ts` | `CouponApplyTest.cs` | `CouponApplyTest.java` | `test_coupon_apply.py` |
+| 輸入 AC 檔 | TypeScript | C# | Java | Python | Flutter/Dart |
+|-----------|-----------|-----|------|--------|-------------|
+| `AC-coupon-apply.md` | `coupon-apply.test.ts` | `CouponApplyTest.cs` | `CouponApplyTest.java` | `test_coupon_apply.py` | `coupon_apply_test.dart` |
 
 ## 測試命名規則
 
