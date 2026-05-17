@@ -1,0 +1,48 @@
+{
+  "skill_name": "code-reviewer",
+  "evals": [
+    {
+      "id": 1,
+      "name": "backend-api-spec-noncompliance",
+      "prompt": "請對照規格文檔 docs/specs/login-spec.md，幫我 review 這次的 API 實作",
+      "expected_output": "應輸出規格符合度區塊，標出 401 狀態碼缺失（實作回傳 404/400）與帳號枚舉安全漏洞，整體評估為不符合規格（❌）；審查結果同時存檔至 docs/ 目錄",
+      "files": [],
+      "expectations": [
+        "輸出包含「規格符合度」或「📐 規格符合度」區塊標題（有提供規格文檔）",
+        "找出 401 狀態碼缺失問題：規格要求 401 Unauthorized，但實作回傳 404 與 400",
+        "找出帳號枚舉安全漏洞：錯誤訊息揭露「使用者不存在」，違反規格的安全規範",
+        "整體評估標記為不符合規格（含 ❌ 符號）或建議修改（含 ⚠️ 符號）",
+        "在 docs/ 目錄下建立了 code-review-YYYY-MM-DD-login-spec.md 格式的審查存檔"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "react-component-type-and-ternary",
+      "prompt": "根據 docs/specs/todo-item-spec.md 幫我審查這次的前端元件實作",
+      "expected_output": "應觸發 React 最佳實踐審查區塊，找出 props: any 型別問題、JSX 內巢狀三元運算子、以及 statusLabel 計算後未使用的 dead code；規格符合度整體評估為部分符合（顯示邏輯正確但型別不符）",
+      "files": [],
+      "expectations": [
+        "輸出包含 React 最佳實踐相關區塊（含「⚛️」或「React 最佳實踐」）",
+        "找出 props: any 型別問題，建議定義明確的 TypeScript interface",
+        "找出 JSX 中的巢狀三元運算子問題（props.completed ? ... : props.priority === 'high' ? ... : ...）",
+        "指出 statusLabel 變數計算後未被使用（unused variable / dead code）",
+        "在 docs/ 目錄下建立了 code-review-YYYY-MM-DD-todo-item-spec.md 格式的審查存檔"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "no-spec-sql-injection",
+      "prompt": "幫我 review 這次的程式碼變更",
+      "expected_output": "無規格文檔時應略過規格符合度區塊，直接執行通用 code review；應標出 searchUsers 與 getUserById 的 SQL Injection 安全漏洞（🔴 或 🟠），以及 TODO 未追蹤與被注解的舊程式碼（⚪）；審查結果自動推導 slug 後存檔",
+      "files": [],
+      "expectations": [
+        "未輸出「規格符合度」主要審查區塊（因為沒有提供規格文檔）",
+        "找出 searchUsers 函式的 SQL Injection 風險：字串拼接 term 參數直接嵌入 SQL",
+        "找出 getUserById 函式的 SQL Injection 風險：數字型 id 直接嵌入 SQL 字串",
+        "在「使用者自行決定（⚪）」區塊指出 TODO 未追蹤的 comment",
+        "在「使用者自行決定（⚪）」區塊指出被注解掉的 findUser 函式（dead code as comments）",
+        "在 docs/ 目錄下建立了 code-review-YYYY-MM-DD-*.md 格式的審查存檔（slug 從 diff 推導）"
+      ]
+    }
+  ]
+}
