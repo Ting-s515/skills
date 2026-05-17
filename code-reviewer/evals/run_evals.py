@@ -136,29 +136,28 @@ def setup_git_repo(eval_fixture_dir: Path) -> Path:
 
 
 def run_ai(command_prefix: list[str], prompt: str, output_file: Path, cwd: Path, timeout: int) -> tuple[int, bool]:
-    """Run AI CLI, stream output to file. Returns (exit_code, timed_out)."""
+    """Run AI CLI via stdin to avoid Windows command line length limits. Returns (exit_code, timed_out)."""
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
-    with output_file.open("w", encoding="utf-8") as f:
-        process = subprocess.Popen(
-            [*command_prefix, prompt],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            cwd=str(cwd),
-        )
+    process = subprocess.Popen(
+        command_prefix,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        cwd=str(cwd),
+    )
 
-        try:
-            if process.stdout is not None:
-                for line in process.stdout:
-                    f.write(line)
-            return process.wait(timeout=timeout), False
-        except subprocess.TimeoutExpired:
-            process.kill()
-            process.wait()
-            return -1, True
+    try:
+        stdout, _ = process.communicate(input=prompt, timeout=timeout)
+        output_file.write_text(stdout, encoding="utf-8")
+        return process.returncode, False
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.communicate()
+        return -1, True
 
 
 def run_eval_task(

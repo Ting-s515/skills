@@ -124,9 +124,9 @@ def run_single(
     last_message_path = run_dir / "last-message.md"
 
     if runner_name == "codex":
-        cmd = [*command_prefix, "--output-last-message", str(last_message_path), prompt]
+        cmd = [*command_prefix, "--output-last-message", str(last_message_path)]
     else:
-        cmd = [*command_prefix, prompt]
+        cmd = [*command_prefix]
 
     start_dt = datetime.now(timezone.utc)
     start_ts = time.monotonic()
@@ -153,11 +153,14 @@ def run_single(
         log_file.flush()
         process = subprocess.Popen(
             cmd,
+            stdin=subprocess.PIPE,
             stdout=log_file,
             stderr=subprocess.STDOUT,
             text=True,
             start_new_session=os.name != "nt",
         )
+        process.stdin.write(prompt)
+        process.stdin.close()
         try:
             exit_code = process.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
