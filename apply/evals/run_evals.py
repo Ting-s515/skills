@@ -367,9 +367,7 @@ def main() -> int:
     for index, eval_case in evals:
         prepare_eval_case_metadata(eval_case, index, iteration_dir, configurations)
 
-    max_workers = max(1, min(args.jobs, len(tasks)))
-
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+    with ThreadPoolExecutor(max_workers=len(tasks)) as executor:
         futures = {
             executor.submit(
                 run_eval_config,
