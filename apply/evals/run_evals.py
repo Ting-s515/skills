@@ -184,16 +184,12 @@ def run_single(
     }
 
 
-def run_eval_case(
+def prepare_eval_case_metadata(
     eval_case: dict[str, Any],
     index: int,
-    runner_name: str,
-    command_prefix: list[str],
     iteration_dir: Path,
-    timeout: int,
     configurations: list[str],
-    dry_run: bool,
-) -> list[dict[str, Any]]:
+) -> None:
     eval_id = str(eval_case.get("id", index))
     name = eval_case.get("name") or f"eval-{eval_id}"
     prompt = eval_case.get("prompt")
@@ -215,47 +211,61 @@ def run_eval_case(
         },
     )
 
-    rows: list[dict[str, Any]] = []
-    for config in configurations:
-        run_dir = eval_dir / config
-        effective_prompt = (
-            f"[baseline — do not apply any skill pattern] {prompt}"
-            if config == "without_skill"
-            else prompt
-        )
 
-        print(f"  [start] {name}/{config}")
-        timing = run_single(runner_name, command_prefix, effective_prompt, run_dir, timeout, dry_run)
-        write_json(run_dir / "timing.json", timing)
+def run_eval_config(
+    eval_case: dict[str, Any],
+    index: int,
+    config: str,
+    runner_name: str,
+    command_prefix: list[str],
+    iteration_dir: Path,
+    timeout: int,
+    dry_run: bool,
+) -> dict[str, Any]:
+    eval_id = str(eval_case.get("id", index))
+    name = eval_case.get("name") or f"eval-{eval_id}"
+    prompt = eval_case.get("prompt")
+    if not prompt:
+        raise ValueError(f"eval {eval_id} is missing prompt")
 
-        status = "timeout" if timing["timed_out"] else ("pass" if timing["exit_code"] == 0 else "fail")
-        print(f"  [done]  {name}/{config} — exit={timing['exit_code']} {timing['duration_seconds']}s {status}")
+    eval_dir = iteration_dir / safe_name(name)
+    run_dir = eval_dir / config
+    effective_prompt = (
+        f"[baseline — do not apply any skill pattern] {prompt}"
+        if config == "without_skill"
+        else prompt
+    )
 
-        rows.append(
-            {
-                "eval_id": eval_id,
-                "eval_name": name,
-                "configuration": config,
-                "exit_code": timing["exit_code"],
-                "duration_seconds": timing["duration_seconds"],
-                "timed_out": timing["timed_out"],
-                "output_log": timing["output_log"],
-                "status": status,
-            }
-        )
-    return rows
+    print(f"  [start] {name}/{config}")
+    timing = run_single(runner_name, command_prefix, effective_prompt, run_dir, timeout, dry_run)
+    write_json(run_dir / "timing.json", timing)
+
+    status = "timeout" if timing["timed_out"] else ("pass" if timing["exit_code"] == 0 else "fail")
+    print(f"  [done]  {name}/{config} — exit={timing['exit_code']} {timing['duration_seconds']}s {status}")
+
+    return {
+        "eval_id": eval_id,
+        "eval_name": name,
+        "configuration": config,
+        "exit_code": timing["exit_code"],
+        "duration_seconds": timing["duration_seconds"],
+        "timed_out": timing["timed_out"],
+        "output_log": timing["output_log"],
+        "status": status,
+    }
 
 
 def failed_result(
     eval_case: dict[str, Any],
     index: int,
+    config: str,
     iteration_dir: Path,
     timeout: int,
     error: BaseException,
 ) -> dict[str, Any]:
     eval_id = str(eval_case.get("id", index))
     name = eval_case.get("name") or f"eval-{eval_id}"
-    run_dir = iteration_dir / safe_name(name) / "with_skill"
+    run_dir = iteration_dir / safe_name(name) / config
     run_dir.mkdir(parents=True, exist_ok=True)
 
     log_path = run_dir / "output.log"
@@ -265,7 +275,7 @@ def failed_result(
     result = {
         "eval_id": eval_id,
         "eval_name": name,
-        "configuration": "with_skill",
+        "configuration": config,
         "exit_code": 1,
         "duration_seconds": 0,
         "timed_out": False,
@@ -346,30 +356,38 @@ def main() -> int:
     print()
 
     all_rows: list[dict[str, Any]] = []
-    max_workers = max(1, min(args.jobs, len(evals)))
+    tasks = [
+        (index, eval_case, config)
+        for index, eval_case in evals
+        for config in configurations
+    ]
+    for index, eval_case in evals:
+        prepare_eval_case_metadata(eval_case, index, iteration_dir, configurations)
+
+    max_workers = max(1, min(args.jobs, len(tasks)))
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {
             executor.submit(
-                run_eval_case,
+                run_eval_config,
                 eval_case,
                 index,
+                config,
                 runner_name,
                 command_prefix,
                 iteration_dir,
                 args.timeout,
-                configurations,
                 args.dry_run,
-            ): (index, eval_case)
-            for index, eval_case in evals
+            ): (index, eval_case, config)
+            for index, eval_case, config in tasks
         }
         for future in as_completed(futures):
-            index, eval_case = futures[future]
+            index, eval_case, config = futures[future]
             try:
-                all_rows.extend(future.result())
+                all_rows.append(future.result())
             except Exception as error:
-                result = failed_result(eval_case, index, iteration_dir, args.timeout, error)
-                print(f"  [failed] {result['eval_name']}: {result['error']}")
+                result = failed_result(eval_case, index, config, iteration_dir, args.timeout, error)
+                print(f"  [failed] {result['eval_name']}/{config}: {result['error']}")
                 all_rows.append(result)
 
     all_rows.sort(key=sort_key)
