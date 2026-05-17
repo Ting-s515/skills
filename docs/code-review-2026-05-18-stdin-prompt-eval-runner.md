@@ -1,9 +1,9 @@
-# Code Review 紀錄 — 2026-05-18（第 1 輪）
+# Code Review 紀錄 — 2026-05-18（第 2 輪）
 
 ## 📋 Code Review 摘要
 
-**審查範圍：** 最新 commit `75a2fa3` 對所有 `run_evals.py` 與 `skill-creator/SKILL.md` runner 範本的 stdin prompt 修正
-**整體評估：** ✅ 所有問題已修正完畢（commit `9f34613`）
+**審查範圍：** 重新讀取本文件後，再次審查 stdin prompt eval runner 修正，以及 commit `9f34613` 對 timeout artifact 的後續修正。
+**整體評估：** ✅ 未發現新增問題，可保留目前修正。
 
 ---
 
@@ -15,30 +15,24 @@
 
 ### 🟠 建議改善（Warning）
 
-#### ~~問題 1：timeout 時不會保留已輸出的 stdout artifact~~ ✅ 已修正（commit `9f34613`）
-- **檔案：** `skill-creator/evals/run_evals.py`
-- **檔案：** `code-reviewer/evals/run_evals.py`
-- **檔案：** `skill-creator/SKILL.md`
-- **問題：** 這三處改成 `communicate(input=prompt, timeout=timeout)` 後，正常完成時會在 `output_file.write_text(stdout, ...)` 寫出完整輸出；但 timeout 分支只執行 `process.kill()` 與 `process.communicate()`，沒有把 timeout 前已收集到的輸出或 timeout 訊息寫入 `output.txt`。
-- **影響：** 若 eval timeout，runner summary 仍會指向 `output.txt`，但該檔可能不存在或缺少 timeout 前輸出，會降低後續 debug 與 benchmark artifact 可用性。
-- **修正內容：**
-  ```python
-  except subprocess.TimeoutExpired as error:
-      process.kill()
-      stdout, _ = process.communicate()
-      partial_output = error.output or stdout or ""
-      output_file.write_text(f"{partial_output}\n[timeout] killed after {timeout}s\n", encoding="utf-8")
-      return -1, True
-  ```
+未發現新的 Warning。
+
+#### 已關閉：timeout 時保留 partial stdout artifact
+- **前次問題位置：**
+  - `skill-creator/evals/run_evals.py`
+  - `code-reviewer/evals/run_evals.py`
+  - `skill-creator/SKILL.md`
+- **修正 commit：** `9f34613`
+- **本輪確認結果：** timeout 分支已改為在 kill 後收集 `error.output` 或 `communicate()` 回傳的 stdout，並寫入 `output.txt`，同時追加 `[timeout] killed after Ns` 標記。
 
 ---
 
 ### 🔵 型別安全
 
 #### ✅ 符合項目
-- `run_ai` 簽名維持 `tuple[int, bool]`，呼叫端不需要調整資料結構。
-- `subprocess.Popen(..., text=True, encoding="utf-8", errors="replace")` 搭配 `communicate(input=prompt)` 的型別一致，`prompt` 以字串進 stdin，不再放入 argv。
-- Pattern B runner 使用 binary stdin 時以 `prompt.encode("utf-8")` 寫入；`apply` 使用 `text=True` 時寫入字串，兩種型態與 Popen 設定相符。
+- 正常完成路徑仍使用 `communicate(input=prompt)`，prompt 透過 stdin 傳入，不再拼進 argv。
+- timeout 路徑寫入的 `partial_output` 與正常路徑的 stdout 都維持字串輸出，和 `text=True` / `encoding="utf-8"` 設定一致。
+- `run_ai` 回傳型態仍維持 `tuple[int, bool]`，呼叫端資料結構不需要額外遷移。
 
 ---
 
@@ -50,15 +44,14 @@
 
 ### 查證與驗證
 
-- 本機 `codex exec --help` 已確認：未提供 `[PROMPT]` 參數或使用 `-` 時，instructions 會從 stdin 讀取；因此移除 argv prompt、改走 stdin 是正確修法。
-- 全專案 `run_evals.py` 掃描結果顯示已沒有 `[*command_prefix, prompt]` 或等價 prompt-in-argv 寫法。
+- 已重新讀取本文件，確認前次 review 紀錄已標記 `9f34613` 修正 timeout artifact 問題。
+- 本機 `codex exec --help` 已確認：未提供 `[PROMPT]` 參數或使用 `-` 時，instructions 會從 stdin 讀取；因此改用 stdin 傳 prompt 是正確方向。
+- 全專案 `run_evals.py` 靜態掃描未發現 `[*command_prefix, prompt]`、`command_prefix + [prompt]`、或其他將 prompt 直接放入 subprocess argv 的等價寫法。
 - `python -m py_compile` 已對 8 個 `run_evals.py` 通過。
-- 既有 `skill-creator/eval-results/eval-1` 顯示 `with_skill` 與 `without_skill` 的 `exit_code` 都是 `0`，且未出現 `WinError 206` 或「檔名或副檔名太長」。
+- 已確認 `skill-creator/evals/run_evals.py`、`code-reviewer/evals/run_evals.py` 與 `skill-creator/SKILL.md` 的 timeout 分支皆已保留 partial output artifact。
 
 ---
 
 ### 審查結論
 
-本次修正能解決 Windows 命令列長度限制問題，且已同步更新所有 runner 與 `skill-creator` 範本。
-
-**後續追蹤（commit `9f34613`）：** timeout 分支已補 artifact 寫檔，timeout 時 `output.txt` 會保留 partial output 並附加 `[timeout] killed after Ns` 標記。所有問題已全數關閉。
+本輪重新執行 code-reviewer 後，未發現 stdin prompt 修正或 timeout artifact 修正仍有阻塞問題。`WinError 206` 的根因（長 prompt 放入 Windows argv）已由 stdin prompt 路徑避免，前次指出的 timeout artifact 缺口也已由 commit `9f34613` 補齊。
