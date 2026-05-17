@@ -153,14 +153,14 @@ git diff main...HEAD # 與主分支的完整差異（適用於 feature branch）
 
 ### 存檔規則
 
-- **存放位置：** 專案根目錄下的 `docs/` 資料夾（若不存在則自動建立）
+- **存放位置：** 專案根目錄下的 `docs/code-review-report` 資料夾（若不存在則自動建立）
 - **檔名格式：** `code-review-YYYY-MM-DD-<feature-slug>.md`
   - `YYYY-MM-DD` 為本機今日日期
   - `<feature-slug>` 為**本次審查所對照規格文檔的檔名 slug**（取規格檔名去掉副檔名、轉成 kebab-case）
   - 範例：
-    - 規格 `docs/spec/login.md` → `docs/code-review-2026-05-17-login.md`
-    - 規格 `docs/specs/user-profile.md` → `docs/code-review-2026-05-17-user-profile.md`
-    - 規格 `docs/PRD-Checkout Flow.md` → `docs/code-review-2026-05-17-checkout-flow.md`
+    - 規格 `docs/spec/login.md` → `docs/code-review-report/code-review-2026-05-17-login.md`
+    - 規格 `docs/specs/user-profile.md` → `docs/code-review-report/code-review-2026-05-17-user-profile.md`
+    - 規格 `docs/PRD-Checkout Flow.md` → `docs/code-review-report/code-review-2026-05-17-checkout-flow.md`
 - **內容範圍：** 檔案最上方為 H1 輪數標題（見「輪數判斷與標題」），其下為與對話輸出的「## 📋 Code Review 摘要」**完全一致**的內容，包含所有子區塊（React 最佳實踐 / 規格符合度 / 必須修正 / 建議改善 / 使用者自行決定等），不可省略、改寫或濃縮
 - **不另加額外章節：** 除了 H1 輪數標題之外，不要在檔案中再加入「審查時間」、「審查者」等對話中沒有的欄位；以原始內容為準
 
@@ -214,7 +214,7 @@ git diff main...HEAD # 與主分支的完整差異（適用於 feature branch）
 
 - 在對話中輸出「## 📋 Code Review 摘要」**之後**立即執行寫檔
 - 寫檔完成後，在回覆中以一行簡短訊息告知使用者檔案路徑，例如：
-  `📁 已存檔：docs/code-review-2026-05-17-login.md`
+  `📁 已存檔：docs/code-review-report/code-review-2026-05-17-login.md`
 
 > 設計動機：按功能切分檔名是為了避免「同日多功能審查互相覆蓋」（規格檔名越具體越好，
 > 像 `README` 這種通用名應改找更具體的來源）；同功能同日直接覆蓋則是因為同一審查週期
