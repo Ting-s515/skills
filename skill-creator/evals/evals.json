@@ -1,0 +1,19 @@
+{
+  "skill_name": "skill-creator",
+  "evals": [
+    {
+      "id": 1,
+      "name": "parallel-eval-runner-generation",
+      "prompt": "我要建立一個新 skill 叫做 'url-summarizer'，功能是讀取網頁 URL 並摘要內容。請幫我產出 evals/evals.json 和 evals/run_evals.py 這兩個檔案的完整內容（直接輸出程式碼，不需要實際寫檔）。",
+      "expected_output": "產出的 run_evals.py 使用 ThreadPoolExecutor 並行執行所有 eval run，不使用序列 for 迴圈逐一跑 with_skill 和 without_skill",
+      "files": [],
+      "expectations": [
+        "輸出包含 ThreadPoolExecutor",
+        "輸出包含 as_completed",
+        "輸出包含 executor.submit",
+        "輸出包含 timing.json",
+        "輸出包含 DEFAULT_TIMEOUT"
+      ]
+    }
+  ]
+}
