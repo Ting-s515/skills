@@ -2,6 +2,7 @@
 """Run code-reviewer behavior evals using codex or claude CLI.
 
 Each eval runs twice: with_skill (SKILL.MD injected) and without_skill (baseline).
+All runs launch in parallel — total time ≈ slowest single run, not sum of all runs.
 Usage: python evals/run_evals.py [eval-id]   # omit id to run all
 
 為什麼使用 Python：Python 可在 Windows/macOS/Linux 以相同程式碼讀取 JSON、處理路徑並呼叫 CLI；
@@ -18,6 +19,9 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -26,6 +30,20 @@ EVALS_JSON = SCRIPT_DIR / "evals.json"
 SKILL_MD = SCRIPT_DIR.parent / "SKILL.MD"
 FIXTURES_DIR = SCRIPT_DIR / "fixtures"
 OUTPUT_DIR = SCRIPT_DIR.parent / "eval-results"
+
+DEFAULT_TIMEOUT = 300  # seconds per run
+
+
+@dataclass
+class RunResult:
+    eval_id: str
+    name: str
+    config: str
+    exit_code: int
+    duration_seconds: float
+    timed_out: bool
+    output_file: Path
+    error: str = ""
 
 
 def fail(message: str) -> None:
@@ -85,7 +103,6 @@ def setup_git_repo(eval_fixture_dir: Path) -> Path:
     run_git(["config", "user.email", "eval@test.com"], cwd=temp_dir)
     run_git(["config", "user.name", "Eval Runner"], cwd=temp_dir)
 
-    # 複製 base 檔案並建立 initial commit
     base_dir = eval_fixture_dir / "base"
     if base_dir.exists():
         for src_file in base_dir.rglob("*"):
@@ -97,7 +114,6 @@ def setup_git_repo(eval_fixture_dir: Path) -> Path:
         run_git(["add", "-A"], cwd=temp_dir)
         run_git(["commit", "-m", "Initial commit"], cwd=temp_dir)
 
-    # 複製 staged 檔案並 git add（模擬即將提交的變更）
     staged_dir = eval_fixture_dir / "staged"
     if staged_dir.exists():
         for src_file in staged_dir.rglob("*"):
@@ -108,7 +124,6 @@ def setup_git_repo(eval_fixture_dir: Path) -> Path:
                 shutil.copy2(src_file, dest_file)
         run_git(["add", "-A"], cwd=temp_dir)
 
-    # 複製規格文檔至 docs/specs/（不納入 git，讓 skill 透過 Read 工具讀取）
     spec_dir = eval_fixture_dir / "spec"
     if spec_dir.exists():
         for src_file in spec_dir.rglob("*"):
@@ -120,7 +135,8 @@ def setup_git_repo(eval_fixture_dir: Path) -> Path:
     return temp_dir
 
 
-def run_ai(command_prefix: list[str], prompt: str, output_file: Path, cwd: Path) -> None:
+def run_ai(command_prefix: list[str], prompt: str, output_file: Path, cwd: Path, timeout: int) -> tuple[int, bool]:
+    """Run AI CLI, stream output to file. Returns (exit_code, timed_out)."""
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
     with output_file.open("w", encoding="utf-8") as f:
@@ -134,39 +150,67 @@ def run_ai(command_prefix: list[str], prompt: str, output_file: Path, cwd: Path)
             cwd=str(cwd),
         )
 
-        if process.stdout is not None:
-            for line in process.stdout:
-                print(line, end="")
-                f.write(line)
+        try:
+            if process.stdout is not None:
+                for line in process.stdout:
+                    f.write(line)
+            return process.wait(timeout=timeout), False
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
+            return -1, True
 
-        return_code = process.wait()
-        if return_code != 0:
-            fail(f"AI CLI exited with code {return_code}")
 
-
-def run_with_skill(
-    command_prefix: list[str],
+def run_eval_task(
+    eval_id: str,
+    name: str,
+    prompt: str,
+    config: str,
     skill_instructions: str,
-    prompt: str,
-    output_file: Path,
-    cwd: Path,
-) -> None:
-    full_prompt = (
-        f"{skill_instructions}\n\n"
-        f"---\n\n"
-        f"Apply the above skill instructions to this task:\n\n"
-        f"{prompt}"
-    )
-    run_ai(command_prefix, full_prompt, output_file, cwd)
-
-
-def run_without_skill(
     command_prefix: list[str],
-    prompt: str,
-    output_file: Path,
-    cwd: Path,
-) -> None:
-    run_ai(command_prefix, prompt, output_file, cwd)
+    fixture_dir: Path,
+    timeout: int,
+) -> RunResult:
+    """Run one eval config in an isolated temp git repo."""
+    output_file = OUTPUT_DIR / f"eval-{eval_id}" / config / "output.txt"
+    temp_dir = setup_git_repo(fixture_dir)
+
+    try:
+        if config == "with_skill":
+            full_prompt = (
+                f"{skill_instructions}\n\n"
+                f"---\n\n"
+                f"Apply the above skill instructions to this task:\n\n"
+                f"{prompt}"
+            )
+        else:
+            full_prompt = prompt
+
+        start = time.time()
+        exit_code, timed_out = run_ai(command_prefix, full_prompt, output_file, temp_dir, timeout)
+        duration = time.time() - start
+
+        timing_file = output_file.parent / "timing.json"
+        timing_file.write_text(json.dumps({
+            "start": start,
+            "end": start + duration,
+            "duration_seconds": round(duration, 2),
+            "exit_code": exit_code,
+            "timed_out": timed_out,
+            "timeout_setting": timeout,
+        }, indent=2))
+
+        return RunResult(
+            eval_id=eval_id,
+            name=name,
+            config=config,
+            exit_code=exit_code,
+            duration_seconds=duration,
+            timed_out=timed_out,
+            output_file=output_file,
+        )
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def main() -> int:
@@ -178,15 +222,17 @@ def main() -> int:
     evals = data.get("evals", [])
     target_id = sys.argv[1] if len(sys.argv) > 1 else None
 
+    if target_id:
+        evals = [e for e in evals if str(e.get("id", "")) == target_id]
+
     print(f"=== {skill_name} evals ({len(evals)} total) ===")
 
+    # Validate all fixtures exist before launching
+    tasks: list[tuple[str, str, str, str, Path]] = []
     for index, eval_case in enumerate(evals):
         eval_id = str(eval_case.get("id", index))
         name = eval_case.get("name") or f"eval-{eval_id}"
         prompt = eval_case.get("prompt")
-
-        if target_id and eval_id != target_id:
-            continue
 
         if not prompt:
             fail(f"eval {eval_id} is missing prompt")
@@ -195,50 +241,74 @@ def main() -> int:
         if not fixture_dir.exists():
             fail(f"Fixture directory not found: {fixture_dir}")
 
-        eval_dir = OUTPUT_DIR / f"eval-{eval_id}"
+        for config in ("with_skill", "without_skill"):
+            tasks.append((eval_id, name, prompt, config, fixture_dir))
 
-        print()
-        print(f"=== [{eval_id}] {name} ===")
-        print(f"Prompt: {prompt}")
+    if not tasks:
+        print("No eval tasks to run.")
+        return 0
 
-        # --- with_skill ---
-        print("\nSetting up temp git repo (with_skill)...")
-        temp_dir_with = setup_git_repo(fixture_dir)
-        print(f"[repo] {temp_dir_with}")
+    print(f"Launching {len(tasks)} runs in parallel...\n")
 
-        print()
-        print("--- with_skill ---")
-        run_with_skill(
-            command_prefix,
-            skill_instructions,
-            prompt,
-            eval_dir / "with_skill" / "output.txt",
-            temp_dir_with,
-        )
-        print("--- end with_skill ---")
+    results: list[RunResult] = []
+    with ThreadPoolExecutor(max_workers=len(tasks)) as executor:
+        futures = {
+            executor.submit(
+                run_eval_task,
+                eval_id, name, prompt, config,
+                skill_instructions, command_prefix, fixture_dir, DEFAULT_TIMEOUT,
+            ): (eval_id, config)
+            for eval_id, name, prompt, config, fixture_dir in tasks
+        }
 
-        shutil.rmtree(temp_dir_with, ignore_errors=True)
+        for future in as_completed(futures):
+            eval_id, config = futures[future]
+            try:
+                result = future.result()
+                status = "TIMEOUT" if result.timed_out else ("OK" if result.exit_code == 0 else "FAIL")
+                print(f"  [{status}] eval-{eval_id} {config} ({result.duration_seconds:.1f}s)")
+                results.append(result)
+            except Exception as exc:
+                print(f"  [ERROR] eval-{eval_id} {config}: {exc}")
+                task_name = next((t[1] for t in tasks if t[0] == eval_id), f"eval-{eval_id}")
+                results.append(RunResult(
+                    eval_id=eval_id,
+                    name=task_name,
+                    config=config,
+                    exit_code=-1,
+                    duration_seconds=0.0,
+                    timed_out=False,
+                    output_file=Path(),
+                    error=str(exc),
+                ))
 
-        # --- without_skill (baseline) ---
-        print("\nSetting up temp git repo (without_skill)...")
-        temp_dir_without = setup_git_repo(fixture_dir)
-        print(f"[repo] {temp_dir_without}")
+    # Summary table
+    print()
+    print("=== Summary ===")
+    name_w = max((len(r.name) for r in results), default=8)
+    print(f"  {'name':<{name_w}}  {'config':<16}  {'status':<7}  {'duration':>9}  log")
+    print(f"  {'-'*name_w}  {'-'*16}  {'-'*7}  {'-'*9}  ---")
 
-        print()
-        print("--- without_skill (baseline) ---")
-        run_without_skill(
-            command_prefix,
-            prompt,
-            eval_dir / "without_skill" / "output.txt",
-            temp_dir_without,
-        )
-        print("--- end without_skill ---")
+    failed = 0
+    for result in sorted(results, key=lambda r: (r.eval_id, r.config)):
+        if result.timed_out:
+            status = "TIMEOUT"
+            failed += 1
+        elif result.exit_code != 0:
+            status = "FAIL"
+            failed += 1
+        else:
+            status = "OK"
+        log = result.output_file if result.output_file != Path() else "—"
+        print(f"  {result.name:<{name_w}}  {result.config:<16}  {status:<7}  {result.duration_seconds:>8.1f}s  {log}")
 
-        shutil.rmtree(temp_dir_without, ignore_errors=True)
+    print()
+    if failed:
+        print(f"{failed}/{len(results)} run(s) failed.", file=sys.stderr)
+        return 1
 
-        print()
-        print(f"[results saved] {eval_dir}")
-
+    print(f"All {len(results)} runs completed.")
+    print(f"Results: {OUTPUT_DIR}")
     return 0
 
 
