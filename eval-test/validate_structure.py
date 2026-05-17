@@ -51,6 +51,7 @@ SKILLS_DIR = SCRIPT_DIR.parent
 
 SKILLS = [
     "apply",
+    "code-reviewer",
     "propose",
     "propose-sync",
     "llm-repo",
