@@ -154,9 +154,11 @@ def run_ai(command_prefix: list[str], prompt: str, output_file: Path, cwd: Path,
         stdout, _ = process.communicate(input=prompt, timeout=timeout)
         output_file.write_text(stdout, encoding="utf-8")
         return process.returncode, False
-    except subprocess.TimeoutExpired:
+    except subprocess.TimeoutExpired as error:
         process.kill()
-        process.communicate()
+        stdout, _ = process.communicate()
+        partial_output = error.output or stdout or ""
+        output_file.write_text(f"{partial_output}\n[timeout] killed after {timeout}s\n", encoding="utf-8")
         return -1, True
 
 
