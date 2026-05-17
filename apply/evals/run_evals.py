@@ -5,7 +5,6 @@ Usage:
   python evals/run_evals.py [options] [eval-id]
 
 Options:
-  --jobs N          Parallel workers (default: 3)
   --timeout N       Per-run timeout in seconds (default: 1800)
   --with-skill-only Only run with_skill configuration
   --output-dir DIR  Directory that stores eval run artifacts

@@ -3,7 +3,7 @@
 ## 📋 Code Review 摘要
 
 **審查範圍：** 重新審查本專案 8 個 `run_evals.py`，確認是否已統一改成 `max_workers=len(tasks)`、所有 eval/config run 是否同時 submit 並等待最慢的 future 完成，以及 prompt 是否已走 stdin 避免 Windows argv 長度限制。
-**整體評估：** ⚠️ 核心執行行為符合要求；仍有 6 個 runner 的檔頭 Usage docstring 殘留已不存在的 `--jobs` 說明，建議清理以免誤導。
+**整體評估：** ✅ 所有問題已修正完畢（commit 見後續追蹤）
 
 ---
 
@@ -29,26 +29,10 @@
 
 ### 🟠 建議改善（Warning）
 
-#### 問題 1：6 個通用 runner 的檔頭 Usage docstring 仍殘留 `--jobs N`
-- **檔案：** `apply/evals/run_evals.py:8`
-- **檔案：** `propose/evals/run_evals.py:8`
-- **檔案：** `propose-sync/evals/run_evals.py:8`
-- **檔案：** `llm-repo/evals/run_evals.py:8`
-- **檔案：** `fleet-review/evals/run_evals.py:8`
-- **檔案：** `writing-training-doc/evals/run_evals.py:8`
-- **問題：** 實際 argparse 已移除 `--jobs`，但檔頭 docstring 的 Options 仍寫著 `--jobs N Parallel workers`。
-- **影響：** 使用者直接閱讀檔案時會誤以為 `--jobs` 仍可使用；實際執行會得到 `unrecognized arguments: --jobs`。這不影響並行核心行為，但會造成操作文件與 CLI 行為不一致。
-- **建議修正：**
-  ```python
-  """Run propose behavior evals using codex or claude CLI.
-
-  Options:
-    --timeout N       Per-run timeout in seconds (default: 300)
-    --with-skill-only Only run with_skill configuration
-    --output-dir DIR  Directory that stores eval run artifacts
-    --dry-run         Create metadata without invoking the AI CLI
-  """
-  ```
+#### ~~問題 1：6 個通用 runner 的檔頭 Usage docstring 仍殘留 `--jobs N`~~ ✅ 已修正
+- **檔案：** apply、propose、propose-sync、llm-repo、fleet-review、writing-training-doc
+- **問題：** argparse 已移除 `--jobs`，但檔頭 docstring Options 仍殘留 `--jobs N Parallel workers`，使用者閱讀檔案會誤以為該參數仍可使用。
+- **修正內容：** 從 6 個檔案的 docstring 中移除 `--jobs N` 那一行。
 
 ---
 
@@ -81,4 +65,6 @@
 
 ### 審查結論
 
-所有 `run_evals.py` 的核心執行模型已符合「`max_workers=len(tasks)`、所有 run 同時 submit、等待最慢回應完成」的要求；Windows 長 prompt 也已由 stdin prompt 路徑防住。剩餘問題只在 6 個通用 runner 的檔頭 Usage docstring 還殘留 `--jobs N` 說明，建議後續清掉，避免文件與實際 CLI 行為不一致。
+所有 `run_evals.py` 核心執行模型已符合「`max_workers=len(tasks)`、所有 run 同時 submit、等待最慢回應完成」的要求；Windows 長 prompt 由 stdin prompt 路徑防住。
+
+**後續追蹤：** 已從 6 個通用 runner 的 docstring 移除殘留的 `--jobs N` 說明，文件與 CLI 行為現已一致。所有問題已全數關閉。
