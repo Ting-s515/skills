@@ -3,7 +3,7 @@
 ## 📋 Code Review 摘要
 
 **審查範圍：** 本專案 8 個 `run_evals.py`，重點確認所有 eval/config run 是否統一以 `max_workers=len(tasks)` 全部同時啟動，並確認 prompt 是否已走 stdin 避免 Windows argv 長度限制。
-**整體評估：** ✅ 核心行為符合要求，可達成所有 run 同時啟動；另有一項 CLI 文件/輸出一致性 Warning 建議後續清理。
+**整體評估：** ✅ 所有問題已修正完畢（commit `5bf48a0`）
 
 ---
 
@@ -28,22 +28,13 @@
 
 ### 🟠 建議改善（Warning）
 
-#### 問題 1：6 個通用 runner 仍保留已失效的 `--jobs` CLI 與輸出
-- **檔案：** `apply/evals/run_evals.py:51`
-- **檔案：** `propose/evals/run_evals.py:48`
-- **檔案：** `propose-sync/evals/run_evals.py:48`
-- **檔案：** `llm-repo/evals/run_evals.py:48`
-- **檔案：** `fleet-review/evals/run_evals.py:48`
-- **檔案：** `writing-training-doc/evals/run_evals.py:48`
-- **問題：** 這 6 個 runner 已改為 `ThreadPoolExecutor(max_workers=len(tasks))`，但仍保留 `DEFAULT_JOBS`、`--jobs` 參數、help 文字 `Max parallel runs`，並在執行時輸出 `[jobs] {args.jobs}`。目前 `args.jobs` 不再影響實際 worker 數。
-- **影響：** 使用者可能以為 `--jobs 1` 可以限制並行度，或誤判 log 中 `[jobs] 2` 代表實際只啟動 2 個 worker；這與「所有 run 同時啟動」的新行為不一致，容易造成操作與 debug 混淆。
-- **建議修正：**
-  ```python
-  # 移除 DEFAULT_JOBS 與 --jobs 參數，或改名為相容性 no-op 並在 help 中明確標示 ignored。
-  print(f"[parallel] launching {len(tasks)} runs  [timeout] {args.timeout}s  [configs] {', '.join(configurations)}")
-  with ThreadPoolExecutor(max_workers=len(tasks)) as executor:
-      # ...
-  ```
+#### ~~問題 1：6 個通用 runner 仍保留已失效的 `--jobs` CLI 與輸出~~ ✅ 已修正（commit `5bf48a0`）
+- **檔案：** apply、propose、propose-sync、llm-repo、fleet-review、writing-training-doc
+- **問題：** 這 6 個 runner 已改為 `ThreadPoolExecutor(max_workers=len(tasks))`，但仍保留 `DEFAULT_JOBS`、`--jobs` 參數，並在執行時輸出 `[jobs] {args.jobs}`，導致使用者誤以為 `--jobs 1` 可限制並行度。
+- **修正內容：**
+  - 移除 `DEFAULT_JOBS` 常數與 `--jobs` argparse 參數
+  - 將 `tasks` 建立提前至 print 之前
+  - log 從 `[jobs] 2` 改為 `[parallel] {len(tasks)} runs`，如實反映實際並行數
 
 ---
 
@@ -73,4 +64,6 @@
 
 ### 審查結論
 
-Claude 這輪修改已把本專案所有 `run_evals.py` 的核心執行模型對齊為「所有 task 同時 submit，等待最慢的 future 完成後結束」。Windows 長 prompt 限制也仍由 stdin prompt 路徑防住。建議後續清理 6 個通用 runner 中已不生效的 `--jobs` CLI 與 `[jobs]` log，避免使用者誤判實際並行行為。
+所有 `run_evals.py` 核心執行模型已對齊為「所有 task 同時 submit，等待最慢的 future 完成後結束」。Windows 長 prompt 限制由 stdin prompt 路徑防住。
+
+**後續追蹤（commit `5bf48a0`）：** 已移除 6 個通用 runner 中失效的 `--jobs` 參數與 `[jobs]` log，log 改為 `[parallel] N runs` 如實顯示並行數。所有問題已全數關閉。
