@@ -1,0 +1,85 @@
+## 📋 Code Review 摘要
+
+**審查範圍：** `src/user-service.ts` — 新增使用者查詢功能（`searchUsers`、`getUserById`）
+**整體評估：** ❌ 不符合規格，需修正（存在嚴重 SQL Injection 安全漏洞）
+
+---
+
+### 🔴 必須修正（Critical）
+
+#### 問題 1：SQL Injection 漏洞 — `searchUsers`
+- **檔案：** `src/user-service.ts:5`
+- **問題：** 使用字串模板直接將使用者輸入的 `term` 嵌入 SQL 查詢，攻擊者可以注入任意 SQL，導致資料洩漏、竄改或刪除。
+- **影響：** 若攻擊者傳入 `' OR '1'='1` 類型的字串，可繞過條件取得全部使用者資料；嚴重時可執行 DROP TABLE 等破壞性操作。
+- **建議修正：**
+  ```typescript
+  export async function searchUsers(term: string) {
+    const pattern = `%${term}%`;
+    const result = await pool.query(
+      'SELECT id, name, email FROM users WHERE name LIKE $1 OR email LIKE $1',
+      [pattern]
+    );
+    return result.rows;
+  }
+  ```
+
+#### 問題 2：SQL Injection 漏洞 — `getUserById`
+- **檔案：** `src/user-service.ts:11`
+- **問題：** 直接將 `id` 以字串模板嵌入 SQL。雖然參數型別宣告為 `number`，但若呼叫方未正確驗證（例如來自 HTTP 路由參數），仍可能被注入。應一律使用參數化查詢。
+- **影響：** 若攻擊者傳入如 `0 OR 1=1` 的字串，可繞過 id 條件查詢到非預期的資料列。
+- **建議修正：**
+  ```typescript
+  export async function getUserById(id: number) {
+    const result = await pool.query(
+      'SELECT id, name, email FROM users WHERE id = $1',
+      [id]
+    );
+    return result.rows[0] ?? null;
+  }
+  ```
+
+---
+
+### 🟠 建議改善（Warning）
+
+#### 問題 1：`getUserById` 使用 `SELECT *`
+- **檔案：** `src/user-service.ts:11`
+- **問題：** `SELECT *` 會取回資料表所有欄位，包含可能新增的敏感欄位（如 `password_hash`、`secret_token`），容易造成資料過度暴露。
+- **影響：** 若未來資料表新增敏感欄位，此函式會靜默地將其暴露給呼叫方，難以稽核。
+- **建議修正：**
+  ```typescript
+  // 明確列出需要的欄位
+  'SELECT id, name, email FROM users WHERE id = $1'
+  ```
+
+#### 問題 2：函式缺少回傳型別標注
+- **檔案：** `src/user-service.ts:4, 10`
+- **問題：** `searchUsers` 與 `getUserById` 均未宣告回傳型別，TypeScript 只能依賴推斷，若 `pool.query` 回傳 `any`，型別安全保護形同虛設。
+- **影響：** 呼叫方無法從型別系統得知回傳結構，容易產生執行期型別錯誤。
+- **建議修正：**
+  ```typescript
+  interface User {
+    id: number;
+    name: string;
+    email: string;
+  }
+
+  export async function searchUsers(term: string): Promise<User[]> { ... }
+  export async function getUserById(id: number): Promise<User | null> { ... }
+  ```
+
+---
+
+### ⚪ 使用者自行決定（註解類問題）
+
+#### 問題 1：TODO 未追蹤
+- **檔案：** `src/user-service.ts:3`
+- **問題：** `// TODO: 之後要加分頁功能` 為一個待辦項目，但沒有對應的 issue 編號或追蹤連結，長期下來容易被遺忘。
+- **影響：** 僅影響開發階段的可追蹤性，不影響目前功能執行。
+- **建議：** 若目前為開發階段可保留；進入正式實作前建議補上 issue 連結，例如 `// TODO(#123): 之後要加分頁功能`，或直接建立追蹤票。
+
+#### 問題 2：被註解掉的舊版實作
+- **檔案：** `src/user-service.ts:15-18`
+- **問題：** `findUser` 函式以註解形式保留在程式碼中，形成 dead code as comments，增加閱讀干擾；且實際上舊版已使用參數化查詢（`$1`），反而優於新版實作。
+- **影響：** 不影響執行期行為，但降低程式碼可讀性；若同仁誤以為此為有效實作，可能造成混淆。
+- **建議：** 若已無需保留，應直接刪除；若需保留歷史紀錄，請依賴 git history 而非留在程式碼中。

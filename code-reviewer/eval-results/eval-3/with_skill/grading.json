@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "未輸出「規格符合度」主要審查區塊（因為沒有提供規格文檔）",
+      "passed": true,
+      "evidence": "輸出中無 📐 規格符合度區塊，直接從 🔴 必須修正開始，符合 SKILL.MD「無規格文檔時略過」的規定"
+    },
+    {
+      "text": "找出 searchUsers 函式的 SQL Injection 風險：字串拼接 term 參數直接嵌入 SQL",
+      "passed": true,
+      "evidence": "🔴 問題 1「SQL Injection 漏洞 — searchUsers」，說明字串模板直接嵌入 term，並提供參數化查詢修正"
+    },
+    {
+      "text": "找出 getUserById 函式的 SQL Injection 風險：數字型 id 直接嵌入 SQL 字串",
+      "passed": true,
+      "evidence": "🔴 問題 2「SQL Injection 漏洞 — getUserById」，說明 TypeScript number 無法保證 runtime 安全"
+    },
+    {
+      "text": "在「使用者自行決定（⚪）」區塊指出 TODO 未追蹤的 comment",
+      "passed": true,
+      "evidence": "⚪ 問題 1「TODO 未追蹤」，說明缺少 issue 編號且建議補充或建立追蹤票"
+    },
+    {
+      "text": "在「使用者自行決定（⚪）」區塊指出被注解掉的 findUser 函式（dead code as comments）",
+      "passed": true,
+      "evidence": "⚪ 問題 2「被註解掉的舊版實作」，明確說明 findUser 為 dead code as comments 並建議依賴 git history"
+    },
+    {
+      "text": "在 docs/ 目錄下建立了 code-review-YYYY-MM-DD-*.md 格式的審查存檔（slug 從 diff 推導）",
+      "passed": true,
+      "evidence": "eval-repos/eval-3-with_skill/docs/code-review-2026-05-17-user-service.md 已確認存在，slug 由 diff 推導為 user-service"
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  }
+}

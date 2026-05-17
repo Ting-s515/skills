@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "輸出包含「規格符合度」或「📐 規格符合度」區塊標題（有提供規格文檔）",
+      "passed": false,
+      "evidence": "輸出使用自訂格式「【通過】符合規格的項目」，無 📐 規格符合度區塊標題，整體格式為純文字問題清單而非 skill 規定的 Markdown 區塊結構"
+    },
+    {
+      "text": "找出 401 狀態碼缺失問題：規格要求 401 Unauthorized，但實作回傳 404 與 400",
+      "passed": true,
+      "evidence": "【嚴重】問題 1 與問題 2 均明確指出 404/400 應改為 401"
+    },
+    {
+      "text": "找出帳號枚舉安全漏洞：錯誤訊息揭露「使用者不存在」，違反規格的安全規範",
+      "passed": true,
+      "evidence": "問題 1 說明「錯誤訊息「使用者不存在」直接揭露帳號是否存在，與避免帳號枚舉攻擊的安全規範完全相反」"
+    },
+    {
+      "text": "整體評估標記為不符合規格（含 ❌ 符號）或建議修改（含 ⚠️ 符號）",
+      "passed": false,
+      "evidence": "整體結論說明「有多處與規格不符的嚴重問題」但未使用 ❌ 或 ⚠️ 符號，格式為純文字摘要"
+    },
+    {
+      "text": "在 docs/ 目錄下建立了 code-review-YYYY-MM-DD-login-spec.md 格式的審查存檔",
+      "passed": false,
+      "evidence": "without_skill 只寫入 output.txt，未建立 docs/ 下的審查存檔（無 SKILL.MD 指引，模型不知道需要存檔）"
+    }
+  ],
+  "summary": {
+    "passed": 2,
+    "failed": 3,
+    "total": 5,
+    "pass_rate": 0.4
+  }
+}

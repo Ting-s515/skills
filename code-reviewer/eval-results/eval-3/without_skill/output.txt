@@ -1,0 +1,159 @@
+Code Review: user-service.ts
+=============================
+日期：2026-05-17
+審查對象：src/user-service.ts（staged 變更）
+
+## 變更摘要
+
+本次變更將 searchUsers 與 getUserById 兩個函式從空實作（stub）填入實際的資料庫查詢邏輯，使用 pg（node-postgres）風格的 pool.query 執行 SQL。
+
+---
+
+## 嚴重問題（必須修正）
+
+### 1. SQL Injection — searchUsers（高風險）
+
+```typescript
+// 問題程式碼
+const query = `SELECT id, name, email FROM users WHERE name LIKE '%${term}%' OR email LIKE '%${term}%'`;
+const result = await pool.query(query);
+```
+
+**問題：** `term` 直接以字串插值注入 SQL，攻擊者可輸入如 `' OR '1'='1` 導致全表洩漏，甚至可執行 DROP TABLE 等破壞性指令。
+
+**修正方式：** 改用參數化查詢（Parameterized Query）：
+
+```typescript
+const query = `SELECT id, name, email FROM users WHERE name LIKE $1 OR email LIKE $1`;
+const result = await pool.query(query, [`%${term}%`]);
+```
+
+---
+
+### 2. SQL Injection — getUserById（高風險）
+
+```typescript
+// 問題程式碼
+const result = await pool.query(`SELECT * FROM users WHERE id = ${id}`);
+```
+
+**問題：** 雖然參數型別宣告為 `number`，但 TypeScript 型別系統無法保證執行時期（Runtime）安全。若呼叫端繞過型別傳入字串（如來自 HTTP query string），仍可造成 SQL Injection。
+
+**修正方式：**
+
+```typescript
+const result = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+```
+
+---
+
+## 中等問題（建議修正）
+
+### 3. SELECT * 使用不當 — getUserById
+
+```typescript
+const result = await pool.query(`SELECT * FROM users WHERE id = ${id}`);
+```
+
+**問題：**
+- 暴露密碼 hash、token 等敏感欄位給呼叫端
+- 欄位異動時可能導致隱性破壞（silent breaking change）
+- 無法從程式碼推斷回傳結構，降低可讀性
+
+**建議：** 明確列出所需欄位：
+
+```typescript
+pool.query('SELECT id, name, email, created_at FROM users WHERE id = $1', [id])
+```
+
+---
+
+### 4. 缺乏回傳型別宣告
+
+兩個函式均缺少明確的回傳型別，TypeScript 無法提供靜態型別保護，呼叫端也無法得知預期結構。
+
+**建議：** 定義 User 介面並宣告回傳型別：
+
+```typescript
+interface User {
+  id: number;
+  name: string;
+  email: string;
+}
+
+export async function searchUsers(term: string): Promise<User[]> { ... }
+export async function getUserById(id: number): Promise<User | null> { ... }
+```
+
+---
+
+### 5. 缺乏錯誤處理
+
+兩個函式均無 try/catch，任何資料庫連線失敗或查詢錯誤都會以未捕獲的 rejected Promise 往上傳播，可能導致伺服器 crash 或洩漏資料庫錯誤訊息給前端。
+
+**建議：** 加入錯誤處理或至少在上層呼叫端統一處理，並考慮記錄 log：
+
+```typescript
+export async function getUserById(id: number): Promise<User | null> {
+  try {
+    const result = await pool.query('SELECT id, name, email FROM users WHERE id = $1', [id]);
+    return result.rows[0] ?? null;
+  } catch (err) {
+    // 記錄 error log，避免洩漏原始 DB 錯誤
+    throw new Error('Failed to fetch user');
+  }
+}
+```
+
+---
+
+## 輕微問題（可改善）
+
+### 6. 保留已注解的舊版函式
+
+```typescript
+// 舊版實作，先保留
+// export async function findUser(searchTerm: string) {
+//   return pool.query('SELECT * FROM users WHERE name = $1', [searchTerm]);
+// }
+```
+
+**問題：** 已注解的程式碼不應提交至 git，版本歷史已足夠保留舊版紀錄，保留注解程式碼會造成混淆，讀者無法確認此段是否預計復活。
+
+**建議：** 直接移除，若日後需要可從 git log 找回。
+
+---
+
+### 7. TODO 未追蹤
+
+```typescript
+// TODO: 之後要加分頁功能
+```
+
+**問題：** TODO 沒有任何 ticket 編號或截止期限，容易被遺忘。
+
+**建議：** 連結至 issue tracker（如 `// TODO(#42): 加入分頁功能`），或改建立正式 issue。
+
+---
+
+## 正面評價
+
+- `getUserById` 的 `?? null` 處理正確，避免回傳 undefined
+- 函式名稱語意清晰，命名符合慣例
+- 有注意到只回傳 searchUsers 的必要欄位（id, name, email），相較 SELECT * 有意識
+
+---
+
+## 總結與優先順序
+
+| 優先級 | 問題 | 影響 |
+|--------|------|------|
+| P0（立即修正）| searchUsers SQL Injection | 資安漏洞，可導致資料洩漏或資料庫破壞 |
+| P0（立即修正）| getUserById SQL Injection | 同上 |
+| P1（本次 PR）| SELECT * 回傳敏感欄位 | 資安風險，破壞封裝性 |
+| P1（本次 PR）| 缺少回傳型別宣告 | 型別安全風險，可讀性差 |
+| P1（本次 PR）| 缺乏錯誤處理 | 穩定性風險，潛在資訊洩漏 |
+| P2（可後續處理）| 注解程式碼殘留 | 可讀性、維護性 |
+| P2（可後續處理）| TODO 未追蹤 | 任務管理問題 |
+
+**此 PR 不建議直接合併**，P0 的 SQL Injection 問題必須在合併前修正。

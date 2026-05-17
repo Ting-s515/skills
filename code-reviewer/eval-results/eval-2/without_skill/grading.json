@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "輸出包含 React 最佳實踐相關區塊（含「⚛️」或「React 最佳實踐」）",
+      "passed": false,
+      "evidence": "輸出為「Code Review 報告 — TodoItem.tsx」格式，使用 [CRITICAL]/[HIGH]/[LOW] 分級，無 ⚛️ 或 React 最佳實踐專屬區塊"
+    },
+    {
+      "text": "找出 props: any 型別問題，建議定義明確的 TypeScript interface",
+      "passed": true,
+      "evidence": "[CRITICAL] #1「Props 使用 `any` 型別，違反規格技術規範」，並提供完整 TodoItemProps interface 修正"
+    },
+    {
+      "text": "找出 JSX 中的巢狀三元運算子問題（props.completed ? ... : props.priority === 'high' ? ... : ...）",
+      "passed": true,
+      "evidence": "[HIGH] #2「JSX 中使用巢狀三元運算子，違反規格技術規範」，引用具體程式碼段落"
+    },
+    {
+      "text": "指出 statusLabel 變數計算後未被使用（unused variable / dead code）",
+      "passed": true,
+      "evidence": "[HIGH] #3「statusLabel 變數計算後從未被使用（dead code）」，說明造成雙重維護風險"
+    },
+    {
+      "text": "在 docs/ 目錄下建立了 code-review-YYYY-MM-DD-todo-item-spec.md 格式的審查存檔",
+      "passed": false,
+      "evidence": "without_skill 只寫入 output.txt，未建立 docs/ 下的審查存檔"
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 2,
+    "total": 5,
+    "pass_rate": 0.6
+  }
+}

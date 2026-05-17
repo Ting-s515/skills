@@ -1,0 +1,146 @@
+## 📋 Code Review 摘要
+
+**審查範圍：** `src/components/TodoItem.tsx` — TodoItem 前端元件實作
+**整體評估：** ❌ 不符合規格，需修正
+
+---
+
+### ⚛️ React 最佳實踐
+
+#### ✅ 符合最佳實踐
+- **展示組件設計**：`TodoItem` 為純展示組件，不含 side effects，符合容器/展示分離原則。
+- **命名清晰**：元件名稱 `TodoItem` 明確表達意圖。
+
+#### ⚠️ 需改善
+- **Props 型別使用 `any`**：`props: any` 完全放棄型別保護，無法在編譯期發現錯誤，違反 react-design 的型別安全原則。
+  ```tsx
+  // 建議修正：使用明確 interface
+  interface TodoItemProps {
+    id: number;
+    title: string;
+    completed: boolean;
+    priority: 'low' | 'medium' | 'high';
+  }
+  const TodoItem = ({ id, title, completed, priority }: TodoItemProps) => { ... };
+  ```
+
+- **巢狀三元運算子在 JSX 中直接使用**：JSX 內嵌巢狀三元運算子可讀性低，且違反規格明確要求「避免巢狀三元運算子」。雖然 `statusLabel` 變數已計算出正確值，卻未被使用，導致 JSX 中重複邏輯。
+  ```tsx
+  // 建議：直接使用已計算的 statusLabel 變數
+  <span>{statusLabel}</span>
+  ```
+
+- **Dead code**：`statusLabel` 變數計算後從未在 `return` 中使用，形成無效程式碼，增加維護混淆。
+
+- **`statusLabel` 使用巢狀三元**：即使 `statusLabel` 沒有被使用，其本身的計算方式仍是巢狀三元，規格明確要求「避免巢狀三元運算子」，應改為 if/else 或獨立函式。
+  ```tsx
+  // 建議修正：改用 if/else 或獨立函式
+  const getStatusLabel = (completed: boolean, priority: string): string => {
+    if (completed) return '已完成';
+    if (priority === 'high') return '緊急';
+    return '進行中';
+  };
+  ```
+
+---
+
+### 📐 規格符合度
+
+#### ✅ 符合規格的項目
+- **顯示規則邏輯正確**：狀態標籤的三個顯示條件（已完成 / 緊急 / 進行中）在邏輯層面對應正確。
+- **刪除線樣式**：`completed === true` 時套用 `textDecoration: 'line-through'`，符合規格。
+
+#### ❌ 不符合或缺漏的項目
+- **Props interface 未定義**：規格要求「Props 必須使用明確的 TypeScript interface 定義，不可使用 `any`」，但實作使用 `props: any`，完全不符合。
+- **禁止巢狀三元**：規格明確要求「避免巢狀三元運算子」，但 JSX 中直接使用了 `props.completed ? '已完成' : props.priority === 'high' ? '緊急' : '進行中'`，且 `statusLabel` 也以巢狀三元計算，兩處皆違規。
+- **`statusLabel` dead code**：JSX 中未使用已計算的 `statusLabel`，導致狀態標籤邏輯重複且 `statusLabel` 成為無效變數。
+- **`id` prop 未使用**：規格定義 `id` 為必填 Props，但元件內完全沒有使用（無綁定至 DOM key 或其他用途）。
+- **顏色樣式缺漏**：規格要求狀態標籤須有顏色區分（已完成綠色、緊急紅色、進行中藍色），但實作中 `<span>` 無任何顏色設定。
+
+---
+
+### 🔴 必須修正（Critical）
+
+#### 問題 1：Props 使用 `any` 導致零型別保護
+
+- **檔案：** `src/components/TodoItem.tsx:2`
+- **問題：** `props: any` 使 TypeScript 無法在編譯期捕捉任何 Props 錯誤，也違反規格明確要求。
+- **影響：** 傳入錯誤型別的 Props 不會報錯，潛在的 runtime 錯誤難以追蹤；也違反規格「不可使用 `any`」的硬性要求。
+- **建議修正：**
+  ```tsx
+  interface TodoItemProps {
+    id: number;
+    title: string;
+    completed: boolean;
+    priority: 'low' | 'medium' | 'high';
+  }
+  const TodoItem = ({ title, completed, priority }: TodoItemProps) => { ... };
+  ```
+
+#### 問題 2：JSX 中使用巢狀三元運算子
+
+- **檔案：** `src/components/TodoItem.tsx:15-17`
+- **問題：** JSX 直接內嵌巢狀三元 `props.completed ? '已完成' : props.priority === 'high' ? '緊急' : '進行中'`，違反規格硬性要求。
+- **影響：** 可讀性低，後續維護者難以一眼理解三個條件的分支邏輯；且已有 `statusLabel` 變數可直接使用卻被忽略，屬重複邏輯。
+- **建議修正：**
+  ```tsx
+  // 使用獨立函式取代巢狀三元
+  const getStatusLabel = (completed: boolean, priority: string): string => {
+    if (completed) return '已完成';
+    if (priority === 'high') return '緊急';
+    return '進行中';
+  };
+  // JSX 中直接使用
+  <span>{getStatusLabel(completed, priority)}</span>
+  ```
+
+#### 問題 3：狀態標籤缺少顏色樣式
+
+- **檔案：** `src/components/TodoItem.tsx:14`
+- **問題：** 規格要求三種狀態標籤分別顯示綠色、紅色、藍色，但 `<span>` 無任何顏色設定。
+- **影響：** 與規格不符，UI 無法正確傳達狀態的視覺差異。
+- **建議修正：**
+  ```tsx
+  const statusColors: Record<string, string> = {
+    '已完成': 'green',
+    '緊急': 'red',
+    '進行中': 'blue',
+  };
+  <span style={{ color: statusColors[statusLabel] }}>{statusLabel}</span>
+  ```
+
+---
+
+### 🟠 建議改善（Warning）
+
+#### 問題 1：`statusLabel` 為 dead code
+
+- **檔案：** `src/components/TodoItem.tsx:4-8`
+- **問題：** `statusLabel` 以巢狀三元計算出來，但 `return` 中完全沒有使用，JSX 另起了一段相同邏輯的三元運算。
+- **影響：** 維護者無法確定哪段才是「真實使用的邏輯」，增加混淆；也造成不必要的計算。
+- **建議：** 移除 `statusLabel` 的宣告，改用獨立函式並在 JSX 中直接呼叫（見問題 2 建議修正）。
+
+#### 問題 2：`id` prop 未使用
+
+- **檔案：** `src/components/TodoItem.tsx:2`
+- **問題：** 規格將 `id` 列為必填 Prop，但元件內沒有任何地方使用 `id`（例如未作為外層 div 的 `key` 或 `data-id`）。
+- **影響：** 父元件在使用 `TodoItem` 時可能需要依賴 `id` 做事件識別，但元件目前不提供此功能；若父元件期待 `id` 傳遞給子元件 DOM，會找不到對應。
+- **建議：** 明確確認 `id` 的使用場景，至少加入 `data-id={id}` 或 `key` 的使用，或在規格中說明 `id` 的用途為元件外部管理。
+
+---
+
+### ⚪ 使用者自行決定（註解類問題）
+
+#### 問題 1：JSX 內的提示性註解未清除
+
+- **檔案：** `src/components/TodoItem.tsx:13`
+- **問題：** `{/* 巢狀三元運算子，應改用 statusLabel 或 if/else */}` 這段 JSX 註解為開發過程的自我提醒，不是正式說明，進入正式程式碼時應移除。
+- **影響：** 不影響功能，但留在程式碼庫中會讓 code review 者誤以為是「尚未完成的 TODO」。
+- **建議：** 若目前為開發/測試階段可暫留；進入正式實作前應移除此類提示性註解。
+
+#### 問題 2：第一行自我說明性註解
+
+- **檔案：** `src/components/TodoItem.tsx:1`
+- **問題：** `// props: any 導致沒有任何型別保護，無法在編譯期發現錯誤` 為開發者自我提醒用，不屬於業務邏輯說明。
+- **影響：** 進入正式實作後此類 meta 註解應移除；若已修正 `props: any` 問題，此行更應一併刪除。
+- **建議：** 修正 `props: any` 後連同此行一起移除。

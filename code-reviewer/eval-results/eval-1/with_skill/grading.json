@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "輸出包含「規格符合度」或「📐 規格符合度」區塊標題（有提供規格文檔）",
+      "passed": true,
+      "evidence": "輸出第 8 行：「### 📐 規格符合度（有提供規格文檔時才輸出此區塊）」完全符合"
+    },
+    {
+      "text": "找出 401 狀態碼缺失問題：規格要求 401 Unauthorized，但實作回傳 404 與 400",
+      "passed": true,
+      "evidence": "明確標出「使用者不存在的狀態碼：規格要求回傳 401，實作卻回傳 404」與「密碼錯誤的狀態碼：規格要求回傳 401，實作卻回傳 400」"
+    },
+    {
+      "text": "找出帳號枚舉安全漏洞：錯誤訊息揭露「使用者不存在」，違反規格的安全規範",
+      "passed": true,
+      "evidence": "Critical 問題 1「帳號枚舉攻擊防護完全未實作」，說明了攻擊者可透過不同狀態碼與訊息判斷帳號是否存在"
+    },
+    {
+      "text": "整體評估標記為不符合規格（含 ❌ 符號）或建議修改（含 ⚠️ 符號）",
+      "passed": true,
+      "evidence": "第 4 行：「**整體評估：** ❌ 不符合規格，需修正」"
+    },
+    {
+      "text": "在 docs/ 目錄下建立了 code-review-YYYY-MM-DD-login-spec.md 格式的審查存檔",
+      "passed": true,
+      "evidence": "eval-repos/eval-1-with_skill/docs/code-review-2026-05-17-login-spec.md 已確認存在"
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "total": 5,
+    "pass_rate": 1.0
+  }
+}
