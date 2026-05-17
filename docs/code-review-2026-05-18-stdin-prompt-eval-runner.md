@@ -3,7 +3,7 @@
 ## 📋 Code Review 摘要
 
 **審查範圍：** 最新 commit `75a2fa3` 對所有 `run_evals.py` 與 `skill-creator/SKILL.md` runner 範本的 stdin prompt 修正
-**整體評估：** ⚠️ 主要修正方向正確，建議補一個 timeout artifact 修正
+**整體評估：** ✅ 所有問題已修正完畢（commit `9f34613`）
 
 ---
 
@@ -15,18 +15,14 @@
 
 ### 🟠 建議改善（Warning）
 
-#### 問題 1：timeout 時不會保留已輸出的 stdout artifact
-- **檔案：** `skill-creator/evals/run_evals.py:99`
-- **檔案：** `code-reviewer/evals/run_evals.py:157`
-- **檔案：** `skill-creator/SKILL.md:268`
+#### ~~問題 1：timeout 時不會保留已輸出的 stdout artifact~~ ✅ 已修正（commit `9f34613`）
+- **檔案：** `skill-creator/evals/run_evals.py`
+- **檔案：** `code-reviewer/evals/run_evals.py`
+- **檔案：** `skill-creator/SKILL.md`
 - **問題：** 這三處改成 `communicate(input=prompt, timeout=timeout)` 後，正常完成時會在 `output_file.write_text(stdout, ...)` 寫出完整輸出；但 timeout 分支只執行 `process.kill()` 與 `process.communicate()`，沒有把 timeout 前已收集到的輸出或 timeout 訊息寫入 `output.txt`。
-- **影響：** 若 eval timeout，runner summary 仍會指向 `output.txt`，但該檔可能不存在或缺少 timeout 前輸出，會降低後續 debug 與 benchmark artifact 可用性。這不影響本次修正 WinError 206 的主要目的，但會讓 timeout 情境退化。
-- **建議修正：**
+- **影響：** 若 eval timeout，runner summary 仍會指向 `output.txt`，但該檔可能不存在或缺少 timeout 前輸出，會降低後續 debug 與 benchmark artifact 可用性。
+- **修正內容：**
   ```python
-  try:
-      stdout, _ = process.communicate(input=prompt, timeout=timeout)
-      output_file.write_text(stdout, encoding="utf-8")
-      return process.returncode, False
   except subprocess.TimeoutExpired as error:
       process.kill()
       stdout, _ = process.communicate()
@@ -63,4 +59,6 @@
 
 ### 審查結論
 
-本次修正能解決 Windows 命令列長度限制問題，且已同步更新所有 runner 與 `skill-creator` 範本。建議再補 timeout 分支的 artifact 寫檔，避免長時間 eval 被殺掉時失去 debug 輸出。
+本次修正能解決 Windows 命令列長度限制問題，且已同步更新所有 runner 與 `skill-creator` 範本。
+
+**後續追蹤（commit `9f34613`）：** timeout 分支已補 artifact 寫檔，timeout 時 `output.txt` 會保留 partial output 並附加 `[timeout] killed after Ns` 標記。所有問題已全數關閉。
