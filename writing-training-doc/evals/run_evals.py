@@ -32,7 +32,6 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 EVALS_JSON = SCRIPT_DIR / "evals.json"
 EVAL_RUNS_DIR = SCRIPT_DIR / "eval-runs"
 
-DEFAULT_JOBS = 2
 DEFAULT_TIMEOUT = 300
 CONFIGURATIONS = ["with_skill", "without_skill"]
 
@@ -45,7 +44,6 @@ def fail(message: str) -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run writing-training-doc behavior evals.")
     parser.add_argument("eval_id", nargs="?", help="Optional eval id to run")
-    parser.add_argument("--jobs", type=int, default=DEFAULT_JOBS, help="Max parallel runs")
     parser.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT, help="Per-run timeout in seconds")
     parser.add_argument("--output-dir", type=Path, default=EVAL_RUNS_DIR, help="Eval run artifacts directory")
     parser.add_argument("--with-skill-only", action="store_true", help="Only run with_skill configuration")
@@ -345,19 +343,19 @@ def main() -> int:
     iteration_dir.mkdir(parents=True, exist_ok=True)
 
     skill_name = data.get("skill_name", "<skill-name>")
-    print(f"=== {skill_name} evals ({len(evals)} cases × {len(configurations)} configs) ===")
-    print(f"[iteration] {iteration_dir}")
-    print(f"[jobs] {args.jobs}  [timeout] {args.timeout}s  [configs] {', '.join(configurations)}")
-    if args.dry_run:
-        print("[dry-run] AI CLI will not be invoked")
-    print()
-
-    all_rows: list[dict[str, Any]] = []
     tasks = [
         (index, eval_case, config)
         for index, eval_case in evals
         for config in configurations
     ]
+    print(f"=== {skill_name} evals ({len(evals)} cases × {len(configurations)} configs) ===")
+    print(f"[iteration] {iteration_dir}")
+    print(f"[parallel] {len(tasks)} runs  [timeout] {args.timeout}s  [configs] {', '.join(configurations)}")
+    if args.dry_run:
+        print("[dry-run] AI CLI will not be invoked")
+    print()
+
+    all_rows: list[dict[str, Any]] = []
     for index, eval_case in evals:
         prepare_eval_case_metadata(eval_case, index, iteration_dir, configurations)
 
