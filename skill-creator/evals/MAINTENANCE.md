@@ -27,6 +27,43 @@
 
 ---
 
+## 9 個本地 Patch 說明
+
+`update-skill-creator.py` 拉取官方最新 SKILL.md 後，套用以下 9 個 patch 對齊本地行為。
+每次官方更新後若 patch 失效（target 字串找不到），腳本會 crash 並提示需要重新確認。
+
+### 核心背景
+
+官方 skill-creator 使用 **with_skill vs without_skill（baseline）對照跑法**：
+每個 eval 同時跑兩個 subagent，比較有無 skill 的差異，再用外部 grader 評分。
+
+本地改為 **BDD 自評分 runner**：只跑 with_skill，AI 在單一 prompt 內完成任務並自評分
+（`E1: PASS/FAIL`），直接輸出 `X/Y expectations passed`，不需要 baseline 也不需要 grader。
+
+**9 個 patch 的統一目的：移除官方 baseline 流程，補入本地 BDD runner 指令。**
+
+| # | 名稱 | 做什麼 | 為什麼需要 |
+|---|------|--------|-----------|
+| 1 | evals.json 範例欄位 | 移除 `expected_output`、`files`；補 `name`、`expectations` | 官方範例有 BDD runner 不使用的欄位；`name` 讓 eval 有描述性命名，`expectations` 是 BDD 評分依據 |
+| 2 | schema 備註術語 | `assertions` → `expectations` | 本地統一使用 `expectations` 欄位名，與 run_evals_bdd.py 的讀取邏輯一致 |
+| 3 | Step 1 移除 Baseline run | 移除 without_skill / old_skill subagent 說明與 prompt 範例 | 本地不跑 baseline；保留說明會誤導 AI 多開不必要的 subagent |
+| 4 | Step 2 加 BDD runner 指令 | `assertions` → `expectations`；補 `python evals/run_evals_bdd.py` 執行區塊 | Step 2 需明確說明在 runs 進行中執行 BDD runner 取得量化通過率 |
+| 5 | benchmark delta | 移除 with_skill vs baseline 的 delta 統計說明 | 無 baseline 就無 delta，保留會造成混淆 |
+| 6 | 迭代迴圈 baseline | 移除「including baseline runs」 | 迭代迴圈只重跑 with_skill，措辭需與主流程一致 |
+| 7 | Claude.ai baseline | 移除「Skip the baseline runs」指令 | 主流程已無 baseline，Claude.ai 專屬說明不需再提 |
+| 8 | Claude.ai benchmarking | 改為「requires subagents to run run_evals_bdd.py」 | 跳過 benchmarking 的原因是「需要 subagent 跑 BDD runner」，而非「baseline 無意義」 |
+| 9 | Cowork baseline | 移除「run baselines」 | Cowork 說明與主流程保持一致，不提 baseline |
+
+### Patch 失效時的處理方式
+
+若 `update-skill-creator.py` 執行時 crash 並顯示 `Patch [name] 失敗`：
+1. 查此表找到對應 patch 的目的
+2. 確認官方 SKILL.md 是否更動了該段落
+3. 更新 `update-skill-creator.py` 裡的 `old` 字串以對齊新版官方內容
+4. 重新執行，確認 `validate_structure.py skill-creator-patches` 通過
+
+---
+
 ## Eval 測試範圍設計原則
 
 **只測本地擴充行為，官方行為不測。**
