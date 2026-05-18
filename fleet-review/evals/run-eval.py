@@ -5,7 +5,7 @@
 #        屬於功能正確性驗證，不是 eval benchmark runner。
 # [注意] 不適用 MAINTENANCE.md 的 eval runner 規範（run_evals.py 命名、
 #        iteration-N/ 結構、timing.json、benchmark.json 等），請勿套用。
-# [對應] eval benchmark runner 請參考 fleet-review/evals/run_evals.py
+# [對應] eval benchmark runner 請參考 fleet-review/evals/run_evals_bdd.py
 from __future__ import annotations
 
 import sys

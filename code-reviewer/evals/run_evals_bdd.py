@@ -9,12 +9,6 @@
 
 所有 eval 全部並行啟動（max_workers=eval 數量），總執行時間 ≈ 最慢的單一 eval，而非全部加總。
 
-與 run_evals.py 的差異
------------------------
-run_evals.py   — 建立真實 git repo，讓 AI 自行執行 shell 指令取得 diff（需要 filesystem 存取）
-run_evals_bdd.py — 在 Python 端計算 diff 並 embed 進 prompt，AI 只需推理不需執行任何指令
-                   因此 Codex 與 Claude 均可在完全無 filesystem 存取的情境下執行本測試。
-
 Usage:
     python evals/run_evals_bdd.py           # 執行全部 eval
     python evals/run_evals_bdd.py 1         # 只執行 eval id=1

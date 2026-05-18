@@ -2,44 +2,44 @@
 
 ## 核心設計哲學
 
-`local_extensions.md` 的存在目的：讓外部工具（Codex CLI）能在不依賴 Claude Code 子代理機制的情況下，執行與官方 skill-creator 等價的 eval 比對測試。
+`run_evals_bdd.py` 現為 skill-creator 官方標準模板（定義於 `SKILL.md` 的 Test Cases 段落）。
+與舊 `run_evals.py` 的根本差異在於：BDD runner 讓 AI 在單一 prompt 內完成任務並自評分，
+不需要 with_skill / without_skill 兩組跑法，也不需要外部 grader，通過率直接從輸出取得。
 
-**Why:** Claude Code 的官方 eval 流程依賴子代理並行執行，Codex CLI 沒有這個機制。`run_evals.py` 作為跨平台橋接層，讓 Codex 也能獨立跑完整的 with_skill vs without_skill 比對。
+**Why BDD：** `run_evals.py` 的 with_skill vs without_skill 架構只能判斷「有無 skill 的差異」，
+但無法量化 skill eval test 通過率。`run_evals_bdd.py` 透過 `expectations` 欄位與自評分機制，
+每次執行都能得到具體的 X/Y expectations passed 結果，支援迭代改善 skill 品質。
 
-**修改原則：** 任何對 `run_evals.py` 的修改都必須維持此對等性，不能讓兩種執行環境的行為產生語意差距。
+**修改原則：** 任何對 `run_evals_bdd.py` 模板的修改都必須同步更新 `skill-creator/SKILL.md`
+與 `evals/local_extensions.md`（插入內容區塊），確保三者一致。
 
 ---
 
-## 官方行為 vs 本地擴充對照表
+## 官方行為 vs BDD runner 對照表
 
-| 面向 | 官方 SKILL.md | run_evals.py（本地擴充）|
-|------|--------------|----------------------|
-| 執行方式 | Claude Code 子代理（並行） | Codex/claude CLI（循序） |
-| with_skill | 子代理載入 skill path | 注入完整 SKILL.md 到 prompt |
-| without_skill | 子代理不帶 skill | 只傳 raw prompt |
-| 結果存放 | `iteration-N/eval-ID/with_skill/` | `eval-results/eval-ID/with_skill/` |
+| 面向 | 官方 SKILL.md（Claude Code 子代理） | `run_evals_bdd.py` |
+|------|-------------------------------------|---------------------|
+| 執行方式 | Claude Code 子代理（並行） | Codex/claude CLI（Python ThreadPoolExecutor 並行） |
+| diff 取得 | AI 執行 shell 指令 | Python difflib 計算後 embed 進 prompt |
+| 評分方式 | 外部 grader subagent | AI 在 prompt 內自評分（E1: PASS/FAIL） |
+| 結果存放 | `iteration-N/eval-ID/with_skill/` | `eval-results-bdd/eval-ID/output.txt` |
+| 通過率 | benchmark.json 彙整 | Summary 行直接輸出 |
 
 ---
 
 ## 維護原則
 
-1. **兩種模式必須同時跑**：每個 eval 都需要 with_skill 和 without_skill，才能比較技能是否有效果，這是 eval 的核心意義。
+1. **fixture 結構必須齊備**：每個 eval 需要 `evals/fixtures/eval-<id>/staged/`，
+   `base/` 與 `spec/` 可為空目錄，但 `staged/` 必須存在。
 
-2. **with_skill 的實作方式**：讀取 `../SKILL.md` 全文，注入到 prompt 前綴，格式固定為：
-   ```
-   [SKILL.md 完整內容]
-   ---
-   Apply the above skill instructions to this task:
-   [eval prompt]
-   ```
+2. **`expectations` 欄位必填**：`evals.json` 每個 eval 都必須有 `expectations` 清單，
+   這是 BDD runner 的評分依據，空陣列會導致 AI 無法評分。
 
-3. **without_skill 的實作方式**：只傳 raw prompt，不加任何 skill 上下文。
+3. **Windows UTF-8 re-exec**：`__main__` 的 re-exec 邏輯不可移除，
+   這是在 Windows cp950 終端機正確輸出中文的唯一可靠方式。
 
-4. **AI 工具偵測順序**：優先 codex，fallback claude。Codex 固定使用 `--dangerously-bypass-approvals-and-sandbox`，不可改為 sandbox 模式。
-
-5. **結果存檔**：每個 eval 的輸出分別存到 `eval-results/eval-<ID>/with_skill/output.txt` 和 `without_skill/output.txt`，方便後續 diff 比對。
-
-6. **`evals/` 目錄受保護**：`update-skill-creator` 更新時不會覆蓋 `evals/` 目錄，`local_extensions.md` 的內容會在更新後自動注入到官方 SKILL.md 的指定錨點之後。
+4. **`evals/` 目錄受保護**：`update-skill-creator` 更新時不會覆蓋 `evals/` 目錄，
+   `local_extensions.md` 的插入內容區塊會在更新後自動注入到官方 SKILL.md 的指定錨點之後。
 
 ---
 
@@ -47,5 +47,5 @@
 
 - `evals/local_extensions.md` — 本地擴充定義（受保護，update-skill-creator 不覆蓋）
 - `evals/MAINTENANCE.md` — 本文件，維護指南
-- `SKILL.md` — 官方技能主檔（update-skill-creator 會覆蓋，但插入點保留本地擴充）
+- `SKILL.md` — 官方技能主檔，Test Cases 段落已含 run_evals_bdd.py 完整模板
 - `update-skill-creator.py` / `.ps1` — 更新腳本，負責合併官方更新與本地擴充

@@ -76,7 +76,7 @@ def apply_local_extension() -> None:
     skill_md.write_text(updated, encoding="utf-8", newline="\n")
 
     checks = {
-        "evals/run_evals.py": "本地擴充未成功插入 SKILL.md。",
+        "evals/run_evals_bdd.py": "本地擴充未成功插入 SKILL.md。",
         "本地規則：Codex eval runner": "本地擴充缺少 Codex eval runner 本地規則。",
         "--dangerously-bypass-approvals-and-sandbox": "本地擴充缺少 Codex bypass sandbox 參數。",
     }

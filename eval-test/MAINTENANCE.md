@@ -1,119 +1,86 @@
 # eval test runner 維護指南
 
-本文件記錄本專案各 skill 的 `evals/run_evals.py` 後續維護時應對齊的共用 eval 執行風格。目標是讓 Codex CLI runner 盡量接近 Claude Code skill-creator 的 eval flow，方便後續模型接手時不需要重新推導設計方向。
+本文件記錄本專案各 skill 的 `evals/run_evals_bdd.py` 後續維護時應對齊的共用 BDD eval 執行風格。目標是讓 Codex CLI runner 盡量接近 Claude Code skill-creator 的 eval flow，方便後續模型接手時不需要重新推導設計方向。
 
-## 參考基準
+## 設計哲學
 
-以 `writing-training-doc-workspace/` 的 Claude Code eval 輸出為主要參考。該 workspace 的特徵：
+`run_evals_bdd.py` 是跨工具（Claude CLI 與 Codex CLI）的 BDD 自評分 eval runner。
+Python 端計算 diff，將 diff + spec + expectations embed 進單一 prompt，AI 在 prompt 內完成任務並自評分（`E1: PASS/FAIL — 證據`），不需要任何 filesystem 存取。
 
-- 每次測試以 `iteration-N/` 為一輪。
-- 每個 eval case 有獨立資料夾，例如 `eval-kafka-lab/`。
-- 每個 eval case 內分開保存 `with_skill/` 與 `without_skill/`。
-- 每個 run 會保存可回放的輸出、`timing.json`、`grading.json`。
-- 所有 run 完成後再彙整為 `benchmark.json` 與 reviewer HTML。
+| 面向 | 舊 `run_evals.py` | `run_evals_bdd.py` |
+|------|-------------------|--------------------|
+| diff 取得 | AI 執行 `git diff` | Python 計算後 embed 進 prompt |
+| 需要 filesystem | 是（建立 temp git repo） | 否 |
+| 評分方式 | 外部 grader | AI 在 prompt 內自評分 |
+| baseline 對照 | with_skill vs without_skill | 僅 with_skill（by design） |
+| 通過率輸出 | 無 | `X/Y expectations passed` |
 
 ## 命名規範
 
 | 項目 | 規定命名 | 說明 |
 |---|---|---|
-| eval runner 腳本 | `evals/run_evals.py` | 固定此檔名，`validate_structure.py` 依賴此路徑進行結構驗證 |
-| eval 定義檔 | `evals/evals.json` | runner 讀取的 eval case 清單 |
-| 輸出根目錄 | `evals/eval-runs/` | 所有 iteration 輸出放在此目錄下 |
-| 每輪輸出目錄 | `iteration-N/` | N 從 1 開始遞增，每次執行建立新的 |
-| eval case 目錄 | `<eval-name>/` | 使用 eval 的 `name` 欄位，經 `safe_name()` 轉換後直接作為目錄名，**不得加 id 前綴** |
+| eval runner 腳本 | `evals/run_evals_bdd.py` | 固定此檔名，`validate_structure.py` 依賴此路徑進行結構驗證 |
+| eval 定義檔 | `evals/evals.json` | runner 讀取的 eval case 清單，必須含 `expectations` 欄位 |
+| fixture 根目錄 | `evals/fixtures/` | 各 eval 的 base/staged/spec 放在此目錄下 |
+| eval fixture 目錄 | `fixtures/eval-<id>/` | 依 evals.json 的 `id` 欄位命名 |
+| 輸出根目錄 | `eval-results-bdd/` | 所有 eval 輸出放在此目錄下 |
+| 單一 eval 輸出 | `eval-results-bdd/eval-<id>/output.txt` | AI 完整輸出含 Grading 區塊 |
 
-> 新增 skill 時，eval runner 腳本必須命名為 `run_evals.py`，否則 `validate_structure.py` 將靜默跳過（SKIP）而不驗證。
+> 新增 skill 時，eval runner 腳本必須命名為 `run_evals_bdd.py`，否則 `validate_structure.py` 將靜默跳過（SKIP）而不驗證。
+
+## fixture 結構
+
+```text
+evals/fixtures/eval-1/
+├── base/     # 變更前的檔案（空目錄 = 新增檔案情境）
+├── staged/   # 變更後的檔案（被審查的程式碼）—— 必要
+└── spec/     # 規格文檔（選填，有則自動注入 prompt）
+```
+
+`staged/` 是必要目錄；`base/` 與 `spec/` 可為空目錄。
 
 ## 維護原則
 
-1. **每個 eval case 必須彼此隔離**
-   - 不要讓多個 eval 共用同一份輸出檔。
-   - 若 eval 會修改檔案，優先使用每個 eval 自己的 workspace copy。
+1. **並行執行**
+   - 所有 eval 以 `ThreadPoolExecutor(max_workers=len(evals))` 同時啟動
+   - 總執行時間 ≈ 最慢的單一 eval，而非全部加總
+   - 不要改成序列 for 迴圈
 
-2. **with_skill 與 without_skill 必須分開**
-   - `with_skill`：注入或指向目標 skill。
-   - `without_skill`：只傳原始 prompt，作為 baseline。
-   - 兩者輸出不可混在同一個 log，避免 benchmark 無法追蹤來源。
+2. **自評分格式**
+   - AI 輸出結束後須接 `## Grading` 區塊
+   - 每條 expectation 獨立一行：`E1: PASS — 證據` 或 `E1: FAIL — 說明`
+   - `parse_grading()` 以 regex 解析，找不到對應行視為 FAIL
 
-3. **並行執行以外層 runner 控制**
-   - Claude Code 可在同一回合 spawn 多個 sub-agent。
-   - Codex CLI runner 應以 Python 同時啟動多個 `codex exec` process 模擬 fan-out。
-   - 不要期待單一 `codex exec` 自動替整批 eval 做外層並行。
+3. **Windows UTF-8 相容**
+   - `__main__` 必須包含 re-exec 邏輯：Windows 環境偵測到非 UTF-8 模式時，以 `-X utf8` 重新執行自身
+   - 不要改回 `sys.stdout.reconfigure()` 補丁寫法
 
-4. **每個 run 必須留下可診斷資料**
-   - `output.log`：完整 stdout/stderr。
-   - `last-message.md`：最後 assistant message，建議搭配 `--output-last-message`。
-   - `timing.json`：開始時間、結束時間、duration、exit code、timeout 狀態。
-   - `metadata.json` 或 `eval_metadata.json`：eval id、name、prompt、configuration、workspace path。
+4. **timeout 落在單一 eval 層級**
+   - 每個 `run_bdd_eval()` 呼叫都有獨立的 `DEFAULT_TIMEOUT`（預設 300 秒）
+   - timeout 後殺掉 process，輸出 `[timeout] killed after Ns`
 
-5. **timeout 要落在單一 run 層級**
-   - 不要只依賴外層工具 timeout。
-   - 每個 `codex exec` process 都應有自己的 timeout。
-   - timeout 後要終止該 process tree，並將該 run 標成 failed/timeout。
-
-6. **summary 必須可讀**
-   - 所有 run 結束後印出表格式摘要。
-   - 摘要至少包含 eval name、configuration、exit code、duration、log path。
-   - 任一 run 失敗時，整體 runner 應 exit non-zero。
+5. **通過率輸出**
+   - Summary 行格式：`=== Summary: X/Y expectations passed ===`
+   - exit code 0 = 全部通過，1 = 有任何 FAIL 或未評分
 
 ## 建議輸出結構
 
 ```text
-<skill-name>/evals/eval-runs/
-  iteration-1/
-    <eval-name>/
-      eval_metadata.json
-      with_skill/
-        output.log
-        last-message.md
-        timing.json
-      without_skill/
-        output.log
-        last-message.md
-        timing.json
-    <another-eval-name>/
-      eval_metadata.json
-      with_skill/
-      without_skill/
-    benchmark.json
-    review.html
+<skill-name>/eval-results-bdd/
+  eval-1/
+    output.txt       ← AI 完整輸出（Code Review + Grading 區塊）
+  eval-2/
+    output.txt
+  eval-3/
+    output.txt
 ```
-
-若短期只要驗證某個 skill 本身，也可以先只跑 `with_skill`。但 runner 的資料結構仍應保留 `configuration` 欄位，避免之後補 baseline 時需要重改格式。
-
-## 實作路線
-
-### 第一階段：低成本並行
-
-- 保留現有 `evals.json`。
-- 新增 `--jobs` 參數，預設 2 或 3。
-- 使用 `subprocess.Popen` 同時啟動多個 `codex exec`。
-- 每個 eval 寫入自己的 `output.log` 與 `timing.json`。
-- 加入 per-run timeout。
-
-這一階段可以先不複製 workspace，但要接受多個 Codex process 可能看到同一個 repo 的 git status。
-
-### 第二階段：穩定隔離
-
-- 每次執行建立新的 `eval-runs/iteration-N/`。
-- 每個 eval 先複製 fixture 到獨立 workspace。
-- 使用 `codex exec --cd <workspace>` 執行。
-- 產出 `benchmark.json`。
-- 後續可接 `skill-creator/eval-viewer/generate_review.py` 或相容的 static review HTML。
-
-## 風險與取捨
-
-- 並行能把總時間從「所有 eval 時間相加」壓到接近「最慢 eval 的時間」。
-- 並行直接跑同一個 git repo 會有互相污染風險，尤其是 agent 內部執行 `git add -N`、`git diff`、code review 時。
-- 對 `apply` 這類會改檔的 skill，長期應採用 workspace copy 隔離。
-- 對純文字產出型 skill，可以先使用較簡單的並行 runner。
 
 ## 完成條件
 
-後續修改 `run_evals.py` 時，應至少符合：
+後續修改 `run_evals_bdd.py` 時，應至少符合：
 
-- 可並行執行多個 eval。
-- 每個 eval 的 log 與 timing 分開。
-- timeout 可定位到單一 eval。
-- 最終 summary 能指出失敗的是哪個 eval 與哪個 configuration。
-- 輸出結構可直接對照 Claude Code skill-creator 產生的 workspace。
+- 可並行執行多個 eval（`ThreadPoolExecutor`）
+- 每個 eval 的輸出存至 `eval-results-bdd/eval-{id}/output.txt`
+- 通過率可從 Summary 行讀取（`X/Y expectations passed`）
+- Windows UTF-8 re-exec 機制完整（`sys.platform == "win32" and not sys.flags.utf8_mode`）
+- 任一 eval 有 FAIL 或 timeout 時 exit code 為 1
