@@ -20,7 +20,7 @@
 | 面向 | 官方 SKILL.md（Claude Code 子代理） | `run_evals_bdd.py` |
 |------|-------------------------------------|---------------------|
 | 執行方式 | Claude Code 子代理（並行） | Codex/claude CLI（Python ThreadPoolExecutor 並行） |
-| diff 取得 | AI 執行 shell 指令 | Python difflib 計算後 embed 進 prompt |
+| 程式碼輸入 | 子代理有 filesystem 存取，可自行讀取檔案 | Python difflib 計算 diff，embed 進 prompt |
 | 評分方式 | 外部 grader subagent | AI 在 prompt 內自評分（E1: PASS/FAIL） |
 | 結果存放 | `iteration-N/eval-ID/with_skill/` | `eval-results-bdd/eval-ID/output.txt` |
 | 通過率 | benchmark.json 彙整 | Summary 行直接輸出 |

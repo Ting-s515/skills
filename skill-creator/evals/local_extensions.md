@@ -21,7 +21,7 @@
 
 | 腳本 | 類型 | 說明 |
 |---|---|---|
-| `scripts/run_eval.py` | **Trigger Evaluation 工具** | 測試 skill description 是否讓 Claude 正確觸發，屬 skill-creator 內部基礎設施。**不適用 `eval-test/MAINTENANCE.md` eval runner 規範，不得套用或升級為 `run_evals.py` 格式。** |
+| `scripts/run_eval.py` | **Trigger Evaluation 工具** | 測試 skill description 是否讓 Claude 正確觸發，屬 skill-creator 內部基礎設施。**不適用 `eval-test/MAINTENANCE.md` eval runner 規範，不得套用或升級為 `run_evals_bdd.py` 格式。** |
 | `scripts/run_loop.py` | skill-creator 內部工具 | 執行 improve 循環，非 eval runner |
 | `scripts/quick_validate.py` | skill-creator 內部工具 | 快速驗證 skill 觸發率，非 eval runner |
 | `scripts/aggregate_benchmark.py` | skill-creator 內部工具 | 彙整 benchmark 結果，非 eval runner |
