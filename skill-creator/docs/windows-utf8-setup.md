@@ -157,6 +157,20 @@ source ~/.bashrc
 
 ---
 
+## 統整表格
+
+| 終端機 / 環境 | 設定方式 | 驗證指令 | 預期輸出 |
+|--------------|---------|---------|---------|
+| **Python** | 環境變數 `PYTHONUTF8=1` | `python -c "import sys; print(sys.flags.utf8_mode)"` | `1` |
+| **PowerShell** | 系統地區（方法 A）或 `$PROFILE`（方法 B） | `[Console]::OutputEncoding` | `UTF-8` |
+| **CMD** | 系統地區（方法 A）自動涵蓋，無需個別設定 | `chcp` | `65001` |
+| **Windows Terminal** | 繼承內部 Shell 設定，無需個別設定 | 開啟後執行 `chcp` | `65001` |
+| **Git Bash** | `git config` + `~/.bashrc` `LANG=en_US.UTF-8` | `echo $LANG` | `en_US.UTF-8` |
+| **WSL** | 現代 Ubuntu 預設 `C.UTF-8`，通常無需設定 | `locale \| grep LANG` | `C.UTF-8` 或 `en_US.UTF-8` |
+| **VS Code 終端機** | 繼承 PowerShell / Git Bash 設定，無需個別設定 | — | — |
+
+---
+
 ## 效果說明
 
 四層都設定後：
