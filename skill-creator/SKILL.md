@@ -194,6 +194,8 @@ Fill in the actual skill name in the header comment:
 本地規則：Codex eval runner 必須固定使用 `--dangerously-bypass-approvals-and-sandbox`，
 不要改成 sandbox / approval 模式。這個 runner 預期只在一次性工作區或外部隔離環境中執行。
 
+所有 eval 全部並行啟動（max_workers=eval 數量），總執行時間 ≈ 最慢的單一 eval，而非全部加總。
+
 Usage:
     python evals/run_evals_bdd.py           # 執行全部 eval
     python evals/run_evals_bdd.py 1         # 只執行 eval id=1
