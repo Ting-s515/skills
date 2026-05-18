@@ -97,8 +97,9 @@ source ~/.bashrc
 ```bash
 echo $LANG
 git config --list | grep encoding
+git config --global core.quotepath
 ```
-輸出 `en_US.UTF-8` 與各 encoding 設定表示成功。
+輸出 `en_US.UTF-8`、各 encoding 設定、`false` 表示設定成功。
 
 ---
 
