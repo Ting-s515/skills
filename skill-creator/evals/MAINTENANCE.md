@@ -60,7 +60,7 @@
 1. 查此表找到對應 patch 的目的
 2. 確認官方 SKILL.md 是否更動了該段落
 3. 更新 `update-skill-creator.py` 裡的 `old` 字串以對齊新版官方內容
-4. 重新執行，確認 `validate_structure.py skill-creator-patches` 通過
+4. 重新執行，確認 `python skill-creator/eval-test/validate_structure.py skill-creator-patches` 通過
 
 ---
 
