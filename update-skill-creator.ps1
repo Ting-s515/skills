@@ -71,7 +71,7 @@ if (Test-Path $localExt) {
     $skillContent = $skillContent.Substring(0, $endOfLine + 1) + "`n" + $insertContent + "`n" + $skillContent.Substring($endOfLine + 1)
     $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
     [System.IO.File]::WriteAllText($skillMd, $skillContent, $utf8NoBom)
-    if (-not (Select-String -Path $skillMd -Pattern 'evals/run_evals\.py' -Quiet)) {
+    if (-not (Select-String -Path $skillMd -Pattern 'evals/run_evals_bdd\.py' -Quiet)) {
         throw "本地擴充未成功插入 SKILL.md。"
     }
     if (-not (Select-String -Path $skillMd -Pattern '本地規則：Codex eval runner' -Quiet)) {
