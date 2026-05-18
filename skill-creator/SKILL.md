@@ -150,16 +150,15 @@ Save test cases to `evals/evals.json`. Don't write assertions yet — just the p
   "evals": [
     {
       "id": 1,
+      "name": "descriptive-eval-name",
       "prompt": "User's task prompt",
-      "expected_output": "Description of expected result",
-      "files": [],
       "expectations": []
     }
   ]
 }
 ```
 
-See `references/schemas.md` for the full schema (including the `assertions` field, which you'll add later).
+See `references/schemas.md` for the full schema (including the `expectations` field, which you'll fill in later).
 
 When creating eval tests, also create `evals/run_evals_bdd.py` alongside `evals.json`. This is the canonical eval runner — it computes the diff in Python, embeds diff + spec + expectations into a self-contained prompt, and the AI self-grades each expectation with `E1: PASS/FAIL — evidence`. Works cross-platform and cross-tool (Claude CLI and Codex CLI) without requiring filesystem access from the AI.
 
@@ -173,6 +172,12 @@ evals/fixtures/eval-1/
 ```
 
 The `expectations` field in `evals.json` is what the BDD runner grades. Fill them in now or after the first few runs once you know what to look for.
+
+為每個 eval 建立 fixture 目錄（`staged/` 為必要，即使內容為空）：
+
+- **有檔案輸入的技能**（code-reviewer、file transformer 等）：將變更前的檔案放入 `base/`，變更後的放入 `staged/`。
+- **純文字輸出技能**（writing、summarization 等）：`base/` 與 `staged/` 保持空目錄即可；diff 為空時 BDD runner 仍能根據 prompt 回應進行評分。
+- **有規格文檔**：放入 `spec/`，runner 會自動注入 prompt。
 
 建立腳本前，先在腳本上方加入以下規則說明：
 
@@ -604,13 +609,21 @@ Write an `eval_metadata.json` for each test case (assertions can be empty for no
 }
 ```
 
-### Step 2: While runs are in progress, draft assertions
+### Step 2: While runs are in progress, draft expectations
 
-Don't just wait for the runs to finish — you can use this time productively. Draft quantitative assertions for each test case and explain them to the user. If assertions already exist in `evals/evals.json`, review them and explain what they check.
+Don't just wait for the runs to finish — you can use this time productively. Draft quantitative expectations for each test case and explain them to the user. If expectations already exist in `evals/evals.json`, review them and explain what they check.
 
-Good assertions are objectively verifiable and have descriptive names — they should read clearly in the benchmark viewer so someone glancing at the results immediately understands what each one checks. Subjective skills (writing style, design quality) are better evaluated qualitatively — don't force assertions onto things that need human judgment.
+Good expectations are objectively verifiable and have descriptive names — they should read clearly in the benchmark viewer so someone glancing at the results immediately understands what each one checks. Subjective skills (writing style, design quality) are better evaluated qualitatively — don't force expectations onto things that need human judgment.
 
-Update the `eval_metadata.json` files and `evals/evals.json` with the assertions once drafted. Also explain to the user what they'll see in the viewer — both the qualitative outputs and the quantitative benchmark.
+Update the workspace `eval_metadata.json` files with `assertions` (used by the grader subagent) and `evals/evals.json` with `expectations` (used by the BDD runner). Also explain to the user what they'll see in the viewer — both the qualitative outputs and the quantitative benchmark.
+
+Once `expectations` are filled in and fixture directories populated, run the BDD runner to get a quantitative pass rate:
+
+```bash
+python evals/run_evals_bdd.py
+```
+
+This outputs `X/Y expectations passed` — the most direct quality metric per iteration.
 
 ### Step 3: As runs complete, capture timing data
 
