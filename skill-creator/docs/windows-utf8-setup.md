@@ -110,9 +110,25 @@ git config --global core.quotepath
 
 WSL（Windows Subsystem for Linux）執行 Linux 環境，與 Windows 終端機設定互相獨立。
 
+### 進入 WSL 環境
+
+在 PowerShell 或 CMD 執行：
+
+```powershell
+wsl
+```
+
+其他常用指令：
+
+```powershell
+wsl --list          # 列出已安裝的發行版
+wsl -d Ubuntu       # 指定進入 Ubuntu
+wsl --install       # 首次安裝 WSL2 + Ubuntu（需重開機）
+```
+
 ### 驗證是否已是 UTF-8
 
-進入 WSL（PowerShell 或 CMD 執行 `wsl`），確認 locale：
+進入 WSL 後，確認 locale：
 
 ```bash
 locale
