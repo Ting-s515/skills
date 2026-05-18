@@ -1,0 +1,2577 @@
+Reading prompt from stdin...
+OpenAI Codex v0.130.0
+--------
+workdir: C:\Users\tenns\.claude\skills
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: danger-full-access
+reasoning effort: high
+reasoning summaries: none
+session id: 019e3b3b-2e7a-7cb2-a8bf-6520f1a91004
+--------
+user
+---
+name: code-reviewer
+description: >
+  當使用者提供業務邏輯文檔（需求規格、User Story、API 文件、流程說明等），並要求審查程式碼實作時，必須載入此技能。
+  使用 git diff 比對業務邏輯與程式碼變更，確認功能是否正確實作、找出邏輯衝突、潛在問題與副作用，並檢視是否符合最佳實踐。
+  觸發情境包含但不限於：「對照文件幫我 review」、「幫我審查這次的實作」、「這個 PR 符合需求嗎」、
+  「依照業務邏輯檢查程式碼」、「根據規格審查這次變更」。
+  即使使用者只說「幫我 review」或「有沒有符合需求」，只要上下文中有提供業務邏輯文檔，也應載入此技能。
+  此技能也適用於 subagent 情境：當 prompt 中包含規格文檔路徑時，自動讀取並對照審查。
+---
+
+# Code Review 流程
+
+## 1. 取得規格文檔
+
+從 prompt 或對話中識別需求規格文檔：
+- 若 prompt 中有明確路徑 → 讀取該檔案
+- 若對話中使用者曾提供規格內容 → 直接使用
+- 若兩者皆無 → 告知使用者需要提供規格文檔才能進行對照審查，但仍可執行通用 code review
+
+## 2. 取得變更內容
+
+依序嘗試以下指令，取得有意義的 diff：
+
+```bash
+git diff HEAD        # 包含已暫存與未暫存的所有變更
+git diff --staged    # 僅已暫存（即將提交）的變更
+git diff main...HEAD # 與主分支的完整差異（適用於 feature branch）
+```
+
+選擇能取得最完整變更的指令。若 diff 為空，告知使用者並停止。
+
+## 3. 前端檔案 React 最佳實踐審查（優先於規格審查）
+
+分析 diff 中是否包含前端 React 相關檔案：
+
+**判斷前端檔案的條件（符合任一即視為前端變更）：**
+- 副檔名為 `.tsx`、`.jsx`
+- 副檔名為 `.ts`、`.js`，且路徑包含 `components?/`、`hooks?/`、`contexts?/`、`pages/` 或 `views/`
+
+**若包含前端檔案，必須先載入並執行 `react-design` skill，依照其原則對 diff 進行審查。**
+
+審查完成後，將結果整理為「React 最佳實踐」區塊，再繼續進行後續的規格審查。
+
+## 4. 對照規格審查（有提供規格文檔時必做）
+
+逐項比對規格文檔的功能需求與實際 diff：
+
+- 規格中要求的功能，實作是否完整？
+- 規格中定義的 API / 資料結構，實作是否一致？
+- 規格中描述的邊界條件與錯誤處理，是否有涵蓋？
+- 是否有實作規格以外的功能（over-engineering 或偏離需求）？
+
+## 5. 通用程式碼審查
+
+### 🔴 邏輯衝突與錯誤（最高優先）
+- 條件判斷邏輯是否正確（邊界條件）
+- 資料流是否完整，有無遺漏的狀態更新
+- 非同步操作的順序與錯誤處理
+- 型別不匹配或隱性型別轉換
+
+### 🟠 潛在風險
+- 安全漏洞（XSS、SQL Injection、Command Injection 等）
+- 效能問題（N+1 查詢、記憶體洩漏）
+- 邊界情況是否處理
+
+### 🟡 程式碼品質
+- 命名是否清晰表達意圖
+- 函數/元件職責是否單一
+- 是否有未使用的變數或 import
+
+### 🔵 型別安全
+- 不安全的型別斷言（如 `as any`、強制 cast、非空斷言 `!`）是否合理
+- 型別縮窄是否完整（union / discriminated union 是否覆蓋所有分支）
+- 序列化邊界（API request/response、JSON.parse、外部資料）是否有驗證或型別守衛
+- 泛型參數是否被正確約束，避免退化為 `unknown` 或 `any`
+
+### ⚪ 註解類問題（測試/開發階段保留）
+- 是否有 `TODO`、`FIXME`、`XXX`、暫時性偵錯註解未清除
+- 是否有被註解掉的程式碼（dead code as comments）
+- 是否有暫時保留的診斷/偏差說明註解，需在進入正式實作前處理
+
+> 註解類問題不直接判定為缺陷，因為測試或開發階段可能刻意保留；
+> 統一歸入輸出格式中的「使用者自行決定」區塊，由使用者依目前階段判斷是否清除。
+
+## 6. 輸出格式
+
+使用繁體中文輸出，格式如下：
+
+```markdown
+## 📋 Code Review 摘要
+
+**審查範圍：** [描述變更涵蓋的檔案/功能]
+**整體評估：** ✅ 符合規格可合併 / ⚠️ 部分符合，建議修改 / ❌ 不符合規格，需修正
+
+---
+
+### ⚛️ React 最佳實踐（僅前端變更時輸出此區塊）
+
+#### ✅ 符合最佳實踐
+- [原則]：[簡述實作如何符合]
+
+#### ⚠️ 需改善
+- [原則]：[描述問題與建議方向]
+  ```tsx
+  // 建議修正方向
+  ```
+
+---
+
+### 📐 規格符合度（有提供規格文檔時才輸出此區塊）
+
+#### ✅ 符合規格的項目
+- [規格項目]：[簡單說明實作如何對應]
+
+#### ❌ 不符合或缺漏的項目
+- [規格項目]：[說明缺漏或偏差之處]
+
+---
+
+### 🔴 必須修正（Critical）
+
+#### 問題 1：[問題標題]
+- **檔案：** `path/to/file.ts:行號`
+- **問題：** [描述問題]
+- **影響：** [說明可能造成的後果]
+- **建議修正：**
+  ```typescript
+  // 修正後的程式碼
+  ```
+
+---
+
+### 🟠 建議改善（Warning）
+
+[同上格式]
+
+---
+
+### ⚪ 使用者自行決定（註解類問題）
+
+#### 問題 1：[問題標題]
+- **檔案：** `path/to/file.ts:行號`
+- **問題：** [說明註解為何可能造成維護混淆，例如 TODO 未追蹤、被註解掉的程式碼、暫時偵錯註解]
+- **影響：** [說明此問題是否只影響正式化前的程式碼品質]
+- **建議：** [若目前為測試/開發階段可保留；若進入正式實作應移除或改寫]
+
+---
+
+## 7. 輸出存檔（必做）
+
+完成 Code Review 後，除了在對話中輸出「## 📋 Code Review 摘要」以外，必須將**該摘要的原始內容**獨立存檔成一份 Markdown 文件，便於後續追蹤與分享。
+
+### 存檔規則
+
+- **存放位置：** 專案根目錄下的 `docs/code-review-report` 資料夾（若不存在則自動建立）
+- **檔名格式：** `code-review-YYYY-MM-DD-<feature-slug>.md`
+  - `YYYY-MM-DD` 為本機今日日期
+  - `<feature-slug>` 為**本次審查所對照規格文檔的檔名 slug**（取規格檔名去掉副檔名、轉成 kebab-case）
+  - 範例：
+    - 規格 `docs/spec/login.md` → `docs/code-review-report/code-review-2026-05-17-login.md`
+    - 規格 `docs/specs/user-profile.md` → `docs/code-review-report/code-review-2026-05-17-user-profile.md`
+    - 規格 `docs/PRD-Checkout Flow.md` → `docs/code-review-report/code-review-2026-05-17-checkout-flow.md`
+- **內容範圍：** 檔案最上方為 H1 輪數標題（見「輪數判斷與標題」），其下為與對話輸出的「## 📋 Code Review 摘要」**完全一致**的內容，包含所有子區塊（React 最佳實踐 / 規格符合度 / 必須修正 / 建議改善 / 使用者自行決定等），不可省略、改寫或濃縮
+- **不另加額外章節：** 除了 H1 輪數標題之外，不要在檔案中再加入「審查時間」、「審查者」等對話中沒有的欄位；以原始內容為準
+
+### 規格 slug 推導規則
+
+- 取規格文檔的**檔名主體**（去掉路徑與副檔名）
+- 全部轉小寫，空白與底線一律改為 `-`
+- 連續多個 `-` 合併為一個，前後 `-` 去除
+- 僅保留英數字與 `-`；非 ASCII 字元（如中文）以 transliteration 失敗時 fallback 為英文摘要詞
+
+### 沒有規格文檔時的 fallback
+
+- 若使用者**沒有提供規格文檔**（純通用 code review），改以 **git diff 中本次主要實作的功能**作為 `<feature-slug>`：
+  - 閱讀 diff，歸納本次變更實際在做的事情（例如「新增登入流程」、「修正購物車數量計算」、「重構訂單匯出邏輯」）
+  - 將該功能描述濃縮為簡短英文 slug（kebab-case、僅英數與 `-`），例如：
+    - 新增登入流程 → `login-flow`
+    - 修正購物車數量計算 → `fix-cart-quantity`
+    - 重構訂單匯出邏輯 → `refactor-order-export`
+  - 保持簡潔（建議 2~4 個單字內），讓檔名一眼就能辨識審查對象
+- 若 diff 過於發散難以歸納單一功能，才 fallback 為 `general`
+
+### 重複審查的覆蓋規則
+
+- 若同一天、同一規格的審查再次執行（檔名完全相同），**直接完全覆蓋**整份檔案內容
+- **不需要保留舊紀錄、不需要追加 changelog 區塊、不需要備份舊版**；每次審查都是當下狀態的快照
+- 不同功能（slug 不同）或不同日期會自然產生不同檔名，互不干擾
+- 雖然檔案內容會被覆蓋，但**輪數必須依照「輪數判斷與標題」遞增**，讓使用者一眼看出這份檔案累積審查過幾次
+
+### 輪數判斷與標題
+
+寫檔前，**必須**先用 `Read` 工具讀取目標路徑（即步驟一推導出的最終檔名），依結果決定本輪輪數：
+
+- 檔案不存在 → 視為**第 1 輪**
+- 檔案存在 → 用 regex `第\s*(\d+)\s*輪` 從檔案開頭抓出舊輪數，**新輪數 = 舊輪數 + 1**
+- 檔案存在但抓不到輪數（例如歷史檔尚未套用此規則）→ 視為**第 1 輪**
+
+判斷完成後，在檔案最上方加入 H1 標題（**位於所有內容之前**），格式固定為：
+
+```
+# Code Review 紀錄 — YYYY-MM-DD（第 N 輪）
+```
+
+- `YYYY-MM-DD` 與檔名中的日期一致（本機今日日期）
+- `N` 為上面推導出的輪數，使用阿拉伯數字
+- H1 標題下方空一行，再接原本的 `## 📋 Code Review 摘要` 與其後所有內容（內容本身不因輪數而改變）
+
+> 設計動機：subagent 是 cold start，無法靠記憶判斷「現在是第幾輪」；唯一可靠的線索就是現存檔案。
+> 透過「讀檔 → 解析 → +1」的固定流程，把輪數變成可重現的行為，而非依賴模型自發補上。
+
+### 執行時機
+
+- 在對話中輸出「## 📋 Code Review 摘要」**之後**立即執行寫檔
+- 寫檔完成後，在回覆中以一行簡短訊息告知使用者檔案路徑，例如：
+  `📁 已存檔：docs/code-review-report/code-review-2026-05-17-login.md`
+
+> 設計動機：按功能切分檔名是為了避免「同日多功能審查互相覆蓋」（規格檔名越具體越好，
+> 像 `README` 這種通用名應改找更具體的來源）；同功能同日直接覆蓋則是因為同一審查週期
+> 只有最新結論才有效，歷史變化請依賴 git history，不要在檔內自行追加 changelog。
+
+---
+
+## 注意事項
+
+- 專注於這次變更本身，不對未修改的程式碼提出建議
+- 若發現變更可能影響其他未修改的程式碼，明確指出關聯性
+- 提供具體可執行的修正建議，而非模糊的指導
+- 建議修正的程式碼只列出關鍵行，用 `// ...` 省略無關的上下文，避免輸出過長
+
+
+---
+
+Apply the above skill instructions to this task.
+
+## 重要說明
+
+以下已提供所有審查所需資訊（diff、規格文檔），不需要執行 shell 指令或讀取檔案來取得審查內容；但若 skill 指示要求輸出存檔，仍須依該指示建立審查 Markdown 檔案。
+
+### 規格文檔：todo-item-spec.md
+
+# TodoItem 元件規格
+
+## 功能說明
+
+顯示單一待辦事項，包含標題與優先級狀態標籤。
+
+## Props 介面
+
+| Props | 型別 | 必填 | 說明 |
+|-------|------|------|------|
+| id | number | ✅ | 唯一識別碼 |
+| title | string | ✅ | 待辦事項標題 |
+| completed | boolean | ✅ | 是否已完成 |
+| priority | `'low' \| 'medium' \| 'high'` | ✅ | 優先級 |
+
+## 顯示規則
+
+- `completed === true`：標題套用刪除線樣式，狀態標籤顯示「已完成」（綠色）
+- `completed === false` 且 `priority === 'high'`：狀態標籤顯示「緊急」（紅色）
+- 其他（`completed === false` 且 `priority !== 'high'`）：狀態標籤顯示「進行中」（藍色）
+
+## 技術規範
+
+- Props 必須使用明確的 TypeScript interface 定義，不可使用 `any`
+- 狀態標籤邏輯必須易於閱讀與維護，避免巢狀三元運算子
+
+
+## Git diff（base → staged）
+
+```diff
+--- a/src/components/TodoItem.tsx
++++ b/src/components/TodoItem.tsx
+@@ -1,3 +1,23 @@
+-export const TodoItem = () => {
+-  return <div>placeholder</div>;
++// props: any 導致沒有任何型別保護，無法在編譯期發現錯誤
++const TodoItem = (props: any) => {
++  // 巢狀三元：計算了 statusLabel 但從未在 return 中使用（dead code）
++  const statusLabel = props.completed
++    ? '已完成'
++    : props.priority === 'high'
++    ? '緊急'
++    : '進行中';
++
++  return (
++    <div className="todo-item">
++      <span style={{ textDecoration: props.completed ? 'line-through' : 'none' }}>
++        {props.title}
++      </span>
++      {/* 巢狀三元運算子，應改用 statusLabel 或 if/else */}
++      <span>
++        {props.completed ? '已完成' : props.priority === 'high' ? '緊急' : '進行中'}
++      </span>
++    </div>
++  );
+ };
++
++export default TodoItem;
+```
+
+## 使用者的請求
+
+根據 docs/specs/todo-item-spec.md 幫我審查這次的前端元件實作
+---
+
+## 評分任務
+
+請在完成上方的 Code Review 後，接著評分以下每一條 Expectation。
+每條獨立一行，格式固定為：
+
+En: PASS — 從你的 review 摘錄的證據（一句話）
+En: FAIL — 說明為何未達到
+
+（n 為 Expectation 編號，例如 E1: PASS — ...）
+
+### Expectations 清單
+
+E1. 輸出包含 React 最佳實踐相關區塊（含「⚛️」或「React 最佳實踐」）
+E2. 找出 props: any 型別問題，建議定義明確的 TypeScript interface
+E3. 找出 JSX 中的巢狀三元運算子問題（props.completed ? ... : props.priority === 'high' ? ... : ...）
+E4. 指出 statusLabel 變數計算後未被使用（unused variable / dead code）
+E5. 在 docs/ 目錄下建立了 code-review-YYYY-MM-DD-todo-item-spec.md 格式的審查存檔
+
+---
+
+## 輸出規範
+
+1. 先完整輸出 Code Review（格式遵照 skill 指示）
+2. 輸出一行分隔線：`---`
+3. 輸出標題 `## Grading`
+4. 逐行輸出評分結果（E1、E2 … 順序對應上方清單）
+
+codex
+我會依你貼上的 `code-reviewer` 流程做審查，並只用工具處理必要的存檔、輪數判斷與 commit gate；審查內容本身直接使用你提供的 spec 與 diff。
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "rg -n \"code-reviewer|run_evals|with_skill|without_skill\" C:\\Users\\tenns\\.codex\\memories\\MEMORY.md" in C:\Users\tenns\.claude\skills
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'git status --short' in C:\Users\tenns\.claude\skills
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "if (Test-Path -LiteralPath 'docs/code-review-report/code-review-2026-05-18-todo-item-spec.md') { Get-Content -LiteralPath 'docs/code-review-report/code-review-2026-05-18-todo-item-spec.md' -TotalCount 5 }" in C:\Users\tenns\.claude\skills
+ succeeded in 603ms:
+16:## Task 2: 把 apply 流程收斂為 tasks -> bdd-unit-test -> tests -> code-reviewer
+24:- apply skill, bdd-unit-test, code-reviewer, stop on conflict, first unfinished feature folder, docs/propose/README.md, C:\Users\tenns\.codex\skills\code-reviewer\SKILL.MD
+40:- when 任務實作完成後, the user明講 `全部任務實作後，必須先用 bdd-unit-test 寫單測，在進行 code-reviewer` -> 類似 propose apply 流程要把 test generation 視為固定步驟，不是 optional 附加 [Task 2]
+49:- 已驗證可用的 skill 路徑包含 `C:\Users\tenns\.codex\skills\apply\SKILL.md`、`C:\Users\tenns\.codex\skills\bdd-unit-test\SKILL.md`、`C:\Users\tenns\.codex\skills\code-reviewer\SKILL.MD`；reviewer 是 downstream step，不應混進 bdd-unit-test [Task 2]
+57:- 症狀：completion criteria 提到 tests/review，但沒有把順序寫死。原因：apply 流程缺少明確編排。修正：把步驟固定成 `tasks -> bdd-unit-test -> run tests -> code-reviewer`，避免 review 先於 test skeleton 補齊 [Task 2]
+262:# Task Group: Skills repo eval tooling standardization, code-reviewer eval comparison, and runner review
+264:scope: 適用於 `C:\Users\tenns\.claude\skills` 的 eval runner 標準化、`code-reviewer` eval 設計與 with_skill/without_skill 比較、repo-wide `run_evals.py` review、以及 artifact/CLI 合約維護；遇到 skill eval 腳本、benchmark 解讀或 Windows prompt 安全性時先查這塊
+275:- skill-creator, run_evals.py, update-skill-creator.py, update-skill-creator.ps1, fleet-review/test/run-test.py, jq, chmod +x, py_compile, rg --files -g "*.sh"
+277:## Task 2: 建立共用 eval-test 維護風格並讓 `apply/evals/run_evals.py` 支援平行執行
+285:- eval-test/MAINTENANCE.md, apply/evals/run_evals.py, --jobs, --timeout, summary.json, benchmark.json, last-message.md, taskkill /T /F, os.killpg, PYTHONUTF8=1, PyYAML
+287:## Task 3: 為 `code-reviewer` 新增 eval fixtures 與 Python runner，並驗證 with_skill / without_skill 比較
+291:- rollout_summaries/2026-05-17T10-01-10-bRuK-code_reviewer_evals_runner_and_output_comparison.md (cwd=C:\Users\tenns\.claude\skills, rollout_path=C:\Users\tenns\.codex\sessions\2026\05\17\rollout-2026-05-17T18-01-10-019e3561-ed31-7211-8a1f-cff09eb38f2e.jsonl, updated_at=2026-05-17T13:52:58+00:00, thread_id=019e3561-ed31-7211-8a1f-cff09eb38f2e, `code-reviewer` eval runner、fixtures 與比較結論)
+295:- code-reviewer, code-reviewer/evals/run_evals.py, with_skill, without_skill, evals.json, validate_structure.py, stdin prompt, UnicodeEncodeError, cp950, last-message.md, Result: 6/6 passed
+297:## Task 4: Repo-wide code-review 所有 `run_evals.py`，確認 full parallel 與 Windows argv safety
+305:- rg --files -g run_evals.py, ThreadPoolExecutor(max_workers=len(tasks)), as_completed, stdin=subprocess.PIPE, communicate(input=prompt), process.stdin.write, --jobs, error: unrecognized arguments: --jobs, py_compile
+314:- when 驗證 repo-wide runner contract, the user repeated `再次執行 code-reviewer`、`全部的run_evals.py`、`統一改成max_workers=len(tasks)，所有 run 同時啟動，等最慢的那個完成就結束` -> 這個 repo 的 runner review 預設做全 repo 掃描並核對精確 concurrency contract，而不是抽樣 spot check [Task 4]
+319:- 這個 repo 的 eval runner 已驗證可全面轉成 `run_evals.py`，並以 Python `json` + `subprocess` 取代 `jq`、shell functions、`chmod +x` 等 shell 依賴 [Task 1]
+320:- `python` 與 `py` 都可用於這台機器；`python --version` 與 `py --version` 都曾驗證為 Python 3.12.4，因此 `python evals/run_evals.py` / `py evals/run_evals.py` 是可行執行模型 [Task 1]
+322:- 共享 eval runner 維護基準在 `eval-test/MAINTENANCE.md`：`iteration-N/<eval-id>-<eval-name>/with_skill/` artifact layout、`eval_metadata.json`、`output.log`、`last-message.md`、`timing.json`、以及 iteration root 的 `summary.json` / `benchmark.json` [Task 2]
+323:- `apply/evals/run_evals.py` 的平行度來自外層 Python wrapper，不是 `codex exec` 內建多工；有效平行度為 `min(--jobs, number_of_selected_evals)`。當前 apply eval set 共有 3 個 case，所以最多同時 3 個 Codex process [Task 2]
+324:- `code-reviewer/evals/evals.json` 已建立 3 個 fixture-backed cases：`spec-mismatch-order-total`、`react-best-practice`、`generic-review-no-spec`；runner 會建立隔離 workspace、做 baseline git commit，讓 fixture 內 `git diff HEAD` 有意義 [Task 3]
+326:- `code-reviewer` 這輪 full run 的 `Result: 6/6 passed` 只代表 with_skill/without_skill 的 6 次執行都成功退出，不代表 skill superiority；判讀 benchmark 時必須再比對 `last-message.md` 與 grading/assertion 是否真的能區分 workflow compliance 與 review quality [Task 3]
+327:- 這 3 個 `code-reviewer` fixtures 目前只能驗證 workflow consistency，不足以證明 with_skill 比 without_skill 更會找 bug；baseline 仍抓到同樣的核心缺陷，差異主要在 `## 📋 Code Review 摘要`、`規格符合度`、`React 最佳實踐`、review-file save flow 等 skill-specific 格式行為 [Task 3]
+328:- repo-wide 最終驗證狀態是 8 個 `run_evals.py` 全部採 `tasks = [...]` 扁平化、`ThreadPoolExecutor(max_workers=len(tasks))`、`as_completed(...)`，且 prompt 皆走 stdin；6 個 generic runners 已移除 active `--jobs` 控制與 stale usage text [Task 4]
+339:- 症狀：benchmark 顯示全 PASS，卻無法回答「skill 是否更好」。原因：`passed` 只量 runner execution success，fixture/assertion 沒把 workflow compliance 與實質 review 品質拆開。修正：未來要新增 grading/assertions，並明確比較 with_skill / without_skill 的輸出內容，而不是只看 exit code 與 timing [Task 3]
+
+ succeeded in 612ms:
+ succeeded in 636ms:
+codex
+目標報告檔目前不存在，所以這次會以第 1 輪建立 `docs/code-review-report/code-review-2026-05-18-todo-item-spec.md`。接著我會把與最終輸出一致的 review 摘要寫入檔案。
+apply patch
+patch: completed
+C:\Users\tenns\.claude\skills\docs\code-review-report\code-review-2026-05-18-todo-item-spec.md
+diff --git a/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..7531b4deed016f987e5e523950b1af714e63d4e2
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+@@ -0,0 +1,139 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/components/TodoItem.tsx` 的 TodoItem 前端元件實作，對照 `docs/specs/todo-item-spec.md`  
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### ⚛️ React 最佳實踐
++
++#### ✅ 符合最佳實踐
++- 元件輸出結構：以單一 component 呈現待辦標題與狀態標籤，方向符合規格描述的單一待辦事項展示用途。
++
++#### ⚠️ 需改善
++- 型別安全：React component props 使用 `any`，會讓呼叫端傳入錯誤型別時無法在編譯期攔截，違反規格要求的明確 TypeScript interface。
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++- 狀態衍生邏輯：JSX 內直接放入巢狀三元運算子，閱讀與維護成本偏高，也違反規格要求避免巢狀三元運算子。應把 label 與樣式邏輯抽成清楚的 helper 或區塊變數。
++  ```tsx
++  const getStatusLabel = (completed: boolean, priority: TodoItemProps['priority']) => {
++    if (completed) {
++      return '已完成';
++    }
++
++    if (priority === 'high') {
++      return '緊急';
++    }
++
++    return '進行中';
++  };
++  ```
++
++---
++
++### 📐 規格符合度
++
++#### ✅ 符合規格的項目
++- 標題顯示：`props.title` 有渲染在畫面中。
++- 已完成標題樣式：`props.completed === true` 時，標題套用 `line-through`。
++- 狀態文字規則：目前 JSX 文字可分別顯示「已完成」、「緊急」、「進行中」。
++
++#### ❌ 不符合或缺漏的項目
++- Props 型別：規格要求使用明確 TypeScript interface，實作使用 `props: any`，不符合技術規範。
++- 狀態標籤顏色：規格要求「已完成」綠色、「緊急」紅色、「進行中」藍色；目前狀態 `<span>` 沒有任何顏色樣式或 class。
++- 狀態標籤邏輯可維護性：規格要求避免巢狀三元運算子；目前 JSX 中使用 `props.completed ? '已完成' : props.priority === 'high' ? '緊急' : '進行中'`。
++- `id` prop：規格定義 `id` 為必填唯一識別碼，但目前沒有 interface 保障，也沒有在元件簽名中明確呈現此 contract。
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：Props 使用 `any`，違反 TypeScript interface 規格
++- **檔案：** `src/components/TodoItem.tsx:2`
++- **問題：** `const TodoItem = (props: any)` 使 `id`、`title`、`completed`、`priority` 都失去型別保護。
++- **影響：** 呼叫端可傳入不存在的 priority、非 boolean completed 或缺漏 title，編譯期不會報錯，與規格的 Props contract 不一致。
++- **建議修正：**
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++
++---
++
++#### 問題 2：JSX 中仍使用巢狀三元運算子
++- **檔案：** `src/components/TodoItem.tsx:16`
++- **問題：** 狀態標籤直接在 JSX 中使用巢狀三元運算子，違反規格「避免巢狀三元運算子」。
++- **影響：** 後續若新增更多狀態或樣式，條件會更難閱讀，且容易造成 label 與樣式規則分岔。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++#### 問題 3：狀態標籤缺少規格要求的顏色
++- **檔案：** `src/components/TodoItem.tsx:15`
++- **問題：** 狀態 `<span>` 只輸出文字，沒有依 completed / priority 套用綠色、紅色、藍色。
++- **影響：** UI 顯示未完整符合規格，使用者無法透過顏色辨識狀態。
++- **建議修正：**
++  ```tsx
++  const statusClassName = getStatusClassName(completed, priority);
++
++  return (
++    // ...
++    <span className={statusClassName}>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：`statusLabel` 計算後未被使用
++- **檔案：** `src/components/TodoItem.tsx:4`
++- **問題：** `statusLabel` 已根據狀態算出文字，但 return 中又重新計算一次，造成 unused variable / dead code。
++- **影響：** 邏輯重複會增加維護風險；未來若只改其中一處，可能導致顯示規則不一致。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：程式內保留指出缺陷的暫時註解
++- **檔案：** `src/components/TodoItem.tsx:1`
++- **問題：** 註解直接描述 `props: any` 與巢狀三元問題，像是 review 備註而非元件實作必要說明。
++- **影響：** 測試或示範階段可保留作為缺陷提示；正式實作前應移除，避免讓問題說明長期留在 production code。
++- **建議：** 修正型別與狀態邏輯後移除此類註解；若需要保留設計理由，改寫成「為什麼」而不是描述目前程式做了什麼。
+
+diff --git a/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..7531b4deed016f987e5e523950b1af714e63d4e2
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+@@ -0,0 +1,139 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/components/TodoItem.tsx` 的 TodoItem 前端元件實作，對照 `docs/specs/todo-item-spec.md`  
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### ⚛️ React 最佳實踐
++
++#### ✅ 符合最佳實踐
++- 元件輸出結構：以單一 component 呈現待辦標題與狀態標籤，方向符合規格描述的單一待辦事項展示用途。
++
++#### ⚠️ 需改善
++- 型別安全：React component props 使用 `any`，會讓呼叫端傳入錯誤型別時無法在編譯期攔截，違反規格要求的明確 TypeScript interface。
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++- 狀態衍生邏輯：JSX 內直接放入巢狀三元運算子，閱讀與維護成本偏高，也違反規格要求避免巢狀三元運算子。應把 label 與樣式邏輯抽成清楚的 helper 或區塊變數。
++  ```tsx
++  const getStatusLabel = (completed: boolean, priority: TodoItemProps['priority']) => {
++    if (completed) {
++      return '已完成';
++    }
++
++    if (priority === 'high') {
++      return '緊急';
++    }
++
++    return '進行中';
++  };
++  ```
++
++---
++
++### 📐 規格符合度
++
++#### ✅ 符合規格的項目
++- 標題顯示：`props.title` 有渲染在畫面中。
++- 已完成標題樣式：`props.completed === true` 時，標題套用 `line-through`。
++- 狀態文字規則：目前 JSX 文字可分別顯示「已完成」、「緊急」、「進行中」。
++
++#### ❌ 不符合或缺漏的項目
++- Props 型別：規格要求使用明確 TypeScript interface，實作使用 `props: any`，不符合技術規範。
++- 狀態標籤顏色：規格要求「已完成」綠色、「緊急」紅色、「進行中」藍色；目前狀態 `<span>` 沒有任何顏色樣式或 class。
++- 狀態標籤邏輯可維護性：規格要求避免巢狀三元運算子；目前 JSX 中使用 `props.completed ? '已完成' : props.priority === 'high' ? '緊急' : '進行中'`。
++- `id` prop：規格定義 `id` 為必填唯一識別碼，但目前沒有 interface 保障，也沒有在元件簽名中明確呈現此 contract。
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：Props 使用 `any`，違反 TypeScript interface 規格
++- **檔案：** `src/components/TodoItem.tsx:2`
++- **問題：** `const TodoItem = (props: any)` 使 `id`、`title`、`completed`、`priority` 都失去型別保護。
++- **影響：** 呼叫端可傳入不存在的 priority、非 boolean completed 或缺漏 title，編譯期不會報錯，與規格的 Props contract 不一致。
++- **建議修正：**
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++
++---
++
++#### 問題 2：JSX 中仍使用巢狀三元運算子
++- **檔案：** `src/components/TodoItem.tsx:16`
++- **問題：** 狀態標籤直接在 JSX 中使用巢狀三元運算子，違反規格「避免巢狀三元運算子」。
++- **影響：** 後續若新增更多狀態或樣式，條件會更難閱讀，且容易造成 label 與樣式規則分岔。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++#### 問題 3：狀態標籤缺少規格要求的顏色
++- **檔案：** `src/components/TodoItem.tsx:15`
++- **問題：** 狀態 `<span>` 只輸出文字，沒有依 completed / priority 套用綠色、紅色、藍色。
++- **影響：** UI 顯示未完整符合規格，使用者無法透過顏色辨識狀態。
++- **建議修正：**
++  ```tsx
++  const statusClassName = getStatusClassName(completed, priority);
++
++  return (
++    // ...
++    <span className={statusClassName}>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：`statusLabel` 計算後未被使用
++- **檔案：** `src/components/TodoItem.tsx:4`
++- **問題：** `statusLabel` 已根據狀態算出文字，但 return 中又重新計算一次，造成 unused variable / dead code。
++- **影響：** 邏輯重複會增加維護風險；未來若只改其中一處，可能導致顯示規則不一致。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：程式內保留指出缺陷的暫時註解
++- **檔案：** `src/components/TodoItem.tsx:1`
++- **問題：** 註解直接描述 `props: any` 與巢狀三元問題，像是 review 備註而非元件實作必要說明。
++- **影響：** 測試或示範階段可保留作為缺陷提示；正式實作前應移除，避免讓問題說明長期留在 production code。
++- **建議：** 修正型別與狀態邏輯後移除此類註解；若需要保留設計理由，改寫成「為什麼」而不是描述目前程式做了什麼。
+
+codex
+報告檔已建立。依專案 gate，這次只有新增 Markdown 審查報告，所以我會做 diff whitespace 檢查、跳過 build 與額外 code review，然後只 staging 這份報告檔並提交。
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'git status --short' in C:\Users\tenns\.claude\skills
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'git diff --check -- docs/code-review-report/code-review-2026-05-18-todo-item-spec.md' in C:\Users\tenns\.claude\skills
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'git diff -- docs/code-review-report/code-review-2026-05-18-todo-item-spec.md' in C:\Users\tenns\.claude\skills
+ succeeded in 493ms:
+ succeeded in 518ms:
+?? docs/
+
+ succeeded in 465ms:
+diff --git a/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..7531b4deed016f987e5e523950b1af714e63d4e2
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+@@ -0,0 +1,139 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/components/TodoItem.tsx` 的 TodoItem 前端元件實作，對照 `docs/specs/todo-item-spec.md`  
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### ⚛️ React 最佳實踐
++
++#### ✅ 符合最佳實踐
++- 元件輸出結構：以單一 component 呈現待辦標題與狀態標籤，方向符合規格描述的單一待辦事項展示用途。
++
++#### ⚠️ 需改善
++- 型別安全：React component props 使用 `any`，會讓呼叫端傳入錯誤型別時無法在編譯期攔截，違反規格要求的明確 TypeScript interface。
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++- 狀態衍生邏輯：JSX 內直接放入巢狀三元運算子，閱讀與維護成本偏高，也違反規格要求避免巢狀三元運算子。應把 label 與樣式邏輯抽成清楚的 helper 或區塊變數。
++  ```tsx
++  const getStatusLabel = (completed: boolean, priority: TodoItemProps['priority']) => {
++    if (completed) {
++      return '已完成';
++    }
++
++    if (priority === 'high') {
++      return '緊急';
++    }
++
++    return '進行中';
++  };
++  ```
++
++---
++
++### 📐 規格符合度
++
++#### ✅ 符合規格的項目
++- 標題顯示：`props.title` 有渲染在畫面中。
++- 已完成標題樣式：`props.completed === true` 時，標題套用 `line-through`。
++- 狀態文字規則：目前 JSX 文字可分別顯示「已完成」、「緊急」、「進行中」。
++
++#### ❌ 不符合或缺漏的項目
++- Props 型別：規格要求使用明確 TypeScript interface，實作使用 `props: any`，不符合技術規範。
++- 狀態標籤顏色：規格要求「已完成」綠色、「緊急」紅色、「進行中」藍色；目前狀態 `<span>` 沒有任何顏色樣式或 class。
++- 狀態標籤邏輯可維護性：規格要求避免巢狀三元運算子；目前 JSX 中使用 `props.completed ? '已完成' : props.priority === 'high' ? '緊急' : '進行中'`。
++- `id` prop：規格定義 `id` 為必填唯一識別碼，但目前沒有 interface 保障，也沒有在元件簽名中明確呈現此 contract。
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：Props 使用 `any`，違反 TypeScript interface 規格
++- **檔案：** `src/components/TodoItem.tsx:2`
++- **問題：** `const TodoItem = (props: any)` 使 `id`、`title`、`completed`、`priority` 都失去型別保護。
++- **影響：** 呼叫端可傳入不存在的 priority、非 boolean completed 或缺漏 title，編譯期不會報錯，與規格的 Props contract 不一致。
++- **建議修正：**
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++
++---
++
++#### 問題 2：JSX 中仍使用巢狀三元運算子
++- **檔案：** `src/components/TodoItem.tsx:16`
++- **問題：** 狀態標籤直接在 JSX 中使用巢狀三元運算子，違反規格「避免巢狀三元運算子」。
++- **影響：** 後續若新增更多狀態或樣式，條件會更難閱讀，且容易造成 label 與樣式規則分岔。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++#### 問題 3：狀態標籤缺少規格要求的顏色
++- **檔案：** `src/components/TodoItem.tsx:15`
++- **問題：** 狀態 `<span>` 只輸出文字，沒有依 completed / priority 套用綠色、紅色、藍色。
++- **影響：** UI 顯示未完整符合規格，使用者無法透過顏色辨識狀態。
++- **建議修正：**
++  ```tsx
++  const statusClassName = getStatusClassName(completed, priority);
++
++  return (
++    // ...
++    <span className={statusClassName}>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：`statusLabel` 計算後未被使用
++- **檔案：** `src/components/TodoItem.tsx:4`
++- **問題：** `statusLabel` 已根據狀態算出文字，但 return 中又重新計算一次，造成 unused variable / dead code。
++- **影響：** 邏輯重複會增加維護風險；未來若只改其中一處，可能導致顯示規則不一致。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：程式內保留指出缺陷的暫時註解
++- **檔案：** `src/components/TodoItem.tsx:1`
++- **問題：** 註解直接描述 `props: any` 與巢狀三元問題，像是 review 備註而非元件實作必要說明。
++- **影響：** 測試或示範階段可保留作為缺陷提示；正式實作前應移除，避免讓問題說明長期留在 production code。
++- **建議：** 修正型別與狀態邏輯後移除此類註解；若需要保留設計理由，改寫成「為什麼」而不是描述目前程式做了什麼。
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'git status --short --untracked-files=all' in C:\Users\tenns\.claude\skills
+ succeeded in 378ms:
+?? docs/code-review-report/code-review-2026-05-18-login-spec.md
+?? docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+?? docs/code-review-report/code-review-2026-05-18-user-service-search.md
+
+diff --git a/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..7531b4deed016f987e5e523950b1af714e63d4e2
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+@@ -0,0 +1,139 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/components/TodoItem.tsx` 的 TodoItem 前端元件實作，對照 `docs/specs/todo-item-spec.md`  
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### ⚛️ React 最佳實踐
++
++#### ✅ 符合最佳實踐
++- 元件輸出結構：以單一 component 呈現待辦標題與狀態標籤，方向符合規格描述的單一待辦事項展示用途。
++
++#### ⚠️ 需改善
++- 型別安全：React component props 使用 `any`，會讓呼叫端傳入錯誤型別時無法在編譯期攔截，違反規格要求的明確 TypeScript interface。
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++- 狀態衍生邏輯：JSX 內直接放入巢狀三元運算子，閱讀與維護成本偏高，也違反規格要求避免巢狀三元運算子。應把 label 與樣式邏輯抽成清楚的 helper 或區塊變數。
++  ```tsx
++  const getStatusLabel = (completed: boolean, priority: TodoItemProps['priority']) => {
++    if (completed) {
++      return '已完成';
++    }
++
++    if (priority === 'high') {
++      return '緊急';
++    }
++
++    return '進行中';
++  };
++  ```
++
++---
++
++### 📐 規格符合度
++
++#### ✅ 符合規格的項目
++- 標題顯示：`props.title` 有渲染在畫面中。
++- 已完成標題樣式：`props.completed === true` 時，標題套用 `line-through`。
++- 狀態文字規則：目前 JSX 文字可分別顯示「已完成」、「緊急」、「進行中」。
++
++#### ❌ 不符合或缺漏的項目
++- Props 型別：規格要求使用明確 TypeScript interface，實作使用 `props: any`，不符合技術規範。
++- 狀態標籤顏色：規格要求「已完成」綠色、「緊急」紅色、「進行中」藍色；目前狀態 `<span>` 沒有任何顏色樣式或 class。
++- 狀態標籤邏輯可維護性：規格要求避免巢狀三元運算子；目前 JSX 中使用 `props.completed ? '已完成' : props.priority === 'high' ? '緊急' : '進行中'`。
++- `id` prop：規格定義 `id` 為必填唯一識別碼，但目前沒有 interface 保障，也沒有在元件簽名中明確呈現此 contract。
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：Props 使用 `any`，違反 TypeScript interface 規格
++- **檔案：** `src/components/TodoItem.tsx:2`
++- **問題：** `const TodoItem = (props: any)` 使 `id`、`title`、`completed`、`priority` 都失去型別保護。
++- **影響：** 呼叫端可傳入不存在的 priority、非 boolean completed 或缺漏 title，編譯期不會報錯，與規格的 Props contract 不一致。
++- **建議修正：**
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++
++---
++
++#### 問題 2：JSX 中仍使用巢狀三元運算子
++- **檔案：** `src/components/TodoItem.tsx:16`
++- **問題：** 狀態標籤直接在 JSX 中使用巢狀三元運算子，違反規格「避免巢狀三元運算子」。
++- **影響：** 後續若新增更多狀態或樣式，條件會更難閱讀，且容易造成 label 與樣式規則分岔。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++#### 問題 3：狀態標籤缺少規格要求的顏色
++- **檔案：** `src/components/TodoItem.tsx:15`
++- **問題：** 狀態 `<span>` 只輸出文字，沒有依 completed / priority 套用綠色、紅色、藍色。
++- **影響：** UI 顯示未完整符合規格，使用者無法透過顏色辨識狀態。
++- **建議修正：**
++  ```tsx
++  const statusClassName = getStatusClassName(completed, priority);
++
++  return (
++    // ...
++    <span className={statusClassName}>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：`statusLabel` 計算後未被使用
++- **檔案：** `src/components/TodoItem.tsx:4`
++- **問題：** `statusLabel` 已根據狀態算出文字，但 return 中又重新計算一次，造成 unused variable / dead code。
++- **影響：** 邏輯重複會增加維護風險；未來若只改其中一處，可能導致顯示規則不一致。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：程式內保留指出缺陷的暫時註解
++- **檔案：** `src/components/TodoItem.tsx:1`
++- **問題：** 註解直接描述 `props: any` 與巢狀三元問題，像是 review 備註而非元件實作必要說明。
++- **影響：** 測試或示範階段可保留作為缺陷提示；正式實作前應移除，避免讓問題說明長期留在 production code。
++- **建議：** 修正型別與狀態邏輯後移除此類註解；若需要保留設計理由，改寫成「為什麼」而不是描述目前程式做了什麼。
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'git add -- docs/code-review-report/code-review-2026-05-18-todo-item-spec.md; git diff --cached --check -- docs/code-review-report/code-review-2026-05-18-todo-item-spec.md' in C:\Users\tenns\.claude\skills
+2026-05-18T13:17:58.881981Z ERROR codex_core::tools::router: error=Exit code: 1
+Wall time: 0.4 seconds
+Output:
+docs/code-review-report/code-review-2026-05-18-todo-item-spec.md:5: trailing whitespace.
++**審查範圍：** `src/components/TodoItem.tsx` 的 TodoItem 前端元件實作，對照 `docs/specs/todo-item-spec.md`  
+warning: in the working copy of 'docs/code-review-report/code-review-2026-05-18-todo-item-spec.md', LF will be replaced by CRLF the next time Git touches it
+
+ exited 1 in 448ms:
+docs/code-review-report/code-review-2026-05-18-todo-item-spec.md:5: trailing whitespace.
++**審查範圍：** `src/components/TodoItem.tsx` 的 TodoItem 前端元件實作，對照 `docs/specs/todo-item-spec.md`  
+warning: in the working copy of 'docs/code-review-report/code-review-2026-05-18-todo-item-spec.md', LF will be replaced by CRLF the next time Git touches it
+
+diff --git a/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..7531b4deed016f987e5e523950b1af714e63d4e2
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+@@ -0,0 +1,139 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/components/TodoItem.tsx` 的 TodoItem 前端元件實作，對照 `docs/specs/todo-item-spec.md`  
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### ⚛️ React 最佳實踐
++
++#### ✅ 符合最佳實踐
++- 元件輸出結構：以單一 component 呈現待辦標題與狀態標籤，方向符合規格描述的單一待辦事項展示用途。
++
++#### ⚠️ 需改善
++- 型別安全：React component props 使用 `any`，會讓呼叫端傳入錯誤型別時無法在編譯期攔截，違反規格要求的明確 TypeScript interface。
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++- 狀態衍生邏輯：JSX 內直接放入巢狀三元運算子，閱讀與維護成本偏高，也違反規格要求避免巢狀三元運算子。應把 label 與樣式邏輯抽成清楚的 helper 或區塊變數。
++  ```tsx
++  const getStatusLabel = (completed: boolean, priority: TodoItemProps['priority']) => {
++    if (completed) {
++      return '已完成';
++    }
++
++    if (priority === 'high') {
++      return '緊急';
++    }
++
++    return '進行中';
++  };
++  ```
++
++---
++
++### 📐 規格符合度
++
++#### ✅ 符合規格的項目
++- 標題顯示：`props.title` 有渲染在畫面中。
++- 已完成標題樣式：`props.completed === true` 時，標題套用 `line-through`。
++- 狀態文字規則：目前 JSX 文字可分別顯示「已完成」、「緊急」、「進行中」。
++
++#### ❌ 不符合或缺漏的項目
++- Props 型別：規格要求使用明確 TypeScript interface，實作使用 `props: any`，不符合技術規範。
++- 狀態標籤顏色：規格要求「已完成」綠色、「緊急」紅色、「進行中」藍色；目前狀態 `<span>` 沒有任何顏色樣式或 class。
++- 狀態標籤邏輯可維護性：規格要求避免巢狀三元運算子；目前 JSX 中使用 `props.completed ? '已完成' : props.priority === 'high' ? '緊急' : '進行中'`。
++- `id` prop：規格定義 `id` 為必填唯一識別碼，但目前沒有 interface 保障，也沒有在元件簽名中明確呈現此 contract。
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：Props 使用 `any`，違反 TypeScript interface 規格
++- **檔案：** `src/components/TodoItem.tsx:2`
++- **問題：** `const TodoItem = (props: any)` 使 `id`、`title`、`completed`、`priority` 都失去型別保護。
++- **影響：** 呼叫端可傳入不存在的 priority、非 boolean completed 或缺漏 title，編譯期不會報錯，與規格的 Props contract 不一致。
++- **建議修正：**
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++
++---
++
++#### 問題 2：JSX 中仍使用巢狀三元運算子
++- **檔案：** `src/components/TodoItem.tsx:16`
++- **問題：** 狀態標籤直接在 JSX 中使用巢狀三元運算子，違反規格「避免巢狀三元運算子」。
++- **影響：** 後續若新增更多狀態或樣式，條件會更難閱讀，且容易造成 label 與樣式規則分岔。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++#### 問題 3：狀態標籤缺少規格要求的顏色
++- **檔案：** `src/components/TodoItem.tsx:15`
++- **問題：** 狀態 `<span>` 只輸出文字，沒有依 completed / priority 套用綠色、紅色、藍色。
++- **影響：** UI 顯示未完整符合規格，使用者無法透過顏色辨識狀態。
++- **建議修正：**
++  ```tsx
++  const statusClassName = getStatusClassName(completed, priority);
++
++  return (
++    // ...
++    <span className={statusClassName}>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：`statusLabel` 計算後未被使用
++- **檔案：** `src/components/TodoItem.tsx:4`
++- **問題：** `statusLabel` 已根據狀態算出文字，但 return 中又重新計算一次，造成 unused variable / dead code。
++- **影響：** 邏輯重複會增加維護風險；未來若只改其中一處，可能導致顯示規則不一致。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：程式內保留指出缺陷的暫時註解
++- **檔案：** `src/components/TodoItem.tsx:1`
++- **問題：** 註解直接描述 `props: any` 與巢狀三元問題，像是 review 備註而非元件實作必要說明。
++- **影響：** 測試或示範階段可保留作為缺陷提示；正式實作前應移除，避免讓問題說明長期留在 production code。
++- **建議：** 修正型別與狀態邏輯後移除此類註解；若需要保留設計理由，改寫成「為什麼」而不是描述目前程式做了什麼。
+
+codex
+`git diff --check` 抓到報告檔第 5 行有 Markdown 行尾空白。我會直接改成一般換行，修完再重新檢查與 staging。
+apply patch
+patch: completed
+C:\Users\tenns\.claude\skills\docs\code-review-report\code-review-2026-05-18-todo-item-spec.md
+diff --git a/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..ace8fcda34833d553c9e1df5f6eee4e8292c1d93
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+@@ -0,0 +1,139 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/components/TodoItem.tsx` 的 TodoItem 前端元件實作，對照 `docs/specs/todo-item-spec.md`
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### ⚛️ React 最佳實踐
++
++#### ✅ 符合最佳實踐
++- 元件輸出結構：以單一 component 呈現待辦標題與狀態標籤，方向符合規格描述的單一待辦事項展示用途。
++
++#### ⚠️ 需改善
++- 型別安全：React component props 使用 `any`，會讓呼叫端傳入錯誤型別時無法在編譯期攔截，違反規格要求的明確 TypeScript interface。
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++- 狀態衍生邏輯：JSX 內直接放入巢狀三元運算子，閱讀與維護成本偏高，也違反規格要求避免巢狀三元運算子。應把 label 與樣式邏輯抽成清楚的 helper 或區塊變數。
++  ```tsx
++  const getStatusLabel = (completed: boolean, priority: TodoItemProps['priority']) => {
++    if (completed) {
++      return '已完成';
++    }
++
++    if (priority === 'high') {
++      return '緊急';
++    }
++
++    return '進行中';
++  };
++  ```
++
++---
++
++### 📐 規格符合度
++
++#### ✅ 符合規格的項目
++- 標題顯示：`props.title` 有渲染在畫面中。
++- 已完成標題樣式：`props.completed === true` 時，標題套用 `line-through`。
++- 狀態文字規則：目前 JSX 文字可分別顯示「已完成」、「緊急」、「進行中」。
++
++#### ❌ 不符合或缺漏的項目
++- Props 型別：規格要求使用明確 TypeScript interface，實作使用 `props: any`，不符合技術規範。
++- 狀態標籤顏色：規格要求「已完成」綠色、「緊急」紅色、「進行中」藍色；目前狀態 `<span>` 沒有任何顏色樣式或 class。
++- 狀態標籤邏輯可維護性：規格要求避免巢狀三元運算子；目前 JSX 中使用 `props.completed ? '已完成' : props.priority === 'high' ? '緊急' : '進行中'`。
++- `id` prop：規格定義 `id` 為必填唯一識別碼，但目前沒有 interface 保障，也沒有在元件簽名中明確呈現此 contract。
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：Props 使用 `any`，違反 TypeScript interface 規格
++- **檔案：** `src/components/TodoItem.tsx:2`
++- **問題：** `const TodoItem = (props: any)` 使 `id`、`title`、`completed`、`priority` 都失去型別保護。
++- **影響：** 呼叫端可傳入不存在的 priority、非 boolean completed 或缺漏 title，編譯期不會報錯，與規格的 Props contract 不一致。
++- **建議修正：**
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++
++---
++
++#### 問題 2：JSX 中仍使用巢狀三元運算子
++- **檔案：** `src/components/TodoItem.tsx:16`
++- **問題：** 狀態標籤直接在 JSX 中使用巢狀三元運算子，違反規格「避免巢狀三元運算子」。
++- **影響：** 後續若新增更多狀態或樣式，條件會更難閱讀，且容易造成 label 與樣式規則分岔。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++#### 問題 3：狀態標籤缺少規格要求的顏色
++- **檔案：** `src/components/TodoItem.tsx:15`
++- **問題：** 狀態 `<span>` 只輸出文字，沒有依 completed / priority 套用綠色、紅色、藍色。
++- **影響：** UI 顯示未完整符合規格，使用者無法透過顏色辨識狀態。
++- **建議修正：**
++  ```tsx
++  const statusClassName = getStatusClassName(completed, priority);
++
++  return (
++    // ...
++    <span className={statusClassName}>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：`statusLabel` 計算後未被使用
++- **檔案：** `src/components/TodoItem.tsx:4`
++- **問題：** `statusLabel` 已根據狀態算出文字，但 return 中又重新計算一次，造成 unused variable / dead code。
++- **影響：** 邏輯重複會增加維護風險；未來若只改其中一處，可能導致顯示規則不一致。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：程式內保留指出缺陷的暫時註解
++- **檔案：** `src/components/TodoItem.tsx:1`
++- **問題：** 註解直接描述 `props: any` 與巢狀三元問題，像是 review 備註而非元件實作必要說明。
++- **影響：** 測試或示範階段可保留作為缺陷提示；正式實作前應移除，避免讓問題說明長期留在 production code。
++- **建議：** 修正型別與狀態邏輯後移除此類註解；若需要保留設計理由，改寫成「為什麼」而不是描述目前程式做了什麼。
+
+diff --git a/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..ace8fcda34833d553c9e1df5f6eee4e8292c1d93
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+@@ -0,0 +1,139 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/components/TodoItem.tsx` 的 TodoItem 前端元件實作，對照 `docs/specs/todo-item-spec.md`
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### ⚛️ React 最佳實踐
++
++#### ✅ 符合最佳實踐
++- 元件輸出結構：以單一 component 呈現待辦標題與狀態標籤，方向符合規格描述的單一待辦事項展示用途。
++
++#### ⚠️ 需改善
++- 型別安全：React component props 使用 `any`，會讓呼叫端傳入錯誤型別時無法在編譯期攔截，違反規格要求的明確 TypeScript interface。
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++- 狀態衍生邏輯：JSX 內直接放入巢狀三元運算子，閱讀與維護成本偏高，也違反規格要求避免巢狀三元運算子。應把 label 與樣式邏輯抽成清楚的 helper 或區塊變數。
++  ```tsx
++  const getStatusLabel = (completed: boolean, priority: TodoItemProps['priority']) => {
++    if (completed) {
++      return '已完成';
++    }
++
++    if (priority === 'high') {
++      return '緊急';
++    }
++
++    return '進行中';
++  };
++  ```
++
++---
++
++### 📐 規格符合度
++
++#### ✅ 符合規格的項目
++- 標題顯示：`props.title` 有渲染在畫面中。
++- 已完成標題樣式：`props.completed === true` 時，標題套用 `line-through`。
++- 狀態文字規則：目前 JSX 文字可分別顯示「已完成」、「緊急」、「進行中」。
++
++#### ❌ 不符合或缺漏的項目
++- Props 型別：規格要求使用明確 TypeScript interface，實作使用 `props: any`，不符合技術規範。
++- 狀態標籤顏色：規格要求「已完成」綠色、「緊急」紅色、「進行中」藍色；目前狀態 `<span>` 沒有任何顏色樣式或 class。
++- 狀態標籤邏輯可維護性：規格要求避免巢狀三元運算子；目前 JSX 中使用 `props.completed ? '已完成' : props.priority === 'high' ? '緊急' : '進行中'`。
++- `id` prop：規格定義 `id` 為必填唯一識別碼，但目前沒有 interface 保障，也沒有在元件簽名中明確呈現此 contract。
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：Props 使用 `any`，違反 TypeScript interface 規格
++- **檔案：** `src/components/TodoItem.tsx:2`
++- **問題：** `const TodoItem = (props: any)` 使 `id`、`title`、`completed`、`priority` 都失去型別保護。
++- **影響：** 呼叫端可傳入不存在的 priority、非 boolean completed 或缺漏 title，編譯期不會報錯，與規格的 Props contract 不一致。
++- **建議修正：**
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++
++---
++
++#### 問題 2：JSX 中仍使用巢狀三元運算子
++- **檔案：** `src/components/TodoItem.tsx:16`
++- **問題：** 狀態標籤直接在 JSX 中使用巢狀三元運算子，違反規格「避免巢狀三元運算子」。
++- **影響：** 後續若新增更多狀態或樣式，條件會更難閱讀，且容易造成 label 與樣式規則分岔。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++#### 問題 3：狀態標籤缺少規格要求的顏色
++- **檔案：** `src/components/TodoItem.tsx:15`
++- **問題：** 狀態 `<span>` 只輸出文字，沒有依 completed / priority 套用綠色、紅色、藍色。
++- **影響：** UI 顯示未完整符合規格，使用者無法透過顏色辨識狀態。
++- **建議修正：**
++  ```tsx
++  const statusClassName = getStatusClassName(completed, priority);
++
++  return (
++    // ...
++    <span className={statusClassName}>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：`statusLabel` 計算後未被使用
++- **檔案：** `src/components/TodoItem.tsx:4`
++- **問題：** `statusLabel` 已根據狀態算出文字，但 return 中又重新計算一次，造成 unused variable / dead code。
++- **影響：** 邏輯重複會增加維護風險；未來若只改其中一處，可能導致顯示規則不一致。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：程式內保留指出缺陷的暫時註解
++- **檔案：** `src/components/TodoItem.tsx:1`
++- **問題：** 註解直接描述 `props: any` 與巢狀三元問題，像是 review 備註而非元件實作必要說明。
++- **影響：** 測試或示範階段可保留作為缺陷提示；正式實作前應移除，避免讓問題說明長期留在 production code。
++- **建議：** 修正型別與狀態邏輯後移除此類註解；若需要保留設計理由，改寫成「為什麼」而不是描述目前程式做了什麼。
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'git add -- docs/code-review-report/code-review-2026-05-18-todo-item-spec.md; git diff --cached --check -- docs/code-review-report/code-review-2026-05-18-todo-item-spec.md; git diff --cached --name-only' in C:\Users\tenns\.claude\skills
+ succeeded in 496ms:
+docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+warning: in the working copy of 'docs/code-review-report/code-review-2026-05-18-todo-item-spec.md', LF will be replaced by CRLF the next time Git touches it
+
+diff --git a/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..ace8fcda34833d553c9e1df5f6eee4e8292c1d93
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+@@ -0,0 +1,139 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/components/TodoItem.tsx` 的 TodoItem 前端元件實作，對照 `docs/specs/todo-item-spec.md`
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### ⚛️ React 最佳實踐
++
++#### ✅ 符合最佳實踐
++- 元件輸出結構：以單一 component 呈現待辦標題與狀態標籤，方向符合規格描述的單一待辦事項展示用途。
++
++#### ⚠️ 需改善
++- 型別安全：React component props 使用 `any`，會讓呼叫端傳入錯誤型別時無法在編譯期攔截，違反規格要求的明確 TypeScript interface。
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++- 狀態衍生邏輯：JSX 內直接放入巢狀三元運算子，閱讀與維護成本偏高，也違反規格要求避免巢狀三元運算子。應把 label 與樣式邏輯抽成清楚的 helper 或區塊變數。
++  ```tsx
++  const getStatusLabel = (completed: boolean, priority: TodoItemProps['priority']) => {
++    if (completed) {
++      return '已完成';
++    }
++
++    if (priority === 'high') {
++      return '緊急';
++    }
++
++    return '進行中';
++  };
++  ```
++
++---
++
++### 📐 規格符合度
++
++#### ✅ 符合規格的項目
++- 標題顯示：`props.title` 有渲染在畫面中。
++- 已完成標題樣式：`props.completed === true` 時，標題套用 `line-through`。
++- 狀態文字規則：目前 JSX 文字可分別顯示「已完成」、「緊急」、「進行中」。
++
++#### ❌ 不符合或缺漏的項目
++- Props 型別：規格要求使用明確 TypeScript interface，實作使用 `props: any`，不符合技術規範。
++- 狀態標籤顏色：規格要求「已完成」綠色、「緊急」紅色、「進行中」藍色；目前狀態 `<span>` 沒有任何顏色樣式或 class。
++- 狀態標籤邏輯可維護性：規格要求避免巢狀三元運算子；目前 JSX 中使用 `props.completed ? '已完成' : props.priority === 'high' ? '緊急' : '進行中'`。
++- `id` prop：規格定義 `id` 為必填唯一識別碼，但目前沒有 interface 保障，也沒有在元件簽名中明確呈現此 contract。
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：Props 使用 `any`，違反 TypeScript interface 規格
++- **檔案：** `src/components/TodoItem.tsx:2`
++- **問題：** `const TodoItem = (props: any)` 使 `id`、`title`、`completed`、`priority` 都失去型別保護。
++- **影響：** 呼叫端可傳入不存在的 priority、非 boolean completed 或缺漏 title，編譯期不會報錯，與規格的 Props contract 不一致。
++- **建議修正：**
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++
++---
++
++#### 問題 2：JSX 中仍使用巢狀三元運算子
++- **檔案：** `src/components/TodoItem.tsx:16`
++- **問題：** 狀態標籤直接在 JSX 中使用巢狀三元運算子，違反規格「避免巢狀三元運算子」。
++- **影響：** 後續若新增更多狀態或樣式，條件會更難閱讀，且容易造成 label 與樣式規則分岔。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++#### 問題 3：狀態標籤缺少規格要求的顏色
++- **檔案：** `src/components/TodoItem.tsx:15`
++- **問題：** 狀態 `<span>` 只輸出文字，沒有依 completed / priority 套用綠色、紅色、藍色。
++- **影響：** UI 顯示未完整符合規格，使用者無法透過顏色辨識狀態。
++- **建議修正：**
++  ```tsx
++  const statusClassName = getStatusClassName(completed, priority);
++
++  return (
++    // ...
++    <span className={statusClassName}>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：`statusLabel` 計算後未被使用
++- **檔案：** `src/components/TodoItem.tsx:4`
++- **問題：** `statusLabel` 已根據狀態算出文字，但 return 中又重新計算一次，造成 unused variable / dead code。
++- **影響：** 邏輯重複會增加維護風險；未來若只改其中一處，可能導致顯示規則不一致。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：程式內保留指出缺陷的暫時註解
++- **檔案：** `src/components/TodoItem.tsx:1`
++- **問題：** 註解直接描述 `props: any` 與巢狀三元問題，像是 review 備註而非元件實作必要說明。
++- **影響：** 測試或示範階段可保留作為缺陷提示；正式實作前應移除，避免讓問題說明長期留在 production code。
++- **建議：** 修正型別與狀態邏輯後移除此類註解；若需要保留設計理由，改寫成「為什麼」而不是描述目前程式做了什麼。
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'git status --short --untracked-files=all' in C:\Users\tenns\.claude\skills
+ succeeded in 405ms:
+A  docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+
+diff --git a/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..ace8fcda34833d553c9e1df5f6eee4e8292c1d93
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+@@ -0,0 +1,139 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/components/TodoItem.tsx` 的 TodoItem 前端元件實作，對照 `docs/specs/todo-item-spec.md`
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### ⚛️ React 最佳實踐
++
++#### ✅ 符合最佳實踐
++- 元件輸出結構：以單一 component 呈現待辦標題與狀態標籤，方向符合規格描述的單一待辦事項展示用途。
++
++#### ⚠️ 需改善
++- 型別安全：React component props 使用 `any`，會讓呼叫端傳入錯誤型別時無法在編譯期攔截，違反規格要求的明確 TypeScript interface。
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++- 狀態衍生邏輯：JSX 內直接放入巢狀三元運算子，閱讀與維護成本偏高，也違反規格要求避免巢狀三元運算子。應把 label 與樣式邏輯抽成清楚的 helper 或區塊變數。
++  ```tsx
++  const getStatusLabel = (completed: boolean, priority: TodoItemProps['priority']) => {
++    if (completed) {
++      return '已完成';
++    }
++
++    if (priority === 'high') {
++      return '緊急';
++    }
++
++    return '進行中';
++  };
++  ```
++
++---
++
++### 📐 規格符合度
++
++#### ✅ 符合規格的項目
++- 標題顯示：`props.title` 有渲染在畫面中。
++- 已完成標題樣式：`props.completed === true` 時，標題套用 `line-through`。
++- 狀態文字規則：目前 JSX 文字可分別顯示「已完成」、「緊急」、「進行中」。
++
++#### ❌ 不符合或缺漏的項目
++- Props 型別：規格要求使用明確 TypeScript interface，實作使用 `props: any`，不符合技術規範。
++- 狀態標籤顏色：規格要求「已完成」綠色、「緊急」紅色、「進行中」藍色；目前狀態 `<span>` 沒有任何顏色樣式或 class。
++- 狀態標籤邏輯可維護性：規格要求避免巢狀三元運算子；目前 JSX 中使用 `props.completed ? '已完成' : props.priority === 'high' ? '緊急' : '進行中'`。
++- `id` prop：規格定義 `id` 為必填唯一識別碼，但目前沒有 interface 保障，也沒有在元件簽名中明確呈現此 contract。
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：Props 使用 `any`，違反 TypeScript interface 規格
++- **檔案：** `src/components/TodoItem.tsx:2`
++- **問題：** `const TodoItem = (props: any)` 使 `id`、`title`、`completed`、`priority` 都失去型別保護。
++- **影響：** 呼叫端可傳入不存在的 priority、非 boolean completed 或缺漏 title，編譯期不會報錯，與規格的 Props contract 不一致。
++- **建議修正：**
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++
++---
++
++#### 問題 2：JSX 中仍使用巢狀三元運算子
++- **檔案：** `src/components/TodoItem.tsx:16`
++- **問題：** 狀態標籤直接在 JSX 中使用巢狀三元運算子，違反規格「避免巢狀三元運算子」。
++- **影響：** 後續若新增更多狀態或樣式，條件會更難閱讀，且容易造成 label 與樣式規則分岔。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++#### 問題 3：狀態標籤缺少規格要求的顏色
++- **檔案：** `src/components/TodoItem.tsx:15`
++- **問題：** 狀態 `<span>` 只輸出文字，沒有依 completed / priority 套用綠色、紅色、藍色。
++- **影響：** UI 顯示未完整符合規格，使用者無法透過顏色辨識狀態。
++- **建議修正：**
++  ```tsx
++  const statusClassName = getStatusClassName(completed, priority);
++
++  return (
++    // ...
++    <span className={statusClassName}>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：`statusLabel` 計算後未被使用
++- **檔案：** `src/components/TodoItem.tsx:4`
++- **問題：** `statusLabel` 已根據狀態算出文字，但 return 中又重新計算一次，造成 unused variable / dead code。
++- **影響：** 邏輯重複會增加維護風險；未來若只改其中一處，可能導致顯示規則不一致。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：程式內保留指出缺陷的暫時註解
++- **檔案：** `src/components/TodoItem.tsx:1`
++- **問題：** 註解直接描述 `props: any` 與巢狀三元問題，像是 review 備註而非元件實作必要說明。
++- **影響：** 測試或示範階段可保留作為缺陷提示；正式實作前應移除，避免讓問題說明長期留在 production code。
++- **建議：** 修正型別與狀態邏輯後移除此類註解；若需要保留設計理由，改寫成「為什麼」而不是描述目前程式做了什麼。
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-ChildItem -LiteralPath 'docs/code-review-report' | Select-Object -ExpandProperty Name" in C:\Users\tenns\.claude\skills
+ succeeded in 422ms:
+code-review-2026-05-18-login-spec.md
+code-review-2026-05-18-todo-item-spec.md
+code-review-2026-05-18-user-service-search.md
+
+diff --git a/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..ace8fcda34833d553c9e1df5f6eee4e8292c1d93
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+@@ -0,0 +1,139 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/components/TodoItem.tsx` 的 TodoItem 前端元件實作，對照 `docs/specs/todo-item-spec.md`
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### ⚛️ React 最佳實踐
++
++#### ✅ 符合最佳實踐
++- 元件輸出結構：以單一 component 呈現待辦標題與狀態標籤，方向符合規格描述的單一待辦事項展示用途。
++
++#### ⚠️ 需改善
++- 型別安全：React component props 使用 `any`，會讓呼叫端傳入錯誤型別時無法在編譯期攔截，違反規格要求的明確 TypeScript interface。
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++- 狀態衍生邏輯：JSX 內直接放入巢狀三元運算子，閱讀與維護成本偏高，也違反規格要求避免巢狀三元運算子。應把 label 與樣式邏輯抽成清楚的 helper 或區塊變數。
++  ```tsx
++  const getStatusLabel = (completed: boolean, priority: TodoItemProps['priority']) => {
++    if (completed) {
++      return '已完成';
++    }
++
++    if (priority === 'high') {
++      return '緊急';
++    }
++
++    return '進行中';
++  };
++  ```
++
++---
++
++### 📐 規格符合度
++
++#### ✅ 符合規格的項目
++- 標題顯示：`props.title` 有渲染在畫面中。
++- 已完成標題樣式：`props.completed === true` 時，標題套用 `line-through`。
++- 狀態文字規則：目前 JSX 文字可分別顯示「已完成」、「緊急」、「進行中」。
++
++#### ❌ 不符合或缺漏的項目
++- Props 型別：規格要求使用明確 TypeScript interface，實作使用 `props: any`，不符合技術規範。
++- 狀態標籤顏色：規格要求「已完成」綠色、「緊急」紅色、「進行中」藍色；目前狀態 `<span>` 沒有任何顏色樣式或 class。
++- 狀態標籤邏輯可維護性：規格要求避免巢狀三元運算子；目前 JSX 中使用 `props.completed ? '已完成' : props.priority === 'high' ? '緊急' : '進行中'`。
++- `id` prop：規格定義 `id` 為必填唯一識別碼，但目前沒有 interface 保障，也沒有在元件簽名中明確呈現此 contract。
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：Props 使用 `any`，違反 TypeScript interface 規格
++- **檔案：** `src/components/TodoItem.tsx:2`
++- **問題：** `const TodoItem = (props: any)` 使 `id`、`title`、`completed`、`priority` 都失去型別保護。
++- **影響：** 呼叫端可傳入不存在的 priority、非 boolean completed 或缺漏 title，編譯期不會報錯，與規格的 Props contract 不一致。
++- **建議修正：**
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++
++---
++
++#### 問題 2：JSX 中仍使用巢狀三元運算子
++- **檔案：** `src/components/TodoItem.tsx:16`
++- **問題：** 狀態標籤直接在 JSX 中使用巢狀三元運算子，違反規格「避免巢狀三元運算子」。
++- **影響：** 後續若新增更多狀態或樣式，條件會更難閱讀，且容易造成 label 與樣式規則分岔。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++#### 問題 3：狀態標籤缺少規格要求的顏色
++- **檔案：** `src/components/TodoItem.tsx:15`
++- **問題：** 狀態 `<span>` 只輸出文字，沒有依 completed / priority 套用綠色、紅色、藍色。
++- **影響：** UI 顯示未完整符合規格，使用者無法透過顏色辨識狀態。
++- **建議修正：**
++  ```tsx
++  const statusClassName = getStatusClassName(completed, priority);
++
++  return (
++    // ...
++    <span className={statusClassName}>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：`statusLabel` 計算後未被使用
++- **檔案：** `src/components/TodoItem.tsx:4`
++- **問題：** `statusLabel` 已根據狀態算出文字，但 return 中又重新計算一次，造成 unused variable / dead code。
++- **影響：** 邏輯重複會增加維護風險；未來若只改其中一處，可能導致顯示規則不一致。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：程式內保留指出缺陷的暫時註解
++- **檔案：** `src/components/TodoItem.tsx:1`
++- **問題：** 註解直接描述 `props: any` 與巢狀三元問題，像是 review 備註而非元件實作必要說明。
++- **影響：** 測試或示範階段可保留作為缺陷提示；正式實作前應移除，避免讓問題說明長期留在 production code。
++- **建議：** 修正型別與狀態邏輯後移除此類註解；若需要保留設計理由，改寫成「為什麼」而不是描述目前程式做了什麼。
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'git status --porcelain=v1 -uall' in C:\Users\tenns\.claude\skills
+ succeeded in 449ms:
+A  docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+
+diff --git a/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..ace8fcda34833d553c9e1df5f6eee4e8292c1d93
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+@@ -0,0 +1,139 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/components/TodoItem.tsx` 的 TodoItem 前端元件實作，對照 `docs/specs/todo-item-spec.md`
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### ⚛️ React 最佳實踐
++
++#### ✅ 符合最佳實踐
++- 元件輸出結構：以單一 component 呈現待辦標題與狀態標籤，方向符合規格描述的單一待辦事項展示用途。
++
++#### ⚠️ 需改善
++- 型別安全：React component props 使用 `any`，會讓呼叫端傳入錯誤型別時無法在編譯期攔截，違反規格要求的明確 TypeScript interface。
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++- 狀態衍生邏輯：JSX 內直接放入巢狀三元運算子，閱讀與維護成本偏高，也違反規格要求避免巢狀三元運算子。應把 label 與樣式邏輯抽成清楚的 helper 或區塊變數。
++  ```tsx
++  const getStatusLabel = (completed: boolean, priority: TodoItemProps['priority']) => {
++    if (completed) {
++      return '已完成';
++    }
++
++    if (priority === 'high') {
++      return '緊急';
++    }
++
++    return '進行中';
++  };
++  ```
++
++---
++
++### 📐 規格符合度
++
++#### ✅ 符合規格的項目
++- 標題顯示：`props.title` 有渲染在畫面中。
++- 已完成標題樣式：`props.completed === true` 時，標題套用 `line-through`。
++- 狀態文字規則：目前 JSX 文字可分別顯示「已完成」、「緊急」、「進行中」。
++
++#### ❌ 不符合或缺漏的項目
++- Props 型別：規格要求使用明確 TypeScript interface，實作使用 `props: any`，不符合技術規範。
++- 狀態標籤顏色：規格要求「已完成」綠色、「緊急」紅色、「進行中」藍色；目前狀態 `<span>` 沒有任何顏色樣式或 class。
++- 狀態標籤邏輯可維護性：規格要求避免巢狀三元運算子；目前 JSX 中使用 `props.completed ? '已完成' : props.priority === 'high' ? '緊急' : '進行中'`。
++- `id` prop：規格定義 `id` 為必填唯一識別碼，但目前沒有 interface 保障，也沒有在元件簽名中明確呈現此 contract。
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：Props 使用 `any`，違反 TypeScript interface 規格
++- **檔案：** `src/components/TodoItem.tsx:2`
++- **問題：** `const TodoItem = (props: any)` 使 `id`、`title`、`completed`、`priority` 都失去型別保護。
++- **影響：** 呼叫端可傳入不存在的 priority、非 boolean completed 或缺漏 title，編譯期不會報錯，與規格的 Props contract 不一致。
++- **建議修正：**
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++
++---
++
++#### 問題 2：JSX 中仍使用巢狀三元運算子
++- **檔案：** `src/components/TodoItem.tsx:16`
++- **問題：** 狀態標籤直接在 JSX 中使用巢狀三元運算子，違反規格「避免巢狀三元運算子」。
++- **影響：** 後續若新增更多狀態或樣式，條件會更難閱讀，且容易造成 label 與樣式規則分岔。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++#### 問題 3：狀態標籤缺少規格要求的顏色
++- **檔案：** `src/components/TodoItem.tsx:15`
++- **問題：** 狀態 `<span>` 只輸出文字，沒有依 completed / priority 套用綠色、紅色、藍色。
++- **影響：** UI 顯示未完整符合規格，使用者無法透過顏色辨識狀態。
++- **建議修正：**
++  ```tsx
++  const statusClassName = getStatusClassName(completed, priority);
++
++  return (
++    // ...
++    <span className={statusClassName}>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：`statusLabel` 計算後未被使用
++- **檔案：** `src/components/TodoItem.tsx:4`
++- **問題：** `statusLabel` 已根據狀態算出文字，但 return 中又重新計算一次，造成 unused variable / dead code。
++- **影響：** 邏輯重複會增加維護風險；未來若只改其中一處，可能導致顯示規則不一致。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：程式內保留指出缺陷的暫時註解
++- **檔案：** `src/components/TodoItem.tsx:1`
++- **問題：** 註解直接描述 `props: any` 與巢狀三元問題，像是 review 備註而非元件實作必要說明。
++- **影響：** 測試或示範階段可保留作為缺陷提示；正式實作前應移除，避免讓問題說明長期留在 production code。
++- **建議：** 修正型別與狀態邏輯後移除此類註解；若需要保留設計理由，改寫成「為什麼」而不是描述目前程式做了什麼。
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'git commit -m "docs: 新增 TodoItem code review 報告" -m "本次新增 TodoItem 元件對照規格的 code review 存檔，供後續追蹤前端元件實作與規格落差。" -m "本次調整：" -m "- 新增 docs/code-review-report/code-review-2026-05-18-todo-item-spec.md" -m "- 記錄 props any、巢狀三元、unused statusLabel 與狀態顏色缺漏等審查結果" -m "- 依 code-reviewer 規則加入第 1 輪審查標題"' in C:\Users\tenns\.claude\skills
+ succeeded in 413ms:
+[main 60bd280] docs: 新增 TodoItem code review 報告
+ 1 file changed, 139 insertions(+)
+ create mode 100644 docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+
+diff --git a/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..ace8fcda34833d553c9e1df5f6eee4e8292c1d93
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+@@ -0,0 +1,139 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/components/TodoItem.tsx` 的 TodoItem 前端元件實作，對照 `docs/specs/todo-item-spec.md`
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### ⚛️ React 最佳實踐
++
++#### ✅ 符合最佳實踐
++- 元件輸出結構：以單一 component 呈現待辦標題與狀態標籤，方向符合規格描述的單一待辦事項展示用途。
++
++#### ⚠️ 需改善
++- 型別安全：React component props 使用 `any`，會讓呼叫端傳入錯誤型別時無法在編譯期攔截，違反規格要求的明確 TypeScript interface。
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++- 狀態衍生邏輯：JSX 內直接放入巢狀三元運算子，閱讀與維護成本偏高，也違反規格要求避免巢狀三元運算子。應把 label 與樣式邏輯抽成清楚的 helper 或區塊變數。
++  ```tsx
++  const getStatusLabel = (completed: boolean, priority: TodoItemProps['priority']) => {
++    if (completed) {
++      return '已完成';
++    }
++
++    if (priority === 'high') {
++      return '緊急';
++    }
++
++    return '進行中';
++  };
++  ```
++
++---
++
++### 📐 規格符合度
++
++#### ✅ 符合規格的項目
++- 標題顯示：`props.title` 有渲染在畫面中。
++- 已完成標題樣式：`props.completed === true` 時，標題套用 `line-through`。
++- 狀態文字規則：目前 JSX 文字可分別顯示「已完成」、「緊急」、「進行中」。
++
++#### ❌ 不符合或缺漏的項目
++- Props 型別：規格要求使用明確 TypeScript interface，實作使用 `props: any`，不符合技術規範。
++- 狀態標籤顏色：規格要求「已完成」綠色、「緊急」紅色、「進行中」藍色；目前狀態 `<span>` 沒有任何顏色樣式或 class。
++- 狀態標籤邏輯可維護性：規格要求避免巢狀三元運算子；目前 JSX 中使用 `props.completed ? '已完成' : props.priority === 'high' ? '緊急' : '進行中'`。
++- `id` prop：規格定義 `id` 為必填唯一識別碼，但目前沒有 interface 保障，也沒有在元件簽名中明確呈現此 contract。
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：Props 使用 `any`，違反 TypeScript interface 規格
++- **檔案：** `src/components/TodoItem.tsx:2`
++- **問題：** `const TodoItem = (props: any)` 使 `id`、`title`、`completed`、`priority` 都失去型別保護。
++- **影響：** 呼叫端可傳入不存在的 priority、非 boolean completed 或缺漏 title，編譯期不會報錯，與規格的 Props contract 不一致。
++- **建議修正：**
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++
++---
++
++#### 問題 2：JSX 中仍使用巢狀三元運算子
++- **檔案：** `src/components/TodoItem.tsx:16`
++- **問題：** 狀態標籤直接在 JSX 中使用巢狀三元運算子，違反規格「避免巢狀三元運算子」。
++- **影響：** 後續若新增更多狀態或樣式，條件會更難閱讀，且容易造成 label 與樣式規則分岔。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++#### 問題 3：狀態標籤缺少規格要求的顏色
++- **檔案：** `src/components/TodoItem.tsx:15`
++- **問題：** 狀態 `<span>` 只輸出文字，沒有依 completed / priority 套用綠色、紅色、藍色。
++- **影響：** UI 顯示未完整符合規格，使用者無法透過顏色辨識狀態。
++- **建議修正：**
++  ```tsx
++  const statusClassName = getStatusClassName(completed, priority);
++
++  return (
++    // ...
++    <span className={statusClassName}>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：`statusLabel` 計算後未被使用
++- **檔案：** `src/components/TodoItem.tsx:4`
++- **問題：** `statusLabel` 已根據狀態算出文字，但 return 中又重新計算一次，造成 unused variable / dead code。
++- **影響：** 邏輯重複會增加維護風險；未來若只改其中一處，可能導致顯示規則不一致。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：程式內保留指出缺陷的暫時註解
++- **檔案：** `src/components/TodoItem.tsx:1`
++- **問題：** 註解直接描述 `props: any` 與巢狀三元問題，像是 review 備註而非元件實作必要說明。
++- **影響：** 測試或示範階段可保留作為缺陷提示；正式實作前應移除，避免讓問題說明長期留在 production code。
++- **建議：** 修正型別與狀態邏輯後移除此類註解；若需要保留設計理由，改寫成「為什麼」而不是描述目前程式做了什麼。
+
+codex
+## 📋 Code Review 摘要
+
+**審查範圍：** `src/components/TodoItem.tsx` 的 TodoItem 前端元件實作，對照 `docs/specs/todo-item-spec.md`
+**整體評估：** ❌ 不符合規格，需修正
+
+---
+
+### ⚛️ React 最佳實踐
+
+#### ✅ 符合最佳實踐
+- 元件輸出結構：以單一 component 呈現待辦標題與狀態標籤，方向符合規格描述的單一待辦事項展示用途。
+
+#### ⚠️ 需改善
+- 型別安全：React component props 使用 `any`，會讓呼叫端傳入錯誤型別時無法在編譯期攔截，違反規格要求的明確 TypeScript interface。
+  ```tsx
+  interface TodoItemProps {
+    id: number;
+    title: string;
+    completed: boolean;
+    priority: 'low' | 'medium' | 'high';
+  }
+  ```
+- 狀態衍生邏輯：JSX 內直接放入巢狀三元運算子，閱讀與維護成本偏高，也違反規格要求避免巢狀三元運算子。
+
+---
+
+### 📐 規格符合度
+
+#### ✅ 符合規格的項目
+- 標題顯示：`props.title` 有渲染在畫面中。
+- 已完成標題樣式：`props.completed === true` 時，標題套用 `line-through`。
+- 狀態文字規則：目前 JSX 文字可分別顯示「已完成」、「緊急」、「進行中」。
+
+#### ❌ 不符合或缺漏的項目
+- Props 型別：規格要求使用明確 TypeScript interface，實作使用 `props: any`，不符合技術規範。
+- 狀態標籤顏色：規格要求「已完成」綠色、「緊急」紅色、「進行中」藍色；目前狀態 `<span>` 沒有任何顏色樣式或 class。
+- 狀態標籤邏輯可維護性：規格要求避免巢狀三元運算子；目前 JSX 中使用 `props.completed ? '已完成' : props.priority === 'high' ? '緊急' : '進行中'`。
+- `id` prop：規格定義 `id` 為必填唯一識別碼，但目前沒有 interface 保障，也沒有在元件簽名中明確呈現此 contract。
+
+---
+
+### 🔴 必須修正（Critical）
+
+#### 問題 1：Props 使用 `any`，違反 TypeScript interface 規格
+- **檔案：** `src/components/TodoItem.tsx:2`
+- **問題：** `const TodoItem = (props: any)` 使 `id`、`title`、`completed`、`priority` 都失去型別保護。
+- **影響：** 呼叫端可傳入不存在的 priority、非 boolean completed 或缺漏 title，編譯期不會報錯，與規格的 Props contract 不一致。
+- **建議修正：**
+  ```tsx
+  interface TodoItemProps {
+    id: number;
+    title: string;
+    completed: boolean;
+    priority: 'low' | 'medium' | 'high';
+  }
+  ```
+
+---
+
+#### 問題 2：JSX 中仍使用巢狀三元運算子
+- **檔案：** `src/components/TodoItem.tsx:16`
+- **問題：** 狀態標籤直接在 JSX 中使用巢狀三元運算子，違反規格「避免巢狀三元運算子」。
+- **影響：** 後續若新增更多狀態或樣式，條件會更難閱讀，且容易造成 label 與樣式規則分岔。
+- **建議修正：**
+  ```tsx
+  <span>{statusLabel}</span>
+  ```
+
+---
+
+#### 問題 3：狀態標籤缺少規格要求的顏色
+- **檔案：** `src/components/TodoItem.tsx:15`
+- **問題：** 狀態 `<span>` 只輸出文字，沒有依 completed / priority 套用綠色、紅色、藍色。
+- **影響：** UI 顯示未完整符合規格，使用者無法透過顏色辨識狀態。
+
+---
+
+### 🟠 建議改善（Warning）
+
+#### 問題 1：`statusLabel` 計算後未被使用
+- **檔案：** `src/components/TodoItem.tsx:4`
+- **問題：** `statusLabel` 已根據狀態算出文字，但 return 中又重新計算一次，造成 unused variable / dead code。
+- **影響：** 邏輯重複會增加維護風險；未來若只改其中一處，可能導致顯示規則不一致。
+
+---
+
+### ⚪ 使用者自行決定（註解類問題）
+
+#### 問題 1：程式內保留指出缺陷的暫時註解
+- **檔案：** `src/components/TodoItem.tsx:1`
+- **問題：** 註解直接描述 `props: any` 與巢狀三元問題，像是 review 備註而非元件實作必要說明。
+- **影響：** 測試或示範階段可保留作為缺陷提示；正式實作前應移除，避免讓問題說明長期留在 production code。
+- **建議：** 修正型別與狀態邏輯後移除此類註解。
+
+📁 已存檔：`docs/code-review-report/code-review-2026-05-18-todo-item-spec.md`
+
+---
+
+## Grading
+
+E1: PASS — Review 內包含「### ⚛️ React 最佳實踐」區塊。  
+E2: PASS — Review 指出 `props: any` 使 props 失去型別保護，並建議定義 `TodoItemProps` interface。  
+E3: PASS — Review 指出 JSX 中使用 `props.completed ? '已完成' : props.priority === 'high' ? '緊急' : '進行中'` 巢狀三元運算子。  
+E4: PASS — Review 指出 `statusLabel` 計算後未被使用，屬於 unused variable / dead code。  
+E5: PASS — 已建立並提交 `docs/code-review-report/code-review-2026-05-18-todo-item-spec.md`。
+
+Workflow gate：本次只新增 Markdown 審查報告，build 跳過；額外 code review 依 docs-only 跳過。已執行 `git diff --cached --check`，並提交 `60bd280`。
+diff --git a/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..ace8fcda34833d553c9e1df5f6eee4e8292c1d93
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+@@ -0,0 +1,139 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/components/TodoItem.tsx` 的 TodoItem 前端元件實作，對照 `docs/specs/todo-item-spec.md`
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### ⚛️ React 最佳實踐
++
++#### ✅ 符合最佳實踐
++- 元件輸出結構：以單一 component 呈現待辦標題與狀態標籤，方向符合規格描述的單一待辦事項展示用途。
++
++#### ⚠️ 需改善
++- 型別安全：React component props 使用 `any`，會讓呼叫端傳入錯誤型別時無法在編譯期攔截，違反規格要求的明確 TypeScript interface。
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++- 狀態衍生邏輯：JSX 內直接放入巢狀三元運算子，閱讀與維護成本偏高，也違反規格要求避免巢狀三元運算子。應把 label 與樣式邏輯抽成清楚的 helper 或區塊變數。
++  ```tsx
++  const getStatusLabel = (completed: boolean, priority: TodoItemProps['priority']) => {
++    if (completed) {
++      return '已完成';
++    }
++
++    if (priority === 'high') {
++      return '緊急';
++    }
++
++    return '進行中';
++  };
++  ```
++
++---
++
++### 📐 規格符合度
++
++#### ✅ 符合規格的項目
++- 標題顯示：`props.title` 有渲染在畫面中。
++- 已完成標題樣式：`props.completed === true` 時，標題套用 `line-through`。
++- 狀態文字規則：目前 JSX 文字可分別顯示「已完成」、「緊急」、「進行中」。
++
++#### ❌ 不符合或缺漏的項目
++- Props 型別：規格要求使用明確 TypeScript interface，實作使用 `props: any`，不符合技術規範。
++- 狀態標籤顏色：規格要求「已完成」綠色、「緊急」紅色、「進行中」藍色；目前狀態 `<span>` 沒有任何顏色樣式或 class。
++- 狀態標籤邏輯可維護性：規格要求避免巢狀三元運算子；目前 JSX 中使用 `props.completed ? '已完成' : props.priority === 'high' ? '緊急' : '進行中'`。
++- `id` prop：規格定義 `id` 為必填唯一識別碼，但目前沒有 interface 保障，也沒有在元件簽名中明確呈現此 contract。
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：Props 使用 `any`，違反 TypeScript interface 規格
++- **檔案：** `src/components/TodoItem.tsx:2`
++- **問題：** `const TodoItem = (props: any)` 使 `id`、`title`、`completed`、`priority` 都失去型別保護。
++- **影響：** 呼叫端可傳入不存在的 priority、非 boolean completed 或缺漏 title，編譯期不會報錯，與規格的 Props contract 不一致。
++- **建議修正：**
++  ```tsx
++  interface TodoItemProps {
++    id: number;
++    title: string;
++    completed: boolean;
++    priority: 'low' | 'medium' | 'high';
++  }
++
++  const TodoItem = ({ title, completed, priority }: TodoItemProps) => {
++    // ...
++  };
++  ```
++
++---
++
++#### 問題 2：JSX 中仍使用巢狀三元運算子
++- **檔案：** `src/components/TodoItem.tsx:16`
++- **問題：** 狀態標籤直接在 JSX 中使用巢狀三元運算子，違反規格「避免巢狀三元運算子」。
++- **影響：** 後續若新增更多狀態或樣式，條件會更難閱讀，且容易造成 label 與樣式規則分岔。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++#### 問題 3：狀態標籤缺少規格要求的顏色
++- **檔案：** `src/components/TodoItem.tsx:15`
++- **問題：** 狀態 `<span>` 只輸出文字，沒有依 completed / priority 套用綠色、紅色、藍色。
++- **影響：** UI 顯示未完整符合規格，使用者無法透過顏色辨識狀態。
++- **建議修正：**
++  ```tsx
++  const statusClassName = getStatusClassName(completed, priority);
++
++  return (
++    // ...
++    <span className={statusClassName}>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：`statusLabel` 計算後未被使用
++- **檔案：** `src/components/TodoItem.tsx:4`
++- **問題：** `statusLabel` 已根據狀態算出文字，但 return 中又重新計算一次，造成 unused variable / dead code。
++- **影響：** 邏輯重複會增加維護風險；未來若只改其中一處，可能導致顯示規則不一致。
++- **建議修正：**
++  ```tsx
++  const statusLabel = getStatusLabel(completed, priority);
++
++  return (
++    // ...
++    <span>{statusLabel}</span>
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：程式內保留指出缺陷的暫時註解
++- **檔案：** `src/components/TodoItem.tsx:1`
++- **問題：** 註解直接描述 `props: any` 與巢狀三元問題，像是 review 備註而非元件實作必要說明。
++- **影響：** 測試或示範階段可保留作為缺陷提示；正式實作前應移除，避免讓問題說明長期留在 production code。
++- **建議：** 修正型別與狀態邏輯後移除此類註解；若需要保留設計理由，改寫成「為什麼」而不是描述目前程式做了什麼。
+
+SUCCESS: The process with PID 18880 (child process of PID 2468) has been terminated.
+SUCCESS: The process with PID 2468 (child process of PID 12692) has been terminated.
+SUCCESS: The process with PID 12692 (child process of PID 2948) has been terminated.
+SUCCESS: The process with PID 2948 (child process of PID 18476) has been terminated.
+tokens used
+48,597
+## 📋 Code Review 摘要
+
+**審查範圍：** `src/components/TodoItem.tsx` 的 TodoItem 前端元件實作，對照 `docs/specs/todo-item-spec.md`
+**整體評估：** ❌ 不符合規格，需修正
+
+---
+
+### ⚛️ React 最佳實踐
+
+#### ✅ 符合最佳實踐
+- 元件輸出結構：以單一 component 呈現待辦標題與狀態標籤，方向符合規格描述的單一待辦事項展示用途。
+
+#### ⚠️ 需改善
+- 型別安全：React component props 使用 `any`，會讓呼叫端傳入錯誤型別時無法在編譯期攔截，違反規格要求的明確 TypeScript interface。
+  ```tsx
+  interface TodoItemProps {
+    id: number;
+    title: string;
+    completed: boolean;
+    priority: 'low' | 'medium' | 'high';
+  }
+  ```
+- 狀態衍生邏輯：JSX 內直接放入巢狀三元運算子，閱讀與維護成本偏高，也違反規格要求避免巢狀三元運算子。
+
+---
+
+### 📐 規格符合度
+
+#### ✅ 符合規格的項目
+- 標題顯示：`props.title` 有渲染在畫面中。
+- 已完成標題樣式：`props.completed === true` 時，標題套用 `line-through`。
+- 狀態文字規則：目前 JSX 文字可分別顯示「已完成」、「緊急」、「進行中」。
+
+#### ❌ 不符合或缺漏的項目
+- Props 型別：規格要求使用明確 TypeScript interface，實作使用 `props: any`，不符合技術規範。
+- 狀態標籤顏色：規格要求「已完成」綠色、「緊急」紅色、「進行中」藍色；目前狀態 `<span>` 沒有任何顏色樣式或 class。
+- 狀態標籤邏輯可維護性：規格要求避免巢狀三元運算子；目前 JSX 中使用 `props.completed ? '已完成' : props.priority === 'high' ? '緊急' : '進行中'`。
+- `id` prop：規格定義 `id` 為必填唯一識別碼，但目前沒有 interface 保障，也沒有在元件簽名中明確呈現此 contract。
+
+---
+
+### 🔴 必須修正（Critical）
+
+#### 問題 1：Props 使用 `any`，違反 TypeScript interface 規格
+- **檔案：** `src/components/TodoItem.tsx:2`
+- **問題：** `const TodoItem = (props: any)` 使 `id`、`title`、`completed`、`priority` 都失去型別保護。
+- **影響：** 呼叫端可傳入不存在的 priority、非 boolean completed 或缺漏 title，編譯期不會報錯，與規格的 Props contract 不一致。
+- **建議修正：**
+  ```tsx
+  interface TodoItemProps {
+    id: number;
+    title: string;
+    completed: boolean;
+    priority: 'low' | 'medium' | 'high';
+  }
+  ```
+
+---
+
+#### 問題 2：JSX 中仍使用巢狀三元運算子
+- **檔案：** `src/components/TodoItem.tsx:16`
+- **問題：** 狀態標籤直接在 JSX 中使用巢狀三元運算子，違反規格「避免巢狀三元運算子」。
+- **影響：** 後續若新增更多狀態或樣式，條件會更難閱讀，且容易造成 label 與樣式規則分岔。
+- **建議修正：**
+  ```tsx
+  <span>{statusLabel}</span>
+  ```
+
+---
+
+#### 問題 3：狀態標籤缺少規格要求的顏色
+- **檔案：** `src/components/TodoItem.tsx:15`
+- **問題：** 狀態 `<span>` 只輸出文字，沒有依 completed / priority 套用綠色、紅色、藍色。
+- **影響：** UI 顯示未完整符合規格，使用者無法透過顏色辨識狀態。
+
+---
+
+### 🟠 建議改善（Warning）
+
+#### 問題 1：`statusLabel` 計算後未被使用
+- **檔案：** `src/components/TodoItem.tsx:4`
+- **問題：** `statusLabel` 已根據狀態算出文字，但 return 中又重新計算一次，造成 unused variable / dead code。
+- **影響：** 邏輯重複會增加維護風險；未來若只改其中一處，可能導致顯示規則不一致。
+
+---
+
+### ⚪ 使用者自行決定（註解類問題）
+
+#### 問題 1：程式內保留指出缺陷的暫時註解
+- **檔案：** `src/components/TodoItem.tsx:1`
+- **問題：** 註解直接描述 `props: any` 與巢狀三元問題，像是 review 備註而非元件實作必要說明。
+- **影響：** 測試或示範階段可保留作為缺陷提示；正式實作前應移除，避免讓問題說明長期留在 production code。
+- **建議：** 修正型別與狀態邏輯後移除此類註解。
+
+📁 已存檔：`docs/code-review-report/code-review-2026-05-18-todo-item-spec.md`
+
+---
+
+## Grading
+
+E1: PASS — Review 內包含「### ⚛️ React 最佳實踐」區塊。  
+E2: PASS — Review 指出 `props: any` 使 props 失去型別保護，並建議定義 `TodoItemProps` interface。  
+E3: PASS — Review 指出 JSX 中使用 `props.completed ? '已完成' : props.priority === 'high' ? '緊急' : '進行中'` 巢狀三元運算子。  
+E4: PASS — Review 指出 `statusLabel` 計算後未被使用，屬於 unused variable / dead code。  
+E5: PASS — 已建立並提交 `docs/code-review-report/code-review-2026-05-18-todo-item-spec.md`。
+
+Workflow gate：本次只新增 Markdown 審查報告，build 跳過；額外 code review 依 docs-only 跳過。已執行 `git diff --cached --check`，並提交 `60bd280`。

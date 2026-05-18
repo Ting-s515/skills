@@ -1,0 +1,1234 @@
+Reading prompt from stdin...
+OpenAI Codex v0.130.0
+--------
+workdir: C:\Users\tenns\.claude\skills
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: danger-full-access
+reasoning effort: high
+reasoning summaries: none
+session id: 019e3b3b-2e89-7772-abc4-d5d483a71ed3
+--------
+user
+---
+name: code-reviewer
+description: >
+  當使用者提供業務邏輯文檔（需求規格、User Story、API 文件、流程說明等），並要求審查程式碼實作時，必須載入此技能。
+  使用 git diff 比對業務邏輯與程式碼變更，確認功能是否正確實作、找出邏輯衝突、潛在問題與副作用，並檢視是否符合最佳實踐。
+  觸發情境包含但不限於：「對照文件幫我 review」、「幫我審查這次的實作」、「這個 PR 符合需求嗎」、
+  「依照業務邏輯檢查程式碼」、「根據規格審查這次變更」。
+  即使使用者只說「幫我 review」或「有沒有符合需求」，只要上下文中有提供業務邏輯文檔，也應載入此技能。
+  此技能也適用於 subagent 情境：當 prompt 中包含規格文檔路徑時，自動讀取並對照審查。
+---
+
+# Code Review 流程
+
+## 1. 取得規格文檔
+
+從 prompt 或對話中識別需求規格文檔：
+- 若 prompt 中有明確路徑 → 讀取該檔案
+- 若對話中使用者曾提供規格內容 → 直接使用
+- 若兩者皆無 → 告知使用者需要提供規格文檔才能進行對照審查，但仍可執行通用 code review
+
+## 2. 取得變更內容
+
+依序嘗試以下指令，取得有意義的 diff：
+
+```bash
+git diff HEAD        # 包含已暫存與未暫存的所有變更
+git diff --staged    # 僅已暫存（即將提交）的變更
+git diff main...HEAD # 與主分支的完整差異（適用於 feature branch）
+```
+
+選擇能取得最完整變更的指令。若 diff 為空，告知使用者並停止。
+
+## 3. 前端檔案 React 最佳實踐審查（優先於規格審查）
+
+分析 diff 中是否包含前端 React 相關檔案：
+
+**判斷前端檔案的條件（符合任一即視為前端變更）：**
+- 副檔名為 `.tsx`、`.jsx`
+- 副檔名為 `.ts`、`.js`，且路徑包含 `components?/`、`hooks?/`、`contexts?/`、`pages/` 或 `views/`
+
+**若包含前端檔案，必須先載入並執行 `react-design` skill，依照其原則對 diff 進行審查。**
+
+審查完成後，將結果整理為「React 最佳實踐」區塊，再繼續進行後續的規格審查。
+
+## 4. 對照規格審查（有提供規格文檔時必做）
+
+逐項比對規格文檔的功能需求與實際 diff：
+
+- 規格中要求的功能，實作是否完整？
+- 規格中定義的 API / 資料結構，實作是否一致？
+- 規格中描述的邊界條件與錯誤處理，是否有涵蓋？
+- 是否有實作規格以外的功能（over-engineering 或偏離需求）？
+
+## 5. 通用程式碼審查
+
+### 🔴 邏輯衝突與錯誤（最高優先）
+- 條件判斷邏輯是否正確（邊界條件）
+- 資料流是否完整，有無遺漏的狀態更新
+- 非同步操作的順序與錯誤處理
+- 型別不匹配或隱性型別轉換
+
+### 🟠 潛在風險
+- 安全漏洞（XSS、SQL Injection、Command Injection 等）
+- 效能問題（N+1 查詢、記憶體洩漏）
+- 邊界情況是否處理
+
+### 🟡 程式碼品質
+- 命名是否清晰表達意圖
+- 函數/元件職責是否單一
+- 是否有未使用的變數或 import
+
+### 🔵 型別安全
+- 不安全的型別斷言（如 `as any`、強制 cast、非空斷言 `!`）是否合理
+- 型別縮窄是否完整（union / discriminated union 是否覆蓋所有分支）
+- 序列化邊界（API request/response、JSON.parse、外部資料）是否有驗證或型別守衛
+- 泛型參數是否被正確約束，避免退化為 `unknown` 或 `any`
+
+### ⚪ 註解類問題（測試/開發階段保留）
+- 是否有 `TODO`、`FIXME`、`XXX`、暫時性偵錯註解未清除
+- 是否有被註解掉的程式碼（dead code as comments）
+- 是否有暫時保留的診斷/偏差說明註解，需在進入正式實作前處理
+
+> 註解類問題不直接判定為缺陷，因為測試或開發階段可能刻意保留；
+> 統一歸入輸出格式中的「使用者自行決定」區塊，由使用者依目前階段判斷是否清除。
+
+## 6. 輸出格式
+
+使用繁體中文輸出，格式如下：
+
+```markdown
+## 📋 Code Review 摘要
+
+**審查範圍：** [描述變更涵蓋的檔案/功能]
+**整體評估：** ✅ 符合規格可合併 / ⚠️ 部分符合，建議修改 / ❌ 不符合規格，需修正
+
+---
+
+### ⚛️ React 最佳實踐（僅前端變更時輸出此區塊）
+
+#### ✅ 符合最佳實踐
+- [原則]：[簡述實作如何符合]
+
+#### ⚠️ 需改善
+- [原則]：[描述問題與建議方向]
+  ```tsx
+  // 建議修正方向
+  ```
+
+---
+
+### 📐 規格符合度（有提供規格文檔時才輸出此區塊）
+
+#### ✅ 符合規格的項目
+- [規格項目]：[簡單說明實作如何對應]
+
+#### ❌ 不符合或缺漏的項目
+- [規格項目]：[說明缺漏或偏差之處]
+
+---
+
+### 🔴 必須修正（Critical）
+
+#### 問題 1：[問題標題]
+- **檔案：** `path/to/file.ts:行號`
+- **問題：** [描述問題]
+- **影響：** [說明可能造成的後果]
+- **建議修正：**
+  ```typescript
+  // 修正後的程式碼
+  ```
+
+---
+
+### 🟠 建議改善（Warning）
+
+[同上格式]
+
+---
+
+### ⚪ 使用者自行決定（註解類問題）
+
+#### 問題 1：[問題標題]
+- **檔案：** `path/to/file.ts:行號`
+- **問題：** [說明註解為何可能造成維護混淆，例如 TODO 未追蹤、被註解掉的程式碼、暫時偵錯註解]
+- **影響：** [說明此問題是否只影響正式化前的程式碼品質]
+- **建議：** [若目前為測試/開發階段可保留；若進入正式實作應移除或改寫]
+
+---
+
+## 7. 輸出存檔（必做）
+
+完成 Code Review 後，除了在對話中輸出「## 📋 Code Review 摘要」以外，必須將**該摘要的原始內容**獨立存檔成一份 Markdown 文件，便於後續追蹤與分享。
+
+### 存檔規則
+
+- **存放位置：** 專案根目錄下的 `docs/code-review-report` 資料夾（若不存在則自動建立）
+- **檔名格式：** `code-review-YYYY-MM-DD-<feature-slug>.md`
+  - `YYYY-MM-DD` 為本機今日日期
+  - `<feature-slug>` 為**本次審查所對照規格文檔的檔名 slug**（取規格檔名去掉副檔名、轉成 kebab-case）
+  - 範例：
+    - 規格 `docs/spec/login.md` → `docs/code-review-report/code-review-2026-05-17-login.md`
+    - 規格 `docs/specs/user-profile.md` → `docs/code-review-report/code-review-2026-05-17-user-profile.md`
+    - 規格 `docs/PRD-Checkout Flow.md` → `docs/code-review-report/code-review-2026-05-17-checkout-flow.md`
+- **內容範圍：** 檔案最上方為 H1 輪數標題（見「輪數判斷與標題」），其下為與對話輸出的「## 📋 Code Review 摘要」**完全一致**的內容，包含所有子區塊（React 最佳實踐 / 規格符合度 / 必須修正 / 建議改善 / 使用者自行決定等），不可省略、改寫或濃縮
+- **不另加額外章節：** 除了 H1 輪數標題之外，不要在檔案中再加入「審查時間」、「審查者」等對話中沒有的欄位；以原始內容為準
+
+### 規格 slug 推導規則
+
+- 取規格文檔的**檔名主體**（去掉路徑與副檔名）
+- 全部轉小寫，空白與底線一律改為 `-`
+- 連續多個 `-` 合併為一個，前後 `-` 去除
+- 僅保留英數字與 `-`；非 ASCII 字元（如中文）以 transliteration 失敗時 fallback 為英文摘要詞
+
+### 沒有規格文檔時的 fallback
+
+- 若使用者**沒有提供規格文檔**（純通用 code review），改以 **git diff 中本次主要實作的功能**作為 `<feature-slug>`：
+  - 閱讀 diff，歸納本次變更實際在做的事情（例如「新增登入流程」、「修正購物車數量計算」、「重構訂單匯出邏輯」）
+  - 將該功能描述濃縮為簡短英文 slug（kebab-case、僅英數與 `-`），例如：
+    - 新增登入流程 → `login-flow`
+    - 修正購物車數量計算 → `fix-cart-quantity`
+    - 重構訂單匯出邏輯 → `refactor-order-export`
+  - 保持簡潔（建議 2~4 個單字內），讓檔名一眼就能辨識審查對象
+- 若 diff 過於發散難以歸納單一功能，才 fallback 為 `general`
+
+### 重複審查的覆蓋規則
+
+- 若同一天、同一規格的審查再次執行（檔名完全相同），**直接完全覆蓋**整份檔案內容
+- **不需要保留舊紀錄、不需要追加 changelog 區塊、不需要備份舊版**；每次審查都是當下狀態的快照
+- 不同功能（slug 不同）或不同日期會自然產生不同檔名，互不干擾
+- 雖然檔案內容會被覆蓋，但**輪數必須依照「輪數判斷與標題」遞增**，讓使用者一眼看出這份檔案累積審查過幾次
+
+### 輪數判斷與標題
+
+寫檔前，**必須**先用 `Read` 工具讀取目標路徑（即步驟一推導出的最終檔名），依結果決定本輪輪數：
+
+- 檔案不存在 → 視為**第 1 輪**
+- 檔案存在 → 用 regex `第\s*(\d+)\s*輪` 從檔案開頭抓出舊輪數，**新輪數 = 舊輪數 + 1**
+- 檔案存在但抓不到輪數（例如歷史檔尚未套用此規則）→ 視為**第 1 輪**
+
+判斷完成後，在檔案最上方加入 H1 標題（**位於所有內容之前**），格式固定為：
+
+```
+# Code Review 紀錄 — YYYY-MM-DD（第 N 輪）
+```
+
+- `YYYY-MM-DD` 與檔名中的日期一致（本機今日日期）
+- `N` 為上面推導出的輪數，使用阿拉伯數字
+- H1 標題下方空一行，再接原本的 `## 📋 Code Review 摘要` 與其後所有內容（內容本身不因輪數而改變）
+
+> 設計動機：subagent 是 cold start，無法靠記憶判斷「現在是第幾輪」；唯一可靠的線索就是現存檔案。
+> 透過「讀檔 → 解析 → +1」的固定流程，把輪數變成可重現的行為，而非依賴模型自發補上。
+
+### 執行時機
+
+- 在對話中輸出「## 📋 Code Review 摘要」**之後**立即執行寫檔
+- 寫檔完成後，在回覆中以一行簡短訊息告知使用者檔案路徑，例如：
+  `📁 已存檔：docs/code-review-report/code-review-2026-05-17-login.md`
+
+> 設計動機：按功能切分檔名是為了避免「同日多功能審查互相覆蓋」（規格檔名越具體越好，
+> 像 `README` 這種通用名應改找更具體的來源）；同功能同日直接覆蓋則是因為同一審查週期
+> 只有最新結論才有效，歷史變化請依賴 git history，不要在檔內自行追加 changelog。
+
+---
+
+## 注意事項
+
+- 專注於這次變更本身，不對未修改的程式碼提出建議
+- 若發現變更可能影響其他未修改的程式碼，明確指出關聯性
+- 提供具體可執行的修正建議，而非模糊的指導
+- 建議修正的程式碼只列出關鍵行，用 `// ...` 省略無關的上下文，避免輸出過長
+
+
+---
+
+Apply the above skill instructions to this task.
+
+## 重要說明
+
+以下已提供所有審查所需資訊（diff、規格文檔），不需要執行 shell 指令或讀取檔案來取得審查內容；但若 skill 指示要求輸出存檔，仍須依該指示建立審查 Markdown 檔案。
+
+### 規格文檔：login-spec.md
+
+# Login API 規格
+
+## POST /api/auth/login
+
+### 請求體
+
+| 欄位 | 型別 | 必填 | 說明 |
+|------|------|------|------|
+| email | string | ✅ | 使用者 email |
+| password | string | ✅ | 使用者密碼 |
+
+### 回應狀態碼
+
+- `200 OK`：登入成功，回傳 `{ token: string, user: { id: number, email: string } }`
+- `401 Unauthorized`：email 或密碼不正確（包含使用者不存在與密碼錯誤兩種情況，統一回傳相同訊息）
+- `422 Unprocessable Entity`：請求體格式錯誤（缺少必填欄位）
+
+### 安全規範
+
+- 使用者不存在與密碼錯誤**必須回傳相同的錯誤訊息與狀態碼**，避免帳號枚舉攻擊（Account Enumeration）
+- JWT token 過期時間為 7 天
+- JWT 密鑰必須從環境變數讀取，不可硬編碼
+
+
+## Git diff（base → staged）
+
+```diff
+--- a/src/login.ts
++++ b/src/login.ts
+@@ -1,5 +1,35 @@
+ import { Request, Response } from 'express';
++import bcrypt from 'bcrypt';
++import jwt from 'jsonwebtoken';
++import { User } from '../models/User';
+ 
+ export async function loginHandler(req: Request, res: Response) {
+-  res.json({ message: 'not implemented' });
++  const { email, password } = req.body;
++
++  if (!email || !password) {
++    return res.status(422).json({ error: '缺少必填欄位' });
++  }
++
++  const user = await User.findOne({ where: { email } });
++  if (!user) {
++    // 規格要求 401，且不可揭露使用者是否存在（避免帳號枚舉攻擊）
++    return res.status(404).json({ error: '使用者不存在' });
++  }
++
++  const isValid = await bcrypt.compare(password, user.passwordHash);
++  if (!isValid) {
++    // 規格要求 401
++    return res.status(400).json({ error: '密碼錯誤' });
++  }
++
++  const token = jwt.sign(
++    { userId: user.id },
++    process.env.JWT_SECRET as string,
++    { expiresIn: '7d' }
++  );
++
++  return res.status(200).json({
++    token,
++    user: { id: user.id, email: user.email },
++  });
+ }
+```
+
+## 使用者的請求
+
+請對照規格文檔 docs/specs/login-spec.md，幫我 review 這次的 API 實作
+---
+
+## 評分任務
+
+請在完成上方的 Code Review 後，接著評分以下每一條 Expectation。
+每條獨立一行，格式固定為：
+
+En: PASS — 從你的 review 摘錄的證據（一句話）
+En: FAIL — 說明為何未達到
+
+（n 為 Expectation 編號，例如 E1: PASS — ...）
+
+### Expectations 清單
+
+E1. 輸出包含「規格符合度」或「📐 規格符合度」區塊標題（有提供規格文檔）
+E2. 找出 401 狀態碼缺失問題：規格要求 401 Unauthorized，但實作回傳 404 與 400
+E3. 找出帳號枚舉安全漏洞：錯誤訊息揭露「使用者不存在」，違反規格的安全規範
+E4. 整體評估標記為不符合規格（含 ❌ 符號）或建議修改（含 ⚠️ 符號）
+E5. 在 docs/ 目錄下建立了 code-review-YYYY-MM-DD-login-spec.md 格式的審查存檔
+
+---
+
+## 輸出規範
+
+1. 先完整輸出 Code Review（格式遵照 skill 指示）
+2. 輸出一行分隔線：`---`
+3. 輸出標題 `## Grading`
+4. 逐行輸出評分結果（E1、E2 … 順序對應上方清單）
+
+codex
+我會依照你提供的 `code-reviewer` 流程產出審查內容，並先確認目標存檔是否已存在以決定輪數。這次 diff 與規格已在 prompt 中提供，所以不會再用 shell 重新取得審查材料。
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Select-String -Path C:\\Users\\tenns\\.codex\\memories\\MEMORY.md -Pattern 'code-reviewer eval|with_skill|run_evals.py|C:\\\\Users\\\\tenns\\\\.claude\\\\skills' -CaseSensitive:"'$false | Select-Object -First 20' in C:\Users\tenns\.claude\skills
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'git status --short' in C:\Users\tenns\.claude\skills
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command '$path = '"'docs/code-review-report/code-review-2026-05-18-login-spec.md'; if (Test-Path -LiteralPath "'$path) { Get-Content -LiteralPath $path -TotalCount 5 } else { Write-Output '"'__MISSING__' }" in C:\Users\tenns\.claude\skills
+ succeeded in 706ms:
+ succeeded in 765ms:
+__MISSING__
+
+ succeeded in 819ms:
+
+C:\Users\tenns\.codex\memories\MEMORY.md:262:# Task Group: Skills repo eval tooling standardizati
+on, [7mcode-reviewer eval[0m comparison, and runner review[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:264:scope: 適用於 `[7mC:\Users\tenns\.claude\skills[0m` 的 eva[0m
+[7m[0ml runner 標準化、`code-reviewer` eval 設計與 with_skill/without_skill 比較、repo-wide `run_evals.[0m
+[7m[0mpy` review、以及 artifact/CLI 合約維護；遇到 skill eval 腳本、benchmark 解讀或 Windows prompt 安[0m
+[7m[0m全性時先查這塊[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:265:applies_to: cwd=[7mC:\Users\tenns\.claude\skills[0m; reuse[0m
+[7m[0m_rule=可重用於同 skills repo 的 eval tooling 維護與 runner review；若其他 repo 也用 Python wrappe[0m
+[7m[0mr + Codex/Claude evals，可重用 runner 結構、比較思路與 failure shield，但需重新確認 CLI flags、ar[0m
+[7m[0mtifact 合約與目錄布局[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:271:- rollout_summaries/2026-05-14T13-05-24-ba4r-skill_c
+reator_eval_runners_to_python_and_updater_fix.md (cwd=[7mC:\Users\tenns\.claude\skills[0m, rollout_path[0m
+[7m[0m=C:\Users\tenns\.codex\sessions\2026\05\14\rollout-2026-05-14T21-05-24-019e2697-823d-71b3-8b18-5e[0m
+[7m[0madda94e763.jsonl, updated_at=2026-05-14T13:44:36+00:00, thread_id=019e2697-823d-71b3-8b18-5eadda9[0m
+[7m[0m4e763, `.sh` -> `.py` 遷移與 updater spacing)[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:275:- skill-creator, [7mrun_evals.py[0m, update-skill-creator.[0m
+[7m[0mpy, update-skill-creator.ps1, fleet-review/test/run-test.py, jq, chmod +x, py_compile, rg --files[0m
+[7m[0m -g "*.sh"[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:277:## Task 2: 建立共用 eval-test 維護風格並讓 `apply/ev
+als/[7mrun_evals.py[0m` 支援平行執行[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:281:- rollout_summaries/2026-05-14T13-46-12-1lGx-apply_e
+val_runner_parallelization_and_shared_maintenance_doc.md (cwd=[7mC:\Users\tenns\.claude\skills[0m, roll[0m
+[7m[0mout_path=C:\Users\tenns\.codex\sessions\2026\05\14\rollout-2026-05-14T21-46-12-019e26bc-e019-7411[0m
+[7m[0m-905d-5ec98c0e7a89.jsonl, updated_at=2026-05-14T16:01:26+00:00, thread_id=019e26bc-e019-7411-905d[0m
+[7m[0m-5ec98c0e7a89, shared maintenance + apply runner parallelization)[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:285:- eval-test/MAINTENANCE.md, apply/evals/[7mrun_evals.py[0m
+[7m[0m, --jobs, --timeout, summary.json, benchmark.json, last-message.md, taskkill /T /F, os.killpg, PY[0m
+[7m[0mTHONUTF8=1, PyYAML[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:287:## Task 3: 為 `code-reviewer` 新增 eval fixtures 與 
+Python runner，並驗證 [7mwith_skill[0m / without_skill 比較[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:291:- rollout_summaries/2026-05-17T10-01-10-bRuK-code_re
+viewer_evals_runner_and_output_comparison.md (cwd=[7mC:\Users\tenns\.claude\skills[0m, rollout_path=C:\[0m
+[7m[0mUsers\tenns\.codex\sessions\2026\05\17\rollout-2026-05-17T18-01-10-019e3561-ed31-7211-8a1f-cff09e[0m
+[7m[0mb38f2e.jsonl, updated_at=2026-05-17T13:52:58+00:00, thread_id=019e3561-ed31-7211-8a1f-cff09eb38f2[0m
+[7m[0me, `code-reviewer` eval runner、fixtures 與比較結論)[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:295:- code-reviewer, code-reviewer/evals/[7mrun_evals.py[0m, w[0m
+[7m[0mith_skill, without_skill, evals.json, validate_structure.py, stdin prompt, UnicodeEncodeError, cp[0m
+[7m[0m950, last-message.md, Result: 6/6 passed[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:297:## Task 4: Repo-wide code-review 所有 `[7mrun_evals.py[0m`[0m
+[7m[0m，確認 full parallel 與 Windows argv safety[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:301:- rollout_summaries/2026-05-17T15-56-27-n0Ds-repo_wi
+de_eval_runners_full_parallel_review.md (cwd=[7mC:\Users\tenns\.claude\skills[0m, rollout_path=C:\Users[0m
+[7m[0m\tenns\.codex\sessions\2026\05\17\rollout-2026-05-17T23-56-27-019e36a7-32cd-7f43-bd68-f9dfb3ff5a9[0m
+[7m[0m6.jsonl, updated_at=2026-05-17T17:31:12+00:00, thread_id=019e36a7-32cd-7f43-bd68-f9dfb3ff5a96, 全[0m
+[7m[0m repo runner review 與 `--jobs` 清理驗證)[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:305:- rg --files -g [7mrun_evals.py[0m, ThreadPoolExecutor(max[0m
+[7m[0m_workers=len(tasks)), as_completed, stdin=subprocess.PIPE, communicate(input=prompt), process.std[0m
+[7m[0min.write, --jobs, error: unrecognized arguments: --jobs, py_compile[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:314:- when 驗證 repo-wide runner contract, the user repe
+ated `再次執行 code-reviewer`、`全部的[7mrun_evals.py[0m`、`統一改成max_workers=len(tasks)，所有 run 同[0m
+[7m[0m時啟動，等最慢的那個完成就結束` -> 這個 repo 的 runner review 預設做全 repo 掃描並核對精確 concur[0m
+[7m[0mrency contract，而不是抽樣 spot check [Task 4][0m
+C:\Users\tenns\.codex\memories\MEMORY.md:319:- 這個 repo 的 eval runner 已驗證可全面轉成 `[7mrun_eva[0m
+[7mls.py[0m`，並以 Python `json` + `subprocess` 取代 `jq`、shell functions、`chmod +x` 等 shell 依賴 [T[0m
+[7m[0mask 1][0m
+C:\Users\tenns\.codex\memories\MEMORY.md:320:- `python` 與 `py` 都可用於這台機器；`python --versi
+on` 與 `py --version` 都曾驗證為 Python 3.12.4，因此 `python evals/[7mrun_evals.py[0m` / `py evals/run_[0m
+[7m[0mevals.py` 是可行執行模型 [Task 1][0m
+C:\Users\tenns\.codex\memories\MEMORY.md:322:- 共享 eval runner 維護基準在 `eval-test/MAINTENANCE
+.md`：`iteration-N/<eval-id>-<eval-name>/[7mwith_skill[0m/` artifact layout、`eval_metadata.json`、`out[0m
+[7m[0mput.log`、`last-message.md`、`timing.json`、以及 iteration root 的 `summary.json` / `benchmark.js[0m
+[7m[0mon` [Task 2][0m
+C:\Users\tenns\.codex\memories\MEMORY.md:323:- `apply/evals/[7mrun_evals.py[0m` 的平行度來自外層 Python[0m
+[7m[0m wrapper，不是 `codex exec` 內建多工；有效平行度為 `min(--jobs, number_of_selected_evals)`。當前 [0m
+[7m[0mapply eval set 共有 3 個 case，所以最多同時 3 個 Codex process [Task 2][0m
+C:\Users\tenns\.codex\memories\MEMORY.md:326:- `code-reviewer` 這輪 full run 的 `Result: 6/6 pass
+ed` 只代表 [7mwith_skill[0m/without_skill 的 6 次執行都成功退出，不代表 skill superiority；判讀 benchma[0m
+[7m[0mrk 時必須再比對 `last-message.md` 與 grading/assertion 是否真的能區分 workflow compliance 與 revi[0m
+[7m[0mew quality [Task 3][0m
+
+
+codex
+目標報告檔目前不存在，所以這次會存為第 1 輪。接下來我會建立 `docs/code-review-report/code-review-2026-05-18-login-spec.md`，內容會和對話中的 Code Review 摘要一致。
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "if (Test-Path -LiteralPath docs) { Get-ChildItem -LiteralPath docs -Force | Select-Object -First 20 } else { Write-Output '__DOCS_MISSING__' }" in C:\Users\tenns\.claude\skills
+ succeeded in 458ms:
+__DOCS_MISSING__
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'New-Item -ItemType Directory -Path docs/code-review-report -Force | Out-Null' in C:\Users\tenns\.claude\skills
+ succeeded in 386ms:
+apply patch
+patch: completed
+C:\Users\tenns\.claude\skills\docs\code-review-report\code-review-2026-05-18-login-spec.md
+diff --git a/docs/code-review-report/code-review-2026-05-18-login-spec.md b/docs/code-review-report/code-review-2026-05-18-login-spec.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..694556a4c127ac5134daec98ccef443f5274d0a5
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-login-spec.md
+@@ -0,0 +1,96 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/login.ts` 的 `POST /api/auth/login` API 實作，對照 `docs/specs/login-spec.md` 的登入請求、回應狀態碼與安全規範。  
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### 📐 規格符合度
++
++#### ✅ 符合規格的項目
++- 缺少必填欄位：實作在 `email` 或 `password` 缺少時回傳 `422 Unprocessable Entity`，符合規格。
++- 登入成功回應：實作成功時回傳 `200 OK`，並包含 `{ token, user: { id, email } }`，符合規格。
++- JWT 過期時間：實作使用 `{ expiresIn: '7d' }`，符合 token 過期時間為 7 天的規格。
++- JWT 密鑰來源：實作從 `process.env.JWT_SECRET` 讀取密鑰，方向符合不可硬編碼的規格。
++
++#### ❌ 不符合或缺漏的項目
++- 401 錯誤狀態碼：規格要求使用者不存在與密碼錯誤都回傳 `401 Unauthorized`，但實作分別回傳 `404` 與 `400`。
++- 帳號枚舉防護：規格要求使用者不存在與密碼錯誤必須回傳相同錯誤訊息與狀態碼，但實作回傳 `使用者不存在` 與 `密碼錯誤`，會揭露帳號是否存在。
++- JWT 密鑰檢查：實作使用 `process.env.JWT_SECRET as string` 強制斷言，若環境變數未設定，執行期會以不明確方式失敗；雖然規格要求從環境變數讀取，但目前缺少設定缺失時的明確錯誤處理。
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：登入失敗狀態碼不符合規格
++- **檔案：** `src/login.ts:12`
++- **問題：** 使用者不存在時回傳 `404`，密碼錯誤時回傳 `400`，但規格要求兩種情境都必須回傳 `401 Unauthorized`。
++- **影響：** API consumer 會收到與規格不一致的狀態碼，導致前端或呼叫端錯誤處理分支失準，也會讓失敗原因被間接區分。
++- **建議修正：**
++  ```typescript
++  const invalidCredentialsResponse = { error: 'email 或密碼不正確' };
++
++  if (!user) {
++    return res.status(401).json(invalidCredentialsResponse);
++  }
++
++  const isValid = await bcrypt.compare(password, user.passwordHash);
++  if (!isValid) {
++    return res.status(401).json(invalidCredentialsResponse);
++  }
++  ```
++
++---
++
++#### 問題 2：錯誤訊息揭露使用者是否存在，違反帳號枚舉防護
++- **檔案：** `src/login.ts:14`
++- **問題：** 使用者不存在時回傳 `使用者不存在`，密碼錯誤時回傳 `密碼錯誤`，違反規格要求的相同錯誤訊息與狀態碼。
++- **影響：** 攻擊者可以透過不同錯誤訊息判斷 email 是否已註冊，形成 Account Enumeration 風險。
++- **建議修正：**
++  ```typescript
++  const invalidCredentialsResponse = { error: 'email 或密碼不正確' };
++
++  if (!user) {
++    return res.status(401).json(invalidCredentialsResponse);
++  }
++
++  // ...
++
++  if (!isValid) {
++    return res.status(401).json(invalidCredentialsResponse);
++  }
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：JWT_SECRET 使用型別斷言但未檢查設定是否存在
++- **檔案：** `src/login.ts:24`
++- **問題：** `process.env.JWT_SECRET as string` 只是在 TypeScript 層面強制視為字串，無法保證執行期真的有值。
++- **影響：** 環境變數缺失時，登入流程可能在簽發 token 階段拋出錯誤並產生未預期的 500；也會讓設定問題延後到 runtime 才暴露。
++- **建議修正：**
++  ```typescript
++  const jwtSecret = process.env.JWT_SECRET;
++  if (!jwtSecret) {
++    throw new Error('JWT_SECRET is required');
++  }
++
++  const token = jwt.sign(
++    { userId: user.id },
++    jwtSecret,
++    { expiresIn: '7d' }
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：註解內容直接描述目前已知違規狀態
++- **檔案：** `src/login.ts:13`
++- **問題：** 註解寫明「規格要求 401」與「不可揭露使用者是否存在」，但緊接著的程式碼仍回傳 `404` 與 `使用者不存在`。
++- **影響：** 若這是開發中暫存註解可以保留；若準備提交正式實作，註解與程式碼矛盾會造成維護者誤判目前行為是否已符合規格。
++- **建議：** 修正程式碼後移除這類暫時性偏差註解，或改成只說明為什麼失敗回應必須統一。
+
+diff --git a/docs/code-review-report/code-review-2026-05-18-login-spec.md b/docs/code-review-report/code-review-2026-05-18-login-spec.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..694556a4c127ac5134daec98ccef443f5274d0a5
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-login-spec.md
+@@ -0,0 +1,96 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/login.ts` 的 `POST /api/auth/login` API 實作，對照 `docs/specs/login-spec.md` 的登入請求、回應狀態碼與安全規範。  
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### 📐 規格符合度
++
++#### ✅ 符合規格的項目
++- 缺少必填欄位：實作在 `email` 或 `password` 缺少時回傳 `422 Unprocessable Entity`，符合規格。
++- 登入成功回應：實作成功時回傳 `200 OK`，並包含 `{ token, user: { id, email } }`，符合規格。
++- JWT 過期時間：實作使用 `{ expiresIn: '7d' }`，符合 token 過期時間為 7 天的規格。
++- JWT 密鑰來源：實作從 `process.env.JWT_SECRET` 讀取密鑰，方向符合不可硬編碼的規格。
++
++#### ❌ 不符合或缺漏的項目
++- 401 錯誤狀態碼：規格要求使用者不存在與密碼錯誤都回傳 `401 Unauthorized`，但實作分別回傳 `404` 與 `400`。
++- 帳號枚舉防護：規格要求使用者不存在與密碼錯誤必須回傳相同錯誤訊息與狀態碼，但實作回傳 `使用者不存在` 與 `密碼錯誤`，會揭露帳號是否存在。
++- JWT 密鑰檢查：實作使用 `process.env.JWT_SECRET as string` 強制斷言，若環境變數未設定，執行期會以不明確方式失敗；雖然規格要求從環境變數讀取，但目前缺少設定缺失時的明確錯誤處理。
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：登入失敗狀態碼不符合規格
++- **檔案：** `src/login.ts:12`
++- **問題：** 使用者不存在時回傳 `404`，密碼錯誤時回傳 `400`，但規格要求兩種情境都必須回傳 `401 Unauthorized`。
++- **影響：** API consumer 會收到與規格不一致的狀態碼，導致前端或呼叫端錯誤處理分支失準，也會讓失敗原因被間接區分。
++- **建議修正：**
++  ```typescript
++  const invalidCredentialsResponse = { error: 'email 或密碼不正確' };
++
++  if (!user) {
++    return res.status(401).json(invalidCredentialsResponse);
++  }
++
++  const isValid = await bcrypt.compare(password, user.passwordHash);
++  if (!isValid) {
++    return res.status(401).json(invalidCredentialsResponse);
++  }
++  ```
++
++---
++
++#### 問題 2：錯誤訊息揭露使用者是否存在，違反帳號枚舉防護
++- **檔案：** `src/login.ts:14`
++- **問題：** 使用者不存在時回傳 `使用者不存在`，密碼錯誤時回傳 `密碼錯誤`，違反規格要求的相同錯誤訊息與狀態碼。
++- **影響：** 攻擊者可以透過不同錯誤訊息判斷 email 是否已註冊，形成 Account Enumeration 風險。
++- **建議修正：**
++  ```typescript
++  const invalidCredentialsResponse = { error: 'email 或密碼不正確' };
++
++  if (!user) {
++    return res.status(401).json(invalidCredentialsResponse);
++  }
++
++  // ...
++
++  if (!isValid) {
++    return res.status(401).json(invalidCredentialsResponse);
++  }
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：JWT_SECRET 使用型別斷言但未檢查設定是否存在
++- **檔案：** `src/login.ts:24`
++- **問題：** `process.env.JWT_SECRET as string` 只是在 TypeScript 層面強制視為字串，無法保證執行期真的有值。
++- **影響：** 環境變數缺失時，登入流程可能在簽發 token 階段拋出錯誤並產生未預期的 500；也會讓設定問題延後到 runtime 才暴露。
++- **建議修正：**
++  ```typescript
++  const jwtSecret = process.env.JWT_SECRET;
++  if (!jwtSecret) {
++    throw new Error('JWT_SECRET is required');
++  }
++
++  const token = jwt.sign(
++    { userId: user.id },
++    jwtSecret,
++    { expiresIn: '7d' }
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：註解內容直接描述目前已知違規狀態
++- **檔案：** `src/login.ts:13`
++- **問題：** 註解寫明「規格要求 401」與「不可揭露使用者是否存在」，但緊接著的程式碼仍回傳 `404` 與 `使用者不存在`。
++- **影響：** 若這是開發中暫存註解可以保留；若準備提交正式實作，註解與程式碼矛盾會造成維護者誤判目前行為是否已符合規格。
++- **建議：** 修正程式碼後移除這類暫時性偏差註解，或改成只說明為什麼失敗回應必須統一。
+
+codex
+報告檔已建立。依照這個 repo 的 gate，我會確認本次只改 Markdown，跳過 build 與 code review，然後只 staging 這次新增的報告檔並提交。
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'git status --short' in C:\Users\tenns\.claude\skills
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'git diff -- docs/code-review-report/code-review-2026-05-18-login-spec.md' in C:\Users\tenns\.claude\skills
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'Get-Content -LiteralPath docs/code-review-report/code-review-2026-05-18-login-spec.md -TotalCount 12' in C:\Users\tenns\.claude\skills
+ succeeded in 516ms:
+ succeeded in 562ms:
+?? docs/
+
+ succeeded in 464ms:
+# Code Review 紀錄 — 2026-05-18（第 1 輪）
+
+## 📋 Code Review 摘要
+
+**審查範圍：** `src/login.ts` 的 `POST /api/auth/login` API 實作，對照 `docs/specs/login-spec.md` 的登入請求、回應狀態碼與安全規範。  
+**整體評估：** ❌ 不符合規格，需修正
+
+---
+
+### 📐 規格符合度
+
+#### ✅ 符合規格的項目
+
+diff --git a/docs/code-review-report/code-review-2026-05-18-login-spec.md b/docs/code-review-report/code-review-2026-05-18-login-spec.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..694556a4c127ac5134daec98ccef443f5274d0a5
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-login-spec.md
+@@ -0,0 +1,96 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/login.ts` 的 `POST /api/auth/login` API 實作，對照 `docs/specs/login-spec.md` 的登入請求、回應狀態碼與安全規範。  
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### 📐 規格符合度
++
++#### ✅ 符合規格的項目
++- 缺少必填欄位：實作在 `email` 或 `password` 缺少時回傳 `422 Unprocessable Entity`，符合規格。
++- 登入成功回應：實作成功時回傳 `200 OK`，並包含 `{ token, user: { id, email } }`，符合規格。
++- JWT 過期時間：實作使用 `{ expiresIn: '7d' }`，符合 token 過期時間為 7 天的規格。
++- JWT 密鑰來源：實作從 `process.env.JWT_SECRET` 讀取密鑰，方向符合不可硬編碼的規格。
++
++#### ❌ 不符合或缺漏的項目
++- 401 錯誤狀態碼：規格要求使用者不存在與密碼錯誤都回傳 `401 Unauthorized`，但實作分別回傳 `404` 與 `400`。
++- 帳號枚舉防護：規格要求使用者不存在與密碼錯誤必須回傳相同錯誤訊息與狀態碼，但實作回傳 `使用者不存在` 與 `密碼錯誤`，會揭露帳號是否存在。
++- JWT 密鑰檢查：實作使用 `process.env.JWT_SECRET as string` 強制斷言，若環境變數未設定，執行期會以不明確方式失敗；雖然規格要求從環境變數讀取，但目前缺少設定缺失時的明確錯誤處理。
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：登入失敗狀態碼不符合規格
++- **檔案：** `src/login.ts:12`
++- **問題：** 使用者不存在時回傳 `404`，密碼錯誤時回傳 `400`，但規格要求兩種情境都必須回傳 `401 Unauthorized`。
++- **影響：** API consumer 會收到與規格不一致的狀態碼，導致前端或呼叫端錯誤處理分支失準，也會讓失敗原因被間接區分。
++- **建議修正：**
++  ```typescript
++  const invalidCredentialsResponse = { error: 'email 或密碼不正確' };
++
++  if (!user) {
++    return res.status(401).json(invalidCredentialsResponse);
++  }
++
++  const isValid = await bcrypt.compare(password, user.passwordHash);
++  if (!isValid) {
++    return res.status(401).json(invalidCredentialsResponse);
++  }
++  ```
++
++---
++
++#### 問題 2：錯誤訊息揭露使用者是否存在，違反帳號枚舉防護
++- **檔案：** `src/login.ts:14`
++- **問題：** 使用者不存在時回傳 `使用者不存在`，密碼錯誤時回傳 `密碼錯誤`，違反規格要求的相同錯誤訊息與狀態碼。
++- **影響：** 攻擊者可以透過不同錯誤訊息判斷 email 是否已註冊，形成 Account Enumeration 風險。
++- **建議修正：**
++  ```typescript
++  const invalidCredentialsResponse = { error: 'email 或密碼不正確' };
++
++  if (!user) {
++    return res.status(401).json(invalidCredentialsResponse);
++  }
++
++  // ...
++
++  if (!isValid) {
++    return res.status(401).json(invalidCredentialsResponse);
++  }
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：JWT_SECRET 使用型別斷言但未檢查設定是否存在
++- **檔案：** `src/login.ts:24`
++- **問題：** `process.env.JWT_SECRET as string` 只是在 TypeScript 層面強制視為字串，無法保證執行期真的有值。
++- **影響：** 環境變數缺失時，登入流程可能在簽發 token 階段拋出錯誤並產生未預期的 500；也會讓設定問題延後到 runtime 才暴露。
++- **建議修正：**
++  ```typescript
++  const jwtSecret = process.env.JWT_SECRET;
++  if (!jwtSecret) {
++    throw new Error('JWT_SECRET is required');
++  }
++
++  const token = jwt.sign(
++    { userId: user.id },
++    jwtSecret,
++    { expiresIn: '7d' }
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：註解內容直接描述目前已知違規狀態
++- **檔案：** `src/login.ts:13`
++- **問題：** 註解寫明「規格要求 401」與「不可揭露使用者是否存在」，但緊接著的程式碼仍回傳 `404` 與 `使用者不存在`。
++- **影響：** 若這是開發中暫存註解可以保留；若準備提交正式實作，註解與程式碼矛盾會造成維護者誤判目前行為是否已符合規格。
++- **建議：** 修正程式碼後移除這類暫時性偏差註解，或改成只說明為什麼失敗回應必須統一。
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'git add -- docs/code-review-report/code-review-2026-05-18-login-spec.md; $msg = @'"'
+docs: add login API code review report
+
+本次審查依照 login-spec 規格對照 login API 的 staged diff，需留下可追蹤的 Markdown 報告供後續修正與分享。
+
+本次調整：
+- 新增 login-spec 對照審查報告，標示第 1 輪審查結果
+- 記錄 401 狀態碼不符合規格與帳號枚舉風險
+- 補上 JWT_SECRET 設定檢查的建議改善項目
+'@; git commit -m "'$msg' in C:\Users\tenns\.claude\skills
+ succeeded in 468ms:
+[main 648d684] docs: add login API code review report
+ 1 file changed, 96 insertions(+)
+ create mode 100644 docs/code-review-report/code-review-2026-05-18-login-spec.md
+warning: in the working copy of 'docs/code-review-report/code-review-2026-05-18-login-spec.md', LF will be replaced by CRLF the next time Git touches it
+
+diff --git a/docs/code-review-report/code-review-2026-05-18-login-spec.md b/docs/code-review-report/code-review-2026-05-18-login-spec.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..694556a4c127ac5134daec98ccef443f5274d0a5
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-login-spec.md
+@@ -0,0 +1,96 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/login.ts` 的 `POST /api/auth/login` API 實作，對照 `docs/specs/login-spec.md` 的登入請求、回應狀態碼與安全規範。  
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### 📐 規格符合度
++
++#### ✅ 符合規格的項目
++- 缺少必填欄位：實作在 `email` 或 `password` 缺少時回傳 `422 Unprocessable Entity`，符合規格。
++- 登入成功回應：實作成功時回傳 `200 OK`，並包含 `{ token, user: { id, email } }`，符合規格。
++- JWT 過期時間：實作使用 `{ expiresIn: '7d' }`，符合 token 過期時間為 7 天的規格。
++- JWT 密鑰來源：實作從 `process.env.JWT_SECRET` 讀取密鑰，方向符合不可硬編碼的規格。
++
++#### ❌ 不符合或缺漏的項目
++- 401 錯誤狀態碼：規格要求使用者不存在與密碼錯誤都回傳 `401 Unauthorized`，但實作分別回傳 `404` 與 `400`。
++- 帳號枚舉防護：規格要求使用者不存在與密碼錯誤必須回傳相同錯誤訊息與狀態碼，但實作回傳 `使用者不存在` 與 `密碼錯誤`，會揭露帳號是否存在。
++- JWT 密鑰檢查：實作使用 `process.env.JWT_SECRET as string` 強制斷言，若環境變數未設定，執行期會以不明確方式失敗；雖然規格要求從環境變數讀取，但目前缺少設定缺失時的明確錯誤處理。
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：登入失敗狀態碼不符合規格
++- **檔案：** `src/login.ts:12`
++- **問題：** 使用者不存在時回傳 `404`，密碼錯誤時回傳 `400`，但規格要求兩種情境都必須回傳 `401 Unauthorized`。
++- **影響：** API consumer 會收到與規格不一致的狀態碼，導致前端或呼叫端錯誤處理分支失準，也會讓失敗原因被間接區分。
++- **建議修正：**
++  ```typescript
++  const invalidCredentialsResponse = { error: 'email 或密碼不正確' };
++
++  if (!user) {
++    return res.status(401).json(invalidCredentialsResponse);
++  }
++
++  const isValid = await bcrypt.compare(password, user.passwordHash);
++  if (!isValid) {
++    return res.status(401).json(invalidCredentialsResponse);
++  }
++  ```
++
++---
++
++#### 問題 2：錯誤訊息揭露使用者是否存在，違反帳號枚舉防護
++- **檔案：** `src/login.ts:14`
++- **問題：** 使用者不存在時回傳 `使用者不存在`，密碼錯誤時回傳 `密碼錯誤`，違反規格要求的相同錯誤訊息與狀態碼。
++- **影響：** 攻擊者可以透過不同錯誤訊息判斷 email 是否已註冊，形成 Account Enumeration 風險。
++- **建議修正：**
++  ```typescript
++  const invalidCredentialsResponse = { error: 'email 或密碼不正確' };
++
++  if (!user) {
++    return res.status(401).json(invalidCredentialsResponse);
++  }
++
++  // ...
++
++  if (!isValid) {
++    return res.status(401).json(invalidCredentialsResponse);
++  }
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：JWT_SECRET 使用型別斷言但未檢查設定是否存在
++- **檔案：** `src/login.ts:24`
++- **問題：** `process.env.JWT_SECRET as string` 只是在 TypeScript 層面強制視為字串，無法保證執行期真的有值。
++- **影響：** 環境變數缺失時，登入流程可能在簽發 token 階段拋出錯誤並產生未預期的 500；也會讓設定問題延後到 runtime 才暴露。
++- **建議修正：**
++  ```typescript
++  const jwtSecret = process.env.JWT_SECRET;
++  if (!jwtSecret) {
++    throw new Error('JWT_SECRET is required');
++  }
++
++  const token = jwt.sign(
++    { userId: user.id },
++    jwtSecret,
++    { expiresIn: '7d' }
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：註解內容直接描述目前已知違規狀態
++- **檔案：** `src/login.ts:13`
++- **問題：** 註解寫明「規格要求 401」與「不可揭露使用者是否存在」，但緊接著的程式碼仍回傳 `404` 與 `使用者不存在`。
++- **影響：** 若這是開發中暫存註解可以保留；若準備提交正式實作，註解與程式碼矛盾會造成維護者誤判目前行為是否已符合規格。
++- **建議：** 修正程式碼後移除這類暫時性偏差註解，或改成只說明為什麼失敗回應必須統一。
+
+codex
+提交已完成，commit 是 `648d684`。本次新增的是純 Markdown 報告，因此 build 跳過；code review gate 也依規則跳過，原因是本次對工作區的變更僅有文檔檔案。
+codex
+## 📋 Code Review 摘要
+
+**審查範圍：** `src/login.ts` 的 `POST /api/auth/login` API 實作，對照 `docs/specs/login-spec.md` 的登入請求、回應狀態碼與安全規範。  
+**整體評估：** ❌ 不符合規格，需修正
+
+---
+
+### 📐 規格符合度
+
+#### ✅ 符合規格的項目
+- 缺少必填欄位：實作在 `email` 或 `password` 缺少時回傳 `422 Unprocessable Entity`，符合規格。
+- 登入成功回應：實作成功時回傳 `200 OK`，並包含 `{ token, user: { id, email } }`，符合規格。
+- JWT 過期時間：實作使用 `{ expiresIn: '7d' }`，符合 token 過期時間為 7 天的規格。
+- JWT 密鑰來源：實作從 `process.env.JWT_SECRET` 讀取密鑰，方向符合不可硬編碼的規格。
+
+#### ❌ 不符合或缺漏的項目
+- 401 錯誤狀態碼：規格要求使用者不存在與密碼錯誤都回傳 `401 Unauthorized`，但實作分別回傳 `404` 與 `400`。
+- 帳號枚舉防護：規格要求使用者不存在與密碼錯誤必須回傳相同錯誤訊息與狀態碼，但實作回傳 `使用者不存在` 與 `密碼錯誤`，會揭露帳號是否存在。
+- JWT 密鑰檢查：實作使用 `process.env.JWT_SECRET as string` 強制斷言，若環境變數未設定，執行期會以不明確方式失敗。
+
+---
+
+### 🔴 必須修正（Critical）
+
+#### 問題 1：登入失敗狀態碼不符合規格
+- **檔案：** `src/login.ts:12`
+- **問題：** 使用者不存在時回傳 `404`，密碼錯誤時回傳 `400`，但規格要求兩種情境都必須回傳 `401 Unauthorized`。
+- **影響：** API consumer 會收到與規格不一致的狀態碼，導致前端或呼叫端錯誤處理分支失準，也會讓失敗原因被間接區分。
+- **建議修正：**
+  ```typescript
+  const invalidCredentialsResponse = { error: 'email 或密碼不正確' };
+
+  if (!user) {
+    return res.status(401).json(invalidCredentialsResponse);
+  }
+
+  const isValid = await bcrypt.compare(password, user.passwordHash);
+  if (!isValid) {
+    return res.status(401).json(invalidCredentialsResponse);
+  }
+  ```
+
+#### 問題 2：錯誤訊息揭露使用者是否存在，違反帳號枚舉防護
+- **檔案：** `src/login.ts:14`
+- **問題：** 使用者不存在時回傳 `使用者不存在`，密碼錯誤時回傳 `密碼錯誤`，違反規格要求的相同錯誤訊息與狀態碼。
+- **影響：** 攻擊者可以透過不同錯誤訊息判斷 email 是否已註冊，形成 Account Enumeration 風險。
+- **建議修正：**
+  ```typescript
+  const invalidCredentialsResponse = { error: 'email 或密碼不正確' };
+
+  if (!user) {
+    return res.status(401).json(invalidCredentialsResponse);
+  }
+
+  // ...
+
+  if (!isValid) {
+    return res.status(401).json(invalidCredentialsResponse);
+  }
+  ```
+
+---
+
+### 🟠 建議改善（Warning）
+
+#### 問題 1：JWT_SECRET 使用型別斷言但未檢查設定是否存在
+- **檔案：** `src/login.ts:24`
+- **問題：** `process.env.JWT_SECRET as string` 只是在 TypeScript 層面強制視為字串，無法保證執行期真的有值。
+- **影響：** 環境變數缺失時，登入流程可能在簽發 token 階段拋出錯誤並產生未預期的 500；也會讓設定問題延後到 runtime 才暴露。
+- **建議修正：**
+  ```typescript
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    throw new Error('JWT_SECRET is required');
+  }
+
+  const token = jwt.sign(
+    { userId: user.id },
+    jwtSecret,
+    { expiresIn: '7d' }
+  );
+  ```
+
+---
+
+### ⚪ 使用者自行決定（註解類問題）
+
+#### 問題 1：註解內容直接描述目前已知違規狀態
+- **檔案：** `src/login.ts:13`
+- **問題：** 註解寫明「規格要求 401」與「不可揭露使用者是否存在」，但緊接著的程式碼仍回傳 `404` 與 `使用者不存在`。
+- **影響：** 若這是開發中暫存註解可以保留；若準備提交正式實作，註解與程式碼矛盾會造成維護者誤判目前行為是否已符合規格。
+- **建議：** 修正程式碼後移除這類暫時性偏差註解，或改成只說明為什麼失敗回應必須統一。
+
+📁 已存檔：`docs/code-review-report/code-review-2026-05-18-login-spec.md`  
+Workflow Gate：本次只新增 Markdown 審查報告，已跳過 build；code review 跳過原因為本次變更僅有文檔檔案。已提交 commit `648d684`。
+
+---
+
+## Grading
+
+E1: PASS — Review 內已輸出 `### 📐 規格符合度` 區塊。  
+E2: PASS — Review 指出規格要求 `401 Unauthorized`，但實作分別回傳 `404` 與 `400`。  
+E3: PASS — Review 指出 `使用者不存在` 與 `密碼錯誤` 會揭露帳號是否存在，形成 Account Enumeration 風險。  
+E4: PASS — 整體評估標記為 `❌ 不符合規格，需修正`。  
+E5: PASS — 已建立 `docs/code-review-report/code-review-2026-05-18-login-spec.md` 審查存檔。  
+
+
+diff --git a/docs/code-review-report/code-review-2026-05-18-login-spec.md b/docs/code-review-report/code-review-2026-05-18-login-spec.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..694556a4c127ac5134daec98ccef443f5274d0a5
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-login-spec.md
+@@ -0,0 +1,96 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/login.ts` 的 `POST /api/auth/login` API 實作，對照 `docs/specs/login-spec.md` 的登入請求、回應狀態碼與安全規範。  
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### 📐 規格符合度
++
++#### ✅ 符合規格的項目
++- 缺少必填欄位：實作在 `email` 或 `password` 缺少時回傳 `422 Unprocessable Entity`，符合規格。
++- 登入成功回應：實作成功時回傳 `200 OK`，並包含 `{ token, user: { id, email } }`，符合規格。
++- JWT 過期時間：實作使用 `{ expiresIn: '7d' }`，符合 token 過期時間為 7 天的規格。
++- JWT 密鑰來源：實作從 `process.env.JWT_SECRET` 讀取密鑰，方向符合不可硬編碼的規格。
++
++#### ❌ 不符合或缺漏的項目
++- 401 錯誤狀態碼：規格要求使用者不存在與密碼錯誤都回傳 `401 Unauthorized`，但實作分別回傳 `404` 與 `400`。
++- 帳號枚舉防護：規格要求使用者不存在與密碼錯誤必須回傳相同錯誤訊息與狀態碼，但實作回傳 `使用者不存在` 與 `密碼錯誤`，會揭露帳號是否存在。
++- JWT 密鑰檢查：實作使用 `process.env.JWT_SECRET as string` 強制斷言，若環境變數未設定，執行期會以不明確方式失敗；雖然規格要求從環境變數讀取，但目前缺少設定缺失時的明確錯誤處理。
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：登入失敗狀態碼不符合規格
++- **檔案：** `src/login.ts:12`
++- **問題：** 使用者不存在時回傳 `404`，密碼錯誤時回傳 `400`，但規格要求兩種情境都必須回傳 `401 Unauthorized`。
++- **影響：** API consumer 會收到與規格不一致的狀態碼，導致前端或呼叫端錯誤處理分支失準，也會讓失敗原因被間接區分。
++- **建議修正：**
++  ```typescript
++  const invalidCredentialsResponse = { error: 'email 或密碼不正確' };
++
++  if (!user) {
++    return res.status(401).json(invalidCredentialsResponse);
++  }
++
++  const isValid = await bcrypt.compare(password, user.passwordHash);
++  if (!isValid) {
++    return res.status(401).json(invalidCredentialsResponse);
++  }
++  ```
++
++---
++
++#### 問題 2：錯誤訊息揭露使用者是否存在，違反帳號枚舉防護
++- **檔案：** `src/login.ts:14`
++- **問題：** 使用者不存在時回傳 `使用者不存在`，密碼錯誤時回傳 `密碼錯誤`，違反規格要求的相同錯誤訊息與狀態碼。
++- **影響：** 攻擊者可以透過不同錯誤訊息判斷 email 是否已註冊，形成 Account Enumeration 風險。
++- **建議修正：**
++  ```typescript
++  const invalidCredentialsResponse = { error: 'email 或密碼不正確' };
++
++  if (!user) {
++    return res.status(401).json(invalidCredentialsResponse);
++  }
++
++  // ...
++
++  if (!isValid) {
++    return res.status(401).json(invalidCredentialsResponse);
++  }
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：JWT_SECRET 使用型別斷言但未檢查設定是否存在
++- **檔案：** `src/login.ts:24`
++- **問題：** `process.env.JWT_SECRET as string` 只是在 TypeScript 層面強制視為字串，無法保證執行期真的有值。
++- **影響：** 環境變數缺失時，登入流程可能在簽發 token 階段拋出錯誤並產生未預期的 500；也會讓設定問題延後到 runtime 才暴露。
++- **建議修正：**
++  ```typescript
++  const jwtSecret = process.env.JWT_SECRET;
++  if (!jwtSecret) {
++    throw new Error('JWT_SECRET is required');
++  }
++
++  const token = jwt.sign(
++    { userId: user.id },
++    jwtSecret,
++    { expiresIn: '7d' }
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：註解內容直接描述目前已知違規狀態
++- **檔案：** `src/login.ts:13`
++- **問題：** 註解寫明「規格要求 401」與「不可揭露使用者是否存在」，但緊接著的程式碼仍回傳 `404` 與 `使用者不存在`。
++- **影響：** 若這是開發中暫存註解可以保留；若準備提交正式實作，註解與程式碼矛盾會造成維護者誤判目前行為是否已符合規格。
++- **建議：** 修正程式碼後移除這類暫時性偏差註解，或改成只說明為什麼失敗回應必須統一。
+
+SUCCESS: The process with PID 384 (child process of PID 19096) has been terminated.
+SUCCESS: The process with PID 19096 (child process of PID 11120) has been terminated.
+SUCCESS: The process with PID 11120 (child process of PID 1164) has been terminated.
+SUCCESS: The process with PID 1164 (child process of PID 11400) has been terminated.
+tokens used
+45,186
+## 📋 Code Review 摘要
+
+**審查範圍：** `src/login.ts` 的 `POST /api/auth/login` API 實作，對照 `docs/specs/login-spec.md` 的登入請求、回應狀態碼與安全規範。  
+**整體評估：** ❌ 不符合規格，需修正
+
+---
+
+### 📐 規格符合度
+
+#### ✅ 符合規格的項目
+- 缺少必填欄位：實作在 `email` 或 `password` 缺少時回傳 `422 Unprocessable Entity`，符合規格。
+- 登入成功回應：實作成功時回傳 `200 OK`，並包含 `{ token, user: { id, email } }`，符合規格。
+- JWT 過期時間：實作使用 `{ expiresIn: '7d' }`，符合 token 過期時間為 7 天的規格。
+- JWT 密鑰來源：實作從 `process.env.JWT_SECRET` 讀取密鑰，方向符合不可硬編碼的規格。
+
+#### ❌ 不符合或缺漏的項目
+- 401 錯誤狀態碼：規格要求使用者不存在與密碼錯誤都回傳 `401 Unauthorized`，但實作分別回傳 `404` 與 `400`。
+- 帳號枚舉防護：規格要求使用者不存在與密碼錯誤必須回傳相同錯誤訊息與狀態碼，但實作回傳 `使用者不存在` 與 `密碼錯誤`，會揭露帳號是否存在。
+- JWT 密鑰檢查：實作使用 `process.env.JWT_SECRET as string` 強制斷言，若環境變數未設定，執行期會以不明確方式失敗。
+
+---
+
+### 🔴 必須修正（Critical）
+
+#### 問題 1：登入失敗狀態碼不符合規格
+- **檔案：** `src/login.ts:12`
+- **問題：** 使用者不存在時回傳 `404`，密碼錯誤時回傳 `400`，但規格要求兩種情境都必須回傳 `401 Unauthorized`。
+- **影響：** API consumer 會收到與規格不一致的狀態碼，導致前端或呼叫端錯誤處理分支失準，也會讓失敗原因被間接區分。
+- **建議修正：**
+  ```typescript
+  const invalidCredentialsResponse = { error: 'email 或密碼不正確' };
+
+  if (!user) {
+    return res.status(401).json(invalidCredentialsResponse);
+  }
+
+  const isValid = await bcrypt.compare(password, user.passwordHash);
+  if (!isValid) {
+    return res.status(401).json(invalidCredentialsResponse);
+  }
+  ```
+
+#### 問題 2：錯誤訊息揭露使用者是否存在，違反帳號枚舉防護
+- **檔案：** `src/login.ts:14`
+- **問題：** 使用者不存在時回傳 `使用者不存在`，密碼錯誤時回傳 `密碼錯誤`，違反規格要求的相同錯誤訊息與狀態碼。
+- **影響：** 攻擊者可以透過不同錯誤訊息判斷 email 是否已註冊，形成 Account Enumeration 風險。
+- **建議修正：**
+  ```typescript
+  const invalidCredentialsResponse = { error: 'email 或密碼不正確' };
+
+  if (!user) {
+    return res.status(401).json(invalidCredentialsResponse);
+  }
+
+  // ...
+
+  if (!isValid) {
+    return res.status(401).json(invalidCredentialsResponse);
+  }
+  ```
+
+---
+
+### 🟠 建議改善（Warning）
+
+#### 問題 1：JWT_SECRET 使用型別斷言但未檢查設定是否存在
+- **檔案：** `src/login.ts:24`
+- **問題：** `process.env.JWT_SECRET as string` 只是在 TypeScript 層面強制視為字串，無法保證執行期真的有值。
+- **影響：** 環境變數缺失時，登入流程可能在簽發 token 階段拋出錯誤並產生未預期的 500；也會讓設定問題延後到 runtime 才暴露。
+- **建議修正：**
+  ```typescript
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    throw new Error('JWT_SECRET is required');
+  }
+
+  const token = jwt.sign(
+    { userId: user.id },
+    jwtSecret,
+    { expiresIn: '7d' }
+  );
+  ```
+
+---
+
+### ⚪ 使用者自行決定（註解類問題）
+
+#### 問題 1：註解內容直接描述目前已知違規狀態
+- **檔案：** `src/login.ts:13`
+- **問題：** 註解寫明「規格要求 401」與「不可揭露使用者是否存在」，但緊接著的程式碼仍回傳 `404` 與 `使用者不存在`。
+- **影響：** 若這是開發中暫存註解可以保留；若準備提交正式實作，註解與程式碼矛盾會造成維護者誤判目前行為是否已符合規格。
+- **建議：** 修正程式碼後移除這類暫時性偏差註解，或改成只說明為什麼失敗回應必須統一。
+
+📁 已存檔：`docs/code-review-report/code-review-2026-05-18-login-spec.md`  
+Workflow Gate：本次只新增 Markdown 審查報告，已跳過 build；code review 跳過原因為本次變更僅有文檔檔案。已提交 commit `648d684`。
+
+---
+
+## Grading
+
+E1: PASS — Review 內已輸出 `### 📐 規格符合度` 區塊。  
+E2: PASS — Review 指出規格要求 `401 Unauthorized`，但實作分別回傳 `404` 與 `400`。  
+E3: PASS — Review 指出 `使用者不存在` 與 `密碼錯誤` 會揭露帳號是否存在，形成 Account Enumeration 風險。  
+E4: PASS — 整體評估標記為 `❌ 不符合規格，需修正`。  
+E5: PASS — 已建立 `docs/code-review-report/code-review-2026-05-18-login-spec.md` 審查存檔。  
+
+

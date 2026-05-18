@@ -1,0 +1,1204 @@
+Reading prompt from stdin...
+OpenAI Codex v0.130.0
+--------
+workdir: C:\Users\tenns\.claude\skills
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: danger-full-access
+reasoning effort: high
+reasoning summaries: none
+session id: 019e3b3b-2e72-71c2-a2a3-59eb77b525f7
+--------
+user
+---
+name: code-reviewer
+description: >
+  當使用者提供業務邏輯文檔（需求規格、User Story、API 文件、流程說明等），並要求審查程式碼實作時，必須載入此技能。
+  使用 git diff 比對業務邏輯與程式碼變更，確認功能是否正確實作、找出邏輯衝突、潛在問題與副作用，並檢視是否符合最佳實踐。
+  觸發情境包含但不限於：「對照文件幫我 review」、「幫我審查這次的實作」、「這個 PR 符合需求嗎」、
+  「依照業務邏輯檢查程式碼」、「根據規格審查這次變更」。
+  即使使用者只說「幫我 review」或「有沒有符合需求」，只要上下文中有提供業務邏輯文檔，也應載入此技能。
+  此技能也適用於 subagent 情境：當 prompt 中包含規格文檔路徑時，自動讀取並對照審查。
+---
+
+# Code Review 流程
+
+## 1. 取得規格文檔
+
+從 prompt 或對話中識別需求規格文檔：
+- 若 prompt 中有明確路徑 → 讀取該檔案
+- 若對話中使用者曾提供規格內容 → 直接使用
+- 若兩者皆無 → 告知使用者需要提供規格文檔才能進行對照審查，但仍可執行通用 code review
+
+## 2. 取得變更內容
+
+依序嘗試以下指令，取得有意義的 diff：
+
+```bash
+git diff HEAD        # 包含已暫存與未暫存的所有變更
+git diff --staged    # 僅已暫存（即將提交）的變更
+git diff main...HEAD # 與主分支的完整差異（適用於 feature branch）
+```
+
+選擇能取得最完整變更的指令。若 diff 為空，告知使用者並停止。
+
+## 3. 前端檔案 React 最佳實踐審查（優先於規格審查）
+
+分析 diff 中是否包含前端 React 相關檔案：
+
+**判斷前端檔案的條件（符合任一即視為前端變更）：**
+- 副檔名為 `.tsx`、`.jsx`
+- 副檔名為 `.ts`、`.js`，且路徑包含 `components?/`、`hooks?/`、`contexts?/`、`pages/` 或 `views/`
+
+**若包含前端檔案，必須先載入並執行 `react-design` skill，依照其原則對 diff 進行審查。**
+
+審查完成後，將結果整理為「React 最佳實踐」區塊，再繼續進行後續的規格審查。
+
+## 4. 對照規格審查（有提供規格文檔時必做）
+
+逐項比對規格文檔的功能需求與實際 diff：
+
+- 規格中要求的功能，實作是否完整？
+- 規格中定義的 API / 資料結構，實作是否一致？
+- 規格中描述的邊界條件與錯誤處理，是否有涵蓋？
+- 是否有實作規格以外的功能（over-engineering 或偏離需求）？
+
+## 5. 通用程式碼審查
+
+### 🔴 邏輯衝突與錯誤（最高優先）
+- 條件判斷邏輯是否正確（邊界條件）
+- 資料流是否完整，有無遺漏的狀態更新
+- 非同步操作的順序與錯誤處理
+- 型別不匹配或隱性型別轉換
+
+### 🟠 潛在風險
+- 安全漏洞（XSS、SQL Injection、Command Injection 等）
+- 效能問題（N+1 查詢、記憶體洩漏）
+- 邊界情況是否處理
+
+### 🟡 程式碼品質
+- 命名是否清晰表達意圖
+- 函數/元件職責是否單一
+- 是否有未使用的變數或 import
+
+### 🔵 型別安全
+- 不安全的型別斷言（如 `as any`、強制 cast、非空斷言 `!`）是否合理
+- 型別縮窄是否完整（union / discriminated union 是否覆蓋所有分支）
+- 序列化邊界（API request/response、JSON.parse、外部資料）是否有驗證或型別守衛
+- 泛型參數是否被正確約束，避免退化為 `unknown` 或 `any`
+
+### ⚪ 註解類問題（測試/開發階段保留）
+- 是否有 `TODO`、`FIXME`、`XXX`、暫時性偵錯註解未清除
+- 是否有被註解掉的程式碼（dead code as comments）
+- 是否有暫時保留的診斷/偏差說明註解，需在進入正式實作前處理
+
+> 註解類問題不直接判定為缺陷，因為測試或開發階段可能刻意保留；
+> 統一歸入輸出格式中的「使用者自行決定」區塊，由使用者依目前階段判斷是否清除。
+
+## 6. 輸出格式
+
+使用繁體中文輸出，格式如下：
+
+```markdown
+## 📋 Code Review 摘要
+
+**審查範圍：** [描述變更涵蓋的檔案/功能]
+**整體評估：** ✅ 符合規格可合併 / ⚠️ 部分符合，建議修改 / ❌ 不符合規格，需修正
+
+---
+
+### ⚛️ React 最佳實踐（僅前端變更時輸出此區塊）
+
+#### ✅ 符合最佳實踐
+- [原則]：[簡述實作如何符合]
+
+#### ⚠️ 需改善
+- [原則]：[描述問題與建議方向]
+  ```tsx
+  // 建議修正方向
+  ```
+
+---
+
+### 📐 規格符合度（有提供規格文檔時才輸出此區塊）
+
+#### ✅ 符合規格的項目
+- [規格項目]：[簡單說明實作如何對應]
+
+#### ❌ 不符合或缺漏的項目
+- [規格項目]：[說明缺漏或偏差之處]
+
+---
+
+### 🔴 必須修正（Critical）
+
+#### 問題 1：[問題標題]
+- **檔案：** `path/to/file.ts:行號`
+- **問題：** [描述問題]
+- **影響：** [說明可能造成的後果]
+- **建議修正：**
+  ```typescript
+  // 修正後的程式碼
+  ```
+
+---
+
+### 🟠 建議改善（Warning）
+
+[同上格式]
+
+---
+
+### ⚪ 使用者自行決定（註解類問題）
+
+#### 問題 1：[問題標題]
+- **檔案：** `path/to/file.ts:行號`
+- **問題：** [說明註解為何可能造成維護混淆，例如 TODO 未追蹤、被註解掉的程式碼、暫時偵錯註解]
+- **影響：** [說明此問題是否只影響正式化前的程式碼品質]
+- **建議：** [若目前為測試/開發階段可保留；若進入正式實作應移除或改寫]
+
+---
+
+## 7. 輸出存檔（必做）
+
+完成 Code Review 後，除了在對話中輸出「## 📋 Code Review 摘要」以外，必須將**該摘要的原始內容**獨立存檔成一份 Markdown 文件，便於後續追蹤與分享。
+
+### 存檔規則
+
+- **存放位置：** 專案根目錄下的 `docs/code-review-report` 資料夾（若不存在則自動建立）
+- **檔名格式：** `code-review-YYYY-MM-DD-<feature-slug>.md`
+  - `YYYY-MM-DD` 為本機今日日期
+  - `<feature-slug>` 為**本次審查所對照規格文檔的檔名 slug**（取規格檔名去掉副檔名、轉成 kebab-case）
+  - 範例：
+    - 規格 `docs/spec/login.md` → `docs/code-review-report/code-review-2026-05-17-login.md`
+    - 規格 `docs/specs/user-profile.md` → `docs/code-review-report/code-review-2026-05-17-user-profile.md`
+    - 規格 `docs/PRD-Checkout Flow.md` → `docs/code-review-report/code-review-2026-05-17-checkout-flow.md`
+- **內容範圍：** 檔案最上方為 H1 輪數標題（見「輪數判斷與標題」），其下為與對話輸出的「## 📋 Code Review 摘要」**完全一致**的內容，包含所有子區塊（React 最佳實踐 / 規格符合度 / 必須修正 / 建議改善 / 使用者自行決定等），不可省略、改寫或濃縮
+- **不另加額外章節：** 除了 H1 輪數標題之外，不要在檔案中再加入「審查時間」、「審查者」等對話中沒有的欄位；以原始內容為準
+
+### 規格 slug 推導規則
+
+- 取規格文檔的**檔名主體**（去掉路徑與副檔名）
+- 全部轉小寫，空白與底線一律改為 `-`
+- 連續多個 `-` 合併為一個，前後 `-` 去除
+- 僅保留英數字與 `-`；非 ASCII 字元（如中文）以 transliteration 失敗時 fallback 為英文摘要詞
+
+### 沒有規格文檔時的 fallback
+
+- 若使用者**沒有提供規格文檔**（純通用 code review），改以 **git diff 中本次主要實作的功能**作為 `<feature-slug>`：
+  - 閱讀 diff，歸納本次變更實際在做的事情（例如「新增登入流程」、「修正購物車數量計算」、「重構訂單匯出邏輯」）
+  - 將該功能描述濃縮為簡短英文 slug（kebab-case、僅英數與 `-`），例如：
+    - 新增登入流程 → `login-flow`
+    - 修正購物車數量計算 → `fix-cart-quantity`
+    - 重構訂單匯出邏輯 → `refactor-order-export`
+  - 保持簡潔（建議 2~4 個單字內），讓檔名一眼就能辨識審查對象
+- 若 diff 過於發散難以歸納單一功能，才 fallback 為 `general`
+
+### 重複審查的覆蓋規則
+
+- 若同一天、同一規格的審查再次執行（檔名完全相同），**直接完全覆蓋**整份檔案內容
+- **不需要保留舊紀錄、不需要追加 changelog 區塊、不需要備份舊版**；每次審查都是當下狀態的快照
+- 不同功能（slug 不同）或不同日期會自然產生不同檔名，互不干擾
+- 雖然檔案內容會被覆蓋，但**輪數必須依照「輪數判斷與標題」遞增**，讓使用者一眼看出這份檔案累積審查過幾次
+
+### 輪數判斷與標題
+
+寫檔前，**必須**先用 `Read` 工具讀取目標路徑（即步驟一推導出的最終檔名），依結果決定本輪輪數：
+
+- 檔案不存在 → 視為**第 1 輪**
+- 檔案存在 → 用 regex `第\s*(\d+)\s*輪` 從檔案開頭抓出舊輪數，**新輪數 = 舊輪數 + 1**
+- 檔案存在但抓不到輪數（例如歷史檔尚未套用此規則）→ 視為**第 1 輪**
+
+判斷完成後，在檔案最上方加入 H1 標題（**位於所有內容之前**），格式固定為：
+
+```
+# Code Review 紀錄 — YYYY-MM-DD（第 N 輪）
+```
+
+- `YYYY-MM-DD` 與檔名中的日期一致（本機今日日期）
+- `N` 為上面推導出的輪數，使用阿拉伯數字
+- H1 標題下方空一行，再接原本的 `## 📋 Code Review 摘要` 與其後所有內容（內容本身不因輪數而改變）
+
+> 設計動機：subagent 是 cold start，無法靠記憶判斷「現在是第幾輪」；唯一可靠的線索就是現存檔案。
+> 透過「讀檔 → 解析 → +1」的固定流程，把輪數變成可重現的行為，而非依賴模型自發補上。
+
+### 執行時機
+
+- 在對話中輸出「## 📋 Code Review 摘要」**之後**立即執行寫檔
+- 寫檔完成後，在回覆中以一行簡短訊息告知使用者檔案路徑，例如：
+  `📁 已存檔：docs/code-review-report/code-review-2026-05-17-login.md`
+
+> 設計動機：按功能切分檔名是為了避免「同日多功能審查互相覆蓋」（規格檔名越具體越好，
+> 像 `README` 這種通用名應改找更具體的來源）；同功能同日直接覆蓋則是因為同一審查週期
+> 只有最新結論才有效，歷史變化請依賴 git history，不要在檔內自行追加 changelog。
+
+---
+
+## 注意事項
+
+- 專注於這次變更本身，不對未修改的程式碼提出建議
+- 若發現變更可能影響其他未修改的程式碼，明確指出關聯性
+- 提供具體可執行的修正建議，而非模糊的指導
+- 建議修正的程式碼只列出關鍵行，用 `// ...` 省略無關的上下文，避免輸出過長
+
+
+---
+
+Apply the above skill instructions to this task.
+
+## 重要說明
+
+以下已提供所有審查所需資訊（diff、規格文檔），不需要執行 shell 指令或讀取檔案來取得審查內容；但若 skill 指示要求輸出存檔，仍須依該指示建立審查 Markdown 檔案。
+
+## Git diff（base → staged）
+
+```diff
+--- a/src/user-service.ts
++++ b/src/user-service.ts
+@@ -1,7 +1,18 @@
++import { pool } from '../db';
++
++// TODO: 之後要加分頁功能
+ export async function searchUsers(term: string) {
+-  return [];
++  const query = `SELECT id, name, email FROM users WHERE name LIKE '%${term}%' OR email LIKE '%${term}%'`;
++  const result = await pool.query(query);
++  return result.rows;
+ }
+ 
+ export async function getUserById(id: number) {
+-  return null;
++  const result = await pool.query(`SELECT * FROM users WHERE id = ${id}`);
++  return result.rows[0] ?? null;
+ }
++
++// 舊版實作，先保留
++// export async function findUser(searchTerm: string) {
++//   return pool.query('SELECT * FROM users WHERE name = $1', [searchTerm]);
++// }
+```
+
+## 使用者的請求
+
+幫我 review 這次的程式碼變更
+---
+
+## 評分任務
+
+請在完成上方的 Code Review 後，接著評分以下每一條 Expectation。
+每條獨立一行，格式固定為：
+
+En: PASS — 從你的 review 摘錄的證據（一句話）
+En: FAIL — 說明為何未達到
+
+（n 為 Expectation 編號，例如 E1: PASS — ...）
+
+### Expectations 清單
+
+E1. 未輸出「規格符合度」主要審查區塊（因為沒有提供規格文檔）
+E2. 找出 searchUsers 函式的 SQL Injection 風險：字串拼接 term 參數直接嵌入 SQL
+E3. 找出 getUserById 函式的 SQL Injection 風險：數字型 id 直接嵌入 SQL 字串
+E4. 在「使用者自行決定（⚪）」區塊指出 TODO 未追蹤的 comment
+E5. 在「使用者自行決定（⚪）」區塊指出被注解掉的 findUser 函式（dead code as comments）
+E6. 在 docs/ 目錄下建立了 code-review-YYYY-MM-DD-*.md 格式的審查存檔（slug 從 diff 推導）
+
+---
+
+## 輸出規範
+
+1. 先完整輸出 Code Review（格式遵照 skill 指示）
+2. 輸出一行分隔線：`---`
+3. 輸出標題 `## Grading`
+4. 逐行輸出評分結果（E1、E2 … 順序對應上方清單）
+
+codex
+我會依你貼上的 `code-reviewer` 規則直接做審查；同時因為目前在 `skills` repo，會先快速確認本 repo 既有規則與工作區狀態，避免把非本次變更納入後續 commit。
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Select-String -Path C:\\Users\\tenns\\.codex\\memories\\MEMORY.md -Pattern 'code-reviewer|run_evals.py|skills repo' -CaseSensitive:"'$false | Select-Object -First 20' in C:\Users\tenns\.claude\skills
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'git status --short' in C:\Users\tenns\.claude\skills
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "if (Test-Path -LiteralPath docs\\code-review-report\\code-review-2026-05-18-user-service-search.md) { Get-Content -LiteralPath docs\\code-review-report\\code-review-2026-05-18-user-service-search.md -TotalCount 5 }" in C:\Users\tenns\.claude\skills
+ succeeded in 647ms:
+ succeeded in 682ms:
+ succeeded in 851ms:
+
+C:\Users\tenns\.codex\memories\MEMORY.md:16:## Task 2: 把 apply 流程收斂為 tasks -> bdd-unit-test
+ -> tests -> [7mcode-reviewer[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:24:- apply skill, bdd-unit-test, [7mcode-reviewer[0m, stop on [0m
+[7m[0mconflict, first unfinished feature folder, docs/propose/README.md, C:\Users\tenns\.codex\skills\c[0m
+[7m[0mode-reviewer\SKILL.MD[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:40:- when 任務實作完成後, the user明講 `全部任務實作後，
+必須先用 bdd-unit-test 寫單測，在進行 [7mcode-reviewer[0m` -> 類似 propose apply 流程要把 test generati[0m
+[7m[0mon 視為固定步驟，不是 optional 附加 [Task 2][0m
+C:\Users\tenns\.codex\memories\MEMORY.md:49:- 已驗證可用的 skill 路徑包含 `C:\Users\tenns\.codex\
+skills\apply\SKILL.md`、`C:\Users\tenns\.codex\skills\bdd-unit-test\SKILL.md`、`C:\Users\tenns\.c
+odex\skills\[7mcode-reviewer[0m\SKILL.MD`；reviewer 是 downstream step，不應混進 bdd-unit-test [Task 2][0m
+C:\Users\tenns\.codex\memories\MEMORY.md:57:- 症狀：completion criteria 提到 tests/review，但沒有
+把順序寫死。原因：apply 流程缺少明確編排。修正：把步驟固定成 `tasks -> bdd-unit-test -> run tests
+ -> [7mcode-reviewer[0m`，避免 review 先於 test skeleton 補齊 [Task 2][0m
+C:\Users\tenns\.codex\memories\MEMORY.md:262:# Task Group: [7mSkills repo[0m eval tooling standardizati[0m
+[7m[0mon, code-reviewer eval comparison, and runner review[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:264:scope: 適用於 `C:\Users\tenns\.claude\skills` 的 eva
+l runner 標準化、`[7mcode-reviewer[0m` eval 設計與 with_skill/without_skill 比較、repo-wide `run_evals.[0m
+[7m[0mpy` review、以及 artifact/CLI 合約維護；遇到 skill eval 腳本、benchmark 解讀或 Windows prompt 安[0m
+[7m[0m全性時先查這塊[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:265:applies_to: cwd=C:\Users\tenns\.claude\skills; reuse
+_rule=可重用於同 [7mskills repo[0m 的 eval tooling 維護與 runner review；若其他 repo 也用 Python wrappe[0m
+[7m[0mr + Codex/Claude evals，可重用 runner 結構、比較思路與 failure shield，但需重新確認 CLI flags、ar[0m
+[7m[0mtifact 合約與目錄布局[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:275:- skill-creator, [7mrun_evals.py[0m, update-skill-creator.[0m
+[7m[0mpy, update-skill-creator.ps1, fleet-review/test/run-test.py, jq, chmod +x, py_compile, rg --files[0m
+[7m[0m -g "*.sh"[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:277:## Task 2: 建立共用 eval-test 維護風格並讓 `apply/ev
+als/[7mrun_evals.py[0m` 支援平行執行[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:285:- eval-test/MAINTENANCE.md, apply/evals/[7mrun_evals.py[0m
+[7m[0m, --jobs, --timeout, summary.json, benchmark.json, last-message.md, taskkill /T /F, os.killpg, PY[0m
+[7m[0mTHONUTF8=1, PyYAML[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:287:## Task 3: 為 `[7mcode-reviewer[0m` 新增 eval fixtures 與 [0m
+[7m[0mPython runner，並驗證 with_skill / without_skill 比較[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:291:- rollout_summaries/2026-05-17T10-01-10-bRuK-code_re
+viewer_evals_runner_and_output_comparison.md (cwd=C:\Users\tenns\.claude\skills, rollout_path=C:\
+Users\tenns\.codex\sessions\2026\05\17\rollout-2026-05-17T18-01-10-019e3561-ed31-7211-8a1f-cff09e
+b38f2e.jsonl, updated_at=2026-05-17T13:52:58+00:00, thread_id=019e3561-ed31-7211-8a1f-cff09eb38f2
+e, `[7mcode-reviewer[0m` eval runner、fixtures 與比較結論)[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:295:- [7mcode-reviewer[0m, code-reviewer/evals/run_evals.py, w[0m
+[7m[0mith_skill, without_skill, evals.json, validate_structure.py, stdin prompt, UnicodeEncodeError, cp[0m
+[7m[0m950, last-message.md, Result: 6/6 passed[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:297:## Task 4: Repo-wide code-review 所有 `[7mrun_evals.py[0m`[0m
+[7m[0m，確認 full parallel 與 Windows argv safety[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:305:- rg --files -g [7mrun_evals.py[0m, ThreadPoolExecutor(max[0m
+[7m[0m_workers=len(tasks)), as_completed, stdin=subprocess.PIPE, communicate(input=prompt), process.std[0m
+[7m[0min.write, --jobs, error: unrecognized arguments: --jobs, py_compile[0m
+C:\Users\tenns\.codex\memories\MEMORY.md:314:- when 驗證 repo-wide runner contract, the user repe
+ated `再次執行 [7mcode-reviewer[0m`、`全部的run_evals.py`、`統一改成max_workers=len(tasks)，所有 run 同[0m
+[7m[0m時啟動，等最慢的那個完成就結束` -> 這個 repo 的 runner review 預設做全 repo 掃描並核對精確 concur[0m
+[7m[0mrency contract，而不是抽樣 spot check [Task 4][0m
+C:\Users\tenns\.codex\memories\MEMORY.md:319:- 這個 repo 的 eval runner 已驗證可全面轉成 `[7mrun_eva[0m
+[7mls.py[0m`，並以 Python `json` + `subprocess` 取代 `jq`、shell functions、`chmod +x` 等 shell 依賴 [T[0m
+[7m[0mask 1][0m
+C:\Users\tenns\.codex\memories\MEMORY.md:320:- `python` 與 `py` 都可用於這台機器；`python --versi
+on` 與 `py --version` 都曾驗證為 Python 3.12.4，因此 `python evals/[7mrun_evals.py[0m` / `py evals/run_[0m
+[7m[0mevals.py` 是可行執行模型 [Task 1][0m
+C:\Users\tenns\.codex\memories\MEMORY.md:323:- `apply/evals/[7mrun_evals.py[0m` 的平行度來自外層 Python[0m
+[7m[0m wrapper，不是 `codex exec` 內建多工；有效平行度為 `min(--jobs, number_of_selected_evals)`。當前 [0m
+[7m[0mapply eval set 共有 3 個 case，所以最多同時 3 個 Codex process [Task 2][0m
+
+
+codex
+目標審查報告目前不存在，所以本次存檔會是第 1 輪。接下來只新增一份 Markdown 報告；審查內容使用你提供的 diff，不再額外讀檔推論。
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "New-Item -ItemType Directory -Force -Path docs\\code-review-report | Out-Null" in C:\Users\tenns\.claude\skills
+ succeeded in 448ms:
+apply patch
+patch: completed
+C:\Users\tenns\.claude\skills\docs\code-review-report\code-review-2026-05-18-user-service-search.md
+diff --git a/docs/code-review-report/code-review-2026-05-18-user-service-search.md b/docs/code-review-report/code-review-2026-05-18-user-service-search.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..c660a043bf9ba985329f7ba66254971313fcfb72
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-user-service-search.md
+@@ -0,0 +1,68 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/user-service.ts` 的使用者搜尋與依 ID 查詢實作  
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：`searchUsers` 直接拼接搜尋字串造成 SQL Injection
++- **檔案：** `src/user-service.ts:5`
++- **問題：** `term` 參數直接插入 SQL 字串，使用者可透過輸入控制 `LIKE` 條件甚至注入額外 SQL。
++- **影響：** 可能造成未授權資料讀取、查詢條件繞過，嚴重時可能破壞資料。
++- **建議修正：**
++  ```typescript
++  const query = `
++    SELECT id, name, email
++    FROM users
++    WHERE name LIKE $1 OR email LIKE $1
++  `;
++  const result = await pool.query(query, [`%${term}%`]);
++  ```
++
++#### 問題 2：`getUserById` 直接拼接 `id` 造成 SQL Injection 風險
++- **檔案：** `src/user-service.ts:11`
++- **問題：** 即使 `id` 型別宣告為 `number`，執行期輸入仍可能來自未驗證外部資料；直接嵌入 SQL 字串不應作為安全邊界。
++- **影響：** 若呼叫端傳入未清理資料或型別被繞過，可能導致 SQL Injection 或查詢條件被竄改。
++- **建議修正：**
++  ```typescript
++  const result = await pool.query(
++    'SELECT id, name, email FROM users WHERE id = $1',
++    [id],
++  );
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：`getUserById` 使用 `SELECT *` 擴大資料外洩面
++- **檔案：** `src/user-service.ts:11`
++- **問題：** `SELECT *` 會回傳資料表所有欄位，與 `searchUsers` 明確選取 `id, name, email` 的做法不一致。
++- **影響：** 若 `users` 表含有密碼雜湊、權限旗標或內部欄位，可能被上層流程意外暴露。
++- **建議修正：**
++  ```typescript
++  const result = await pool.query(
++    'SELECT id, name, email FROM users WHERE id = $1',
++    [id],
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：TODO 註解未追蹤
++- **檔案：** `src/user-service.ts:3`
++- **問題：** `// TODO: 之後要加分頁功能` 沒有對應 issue、任務編號或明確完成條件。
++- **影響：** 目前若仍在開發階段可暫留；進入正式實作前，容易讓分頁需求失去追蹤。
++- **建議：** 若分頁已列入需求，改連到正式任務；若只是想法，移到需求待辦文件或移除。
++
++#### 問題 2：被註解掉的舊版 `findUser` 函式形成 dead code as comments
++- **檔案：** `src/user-service.ts:15`
++- **問題：** 舊版實作整段以註解保留，會讓維護者不確定目前是否仍有遷移或回復需求。
++- **影響：** 測試或開發階段可短暫保留；正式化前應避免讓歷史程式碼留在主檔案中干擾判讀。
++- **建議：** 若仍需追蹤舊行為，改由 git history 或正式遷移任務保存；否則移除註解區塊。
+
+diff --git a/docs/code-review-report/code-review-2026-05-18-user-service-search.md b/docs/code-review-report/code-review-2026-05-18-user-service-search.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..c660a043bf9ba985329f7ba66254971313fcfb72
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-user-service-search.md
+@@ -0,0 +1,68 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/user-service.ts` 的使用者搜尋與依 ID 查詢實作  
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：`searchUsers` 直接拼接搜尋字串造成 SQL Injection
++- **檔案：** `src/user-service.ts:5`
++- **問題：** `term` 參數直接插入 SQL 字串，使用者可透過輸入控制 `LIKE` 條件甚至注入額外 SQL。
++- **影響：** 可能造成未授權資料讀取、查詢條件繞過，嚴重時可能破壞資料。
++- **建議修正：**
++  ```typescript
++  const query = `
++    SELECT id, name, email
++    FROM users
++    WHERE name LIKE $1 OR email LIKE $1
++  `;
++  const result = await pool.query(query, [`%${term}%`]);
++  ```
++
++#### 問題 2：`getUserById` 直接拼接 `id` 造成 SQL Injection 風險
++- **檔案：** `src/user-service.ts:11`
++- **問題：** 即使 `id` 型別宣告為 `number`，執行期輸入仍可能來自未驗證外部資料；直接嵌入 SQL 字串不應作為安全邊界。
++- **影響：** 若呼叫端傳入未清理資料或型別被繞過，可能導致 SQL Injection 或查詢條件被竄改。
++- **建議修正：**
++  ```typescript
++  const result = await pool.query(
++    'SELECT id, name, email FROM users WHERE id = $1',
++    [id],
++  );
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：`getUserById` 使用 `SELECT *` 擴大資料外洩面
++- **檔案：** `src/user-service.ts:11`
++- **問題：** `SELECT *` 會回傳資料表所有欄位，與 `searchUsers` 明確選取 `id, name, email` 的做法不一致。
++- **影響：** 若 `users` 表含有密碼雜湊、權限旗標或內部欄位，可能被上層流程意外暴露。
++- **建議修正：**
++  ```typescript
++  const result = await pool.query(
++    'SELECT id, name, email FROM users WHERE id = $1',
++    [id],
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：TODO 註解未追蹤
++- **檔案：** `src/user-service.ts:3`
++- **問題：** `// TODO: 之後要加分頁功能` 沒有對應 issue、任務編號或明確完成條件。
++- **影響：** 目前若仍在開發階段可暫留；進入正式實作前，容易讓分頁需求失去追蹤。
++- **建議：** 若分頁已列入需求，改連到正式任務；若只是想法，移到需求待辦文件或移除。
++
++#### 問題 2：被註解掉的舊版 `findUser` 函式形成 dead code as comments
++- **檔案：** `src/user-service.ts:15`
++- **問題：** 舊版實作整段以註解保留，會讓維護者不確定目前是否仍有遷移或回復需求。
++- **影響：** 測試或開發階段可短暫保留；正式化前應避免讓歷史程式碼留在主檔案中干擾判讀。
++- **建議：** 若仍需追蹤舊行為，改由 git history 或正式遷移任務保存；否則移除註解區塊。
+
+codex
+報告已建立。依 repo gate，這次變更只有 Markdown 文件；我會跳過 build 與額外 code review，接著只 stage 這份本次新增的報告並提交。
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'git status --short' in C:\Users\tenns\.claude\skills
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "git diff -- docs\\code-review-report\\code-review-2026-05-18-user-service-search.md" in C:\Users\tenns\.claude\skills
+ succeeded in 467ms:
+?? docs/
+
+ succeeded in 480ms:
+diff --git a/docs/code-review-report/code-review-2026-05-18-user-service-search.md b/docs/code-review-report/code-review-2026-05-18-user-service-search.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..c660a043bf9ba985329f7ba66254971313fcfb72
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-user-service-search.md
+@@ -0,0 +1,68 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/user-service.ts` 的使用者搜尋與依 ID 查詢實作  
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：`searchUsers` 直接拼接搜尋字串造成 SQL Injection
++- **檔案：** `src/user-service.ts:5`
++- **問題：** `term` 參數直接插入 SQL 字串，使用者可透過輸入控制 `LIKE` 條件甚至注入額外 SQL。
++- **影響：** 可能造成未授權資料讀取、查詢條件繞過，嚴重時可能破壞資料。
++- **建議修正：**
++  ```typescript
++  const query = `
++    SELECT id, name, email
++    FROM users
++    WHERE name LIKE $1 OR email LIKE $1
++  `;
++  const result = await pool.query(query, [`%${term}%`]);
++  ```
++
++#### 問題 2：`getUserById` 直接拼接 `id` 造成 SQL Injection 風險
++- **檔案：** `src/user-service.ts:11`
++- **問題：** 即使 `id` 型別宣告為 `number`，執行期輸入仍可能來自未驗證外部資料；直接嵌入 SQL 字串不應作為安全邊界。
++- **影響：** 若呼叫端傳入未清理資料或型別被繞過，可能導致 SQL Injection 或查詢條件被竄改。
++- **建議修正：**
++  ```typescript
++  const result = await pool.query(
++    'SELECT id, name, email FROM users WHERE id = $1',
++    [id],
++  );
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：`getUserById` 使用 `SELECT *` 擴大資料外洩面
++- **檔案：** `src/user-service.ts:11`
++- **問題：** `SELECT *` 會回傳資料表所有欄位，與 `searchUsers` 明確選取 `id, name, email` 的做法不一致。
++- **影響：** 若 `users` 表含有密碼雜湊、權限旗標或內部欄位，可能被上層流程意外暴露。
++- **建議修正：**
++  ```typescript
++  const result = await pool.query(
++    'SELECT id, name, email FROM users WHERE id = $1',
++    [id],
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：TODO 註解未追蹤
++- **檔案：** `src/user-service.ts:3`
++- **問題：** `// TODO: 之後要加分頁功能` 沒有對應 issue、任務編號或明確完成條件。
++- **影響：** 目前若仍在開發階段可暫留；進入正式實作前，容易讓分頁需求失去追蹤。
++- **建議：** 若分頁已列入需求，改連到正式任務；若只是想法，移到需求待辦文件或移除。
++
++#### 問題 2：被註解掉的舊版 `findUser` 函式形成 dead code as comments
++- **檔案：** `src/user-service.ts:15`
++- **問題：** 舊版實作整段以註解保留，會讓維護者不確定目前是否仍有遷移或回復需求。
++- **影響：** 測試或開發階段可短暫保留；正式化前應避免讓歷史程式碼留在主檔案中干擾判讀。
++- **建議：** 若仍需追蹤舊行為，改由 git history 或正式遷移任務保存；否則移除註解區塊。
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'Get-ChildItem -Recurse -File docs | ForEach-Object { $_.FullName }' in C:\Users\tenns\.claude\skills
+ succeeded in 420ms:
+C:\Users\tenns\.claude\skills\docs\code-review-report\code-review-2026-05-18-login-spec.md
+C:\Users\tenns\.claude\skills\docs\code-review-report\code-review-2026-05-18-todo-item-spec.md
+C:\Users\tenns\.claude\skills\docs\code-review-report\code-review-2026-05-18-user-service-search.md
+
+diff --git a/docs/code-review-report/code-review-2026-05-18-user-service-search.md b/docs/code-review-report/code-review-2026-05-18-user-service-search.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..c660a043bf9ba985329f7ba66254971313fcfb72
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-user-service-search.md
+@@ -0,0 +1,68 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/user-service.ts` 的使用者搜尋與依 ID 查詢實作  
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：`searchUsers` 直接拼接搜尋字串造成 SQL Injection
++- **檔案：** `src/user-service.ts:5`
++- **問題：** `term` 參數直接插入 SQL 字串，使用者可透過輸入控制 `LIKE` 條件甚至注入額外 SQL。
++- **影響：** 可能造成未授權資料讀取、查詢條件繞過，嚴重時可能破壞資料。
++- **建議修正：**
++  ```typescript
++  const query = `
++    SELECT id, name, email
++    FROM users
++    WHERE name LIKE $1 OR email LIKE $1
++  `;
++  const result = await pool.query(query, [`%${term}%`]);
++  ```
++
++#### 問題 2：`getUserById` 直接拼接 `id` 造成 SQL Injection 風險
++- **檔案：** `src/user-service.ts:11`
++- **問題：** 即使 `id` 型別宣告為 `number`，執行期輸入仍可能來自未驗證外部資料；直接嵌入 SQL 字串不應作為安全邊界。
++- **影響：** 若呼叫端傳入未清理資料或型別被繞過，可能導致 SQL Injection 或查詢條件被竄改。
++- **建議修正：**
++  ```typescript
++  const result = await pool.query(
++    'SELECT id, name, email FROM users WHERE id = $1',
++    [id],
++  );
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：`getUserById` 使用 `SELECT *` 擴大資料外洩面
++- **檔案：** `src/user-service.ts:11`
++- **問題：** `SELECT *` 會回傳資料表所有欄位，與 `searchUsers` 明確選取 `id, name, email` 的做法不一致。
++- **影響：** 若 `users` 表含有密碼雜湊、權限旗標或內部欄位，可能被上層流程意外暴露。
++- **建議修正：**
++  ```typescript
++  const result = await pool.query(
++    'SELECT id, name, email FROM users WHERE id = $1',
++    [id],
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：TODO 註解未追蹤
++- **檔案：** `src/user-service.ts:3`
++- **問題：** `// TODO: 之後要加分頁功能` 沒有對應 issue、任務編號或明確完成條件。
++- **影響：** 目前若仍在開發階段可暫留；進入正式實作前，容易讓分頁需求失去追蹤。
++- **建議：** 若分頁已列入需求，改連到正式任務；若只是想法，移到需求待辦文件或移除。
++
++#### 問題 2：被註解掉的舊版 `findUser` 函式形成 dead code as comments
++- **檔案：** `src/user-service.ts:15`
++- **問題：** 舊版實作整段以註解保留，會讓維護者不確定目前是否仍有遷移或回復需求。
++- **影響：** 測試或開發階段可短暫保留；正式化前應避免讓歷史程式碼留在主檔案中干擾判讀。
++- **建議：** 若仍需追蹤舊行為，改由 git history 或正式遷移任務保存；否則移除註解區塊。
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'git status --short --untracked-files=all' in C:\Users\tenns\.claude\skills
+ succeeded in 413ms:
+?? docs/code-review-report/code-review-2026-05-18-login-spec.md
+?? docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+?? docs/code-review-report/code-review-2026-05-18-user-service-search.md
+
+diff --git a/docs/code-review-report/code-review-2026-05-18-user-service-search.md b/docs/code-review-report/code-review-2026-05-18-user-service-search.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..c660a043bf9ba985329f7ba66254971313fcfb72
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-user-service-search.md
+@@ -0,0 +1,68 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/user-service.ts` 的使用者搜尋與依 ID 查詢實作  
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：`searchUsers` 直接拼接搜尋字串造成 SQL Injection
++- **檔案：** `src/user-service.ts:5`
++- **問題：** `term` 參數直接插入 SQL 字串，使用者可透過輸入控制 `LIKE` 條件甚至注入額外 SQL。
++- **影響：** 可能造成未授權資料讀取、查詢條件繞過，嚴重時可能破壞資料。
++- **建議修正：**
++  ```typescript
++  const query = `
++    SELECT id, name, email
++    FROM users
++    WHERE name LIKE $1 OR email LIKE $1
++  `;
++  const result = await pool.query(query, [`%${term}%`]);
++  ```
++
++#### 問題 2：`getUserById` 直接拼接 `id` 造成 SQL Injection 風險
++- **檔案：** `src/user-service.ts:11`
++- **問題：** 即使 `id` 型別宣告為 `number`，執行期輸入仍可能來自未驗證外部資料；直接嵌入 SQL 字串不應作為安全邊界。
++- **影響：** 若呼叫端傳入未清理資料或型別被繞過，可能導致 SQL Injection 或查詢條件被竄改。
++- **建議修正：**
++  ```typescript
++  const result = await pool.query(
++    'SELECT id, name, email FROM users WHERE id = $1',
++    [id],
++  );
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：`getUserById` 使用 `SELECT *` 擴大資料外洩面
++- **檔案：** `src/user-service.ts:11`
++- **問題：** `SELECT *` 會回傳資料表所有欄位，與 `searchUsers` 明確選取 `id, name, email` 的做法不一致。
++- **影響：** 若 `users` 表含有密碼雜湊、權限旗標或內部欄位，可能被上層流程意外暴露。
++- **建議修正：**
++  ```typescript
++  const result = await pool.query(
++    'SELECT id, name, email FROM users WHERE id = $1',
++    [id],
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：TODO 註解未追蹤
++- **檔案：** `src/user-service.ts:3`
++- **問題：** `// TODO: 之後要加分頁功能` 沒有對應 issue、任務編號或明確完成條件。
++- **影響：** 目前若仍在開發階段可暫留；進入正式實作前，容易讓分頁需求失去追蹤。
++- **建議：** 若分頁已列入需求，改連到正式任務；若只是想法，移到需求待辦文件或移除。
++
++#### 問題 2：被註解掉的舊版 `findUser` 函式形成 dead code as comments
++- **檔案：** `src/user-service.ts:15`
++- **問題：** 舊版實作整段以註解保留，會讓維護者不確定目前是否仍有遷移或回復需求。
++- **影響：** 測試或開發階段可短暫保留；正式化前應避免讓歷史程式碼留在主檔案中干擾判讀。
++- **建議：** 若仍需追蹤舊行為，改由 git history 或正式遷移任務保存；否則移除註解區塊。
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'git add -- docs/code-review-report/code-review-2026-05-18-user-service-search.md; git commit -m "docs: add user service code review report" -m "本次因使用者要求依照 code-reviewer 流程審查提供的 user-service diff，需要將審查摘要依規則存放到 docs/code-review-report 供後續追蹤。`searchUsers` 與 `getUserById` 的主要風險為 SQL 字串拼接，另有 TODO 與舊版註解程式碼需由使用者判斷是否保留。`n`n本次調整：`n- 新增 user-service-search 的 Code Review Markdown 存檔。`n- 依本機日期與 slug 產生 code-review-2026-05-18-user-service-search.md。`n- 記錄 SQL Injection、SELECT * 外洩面、TODO 未追蹤與 dead code comments 等審查結果。"' in C:\Users\tenns\.claude\skills
+ succeeded in 478ms:
+[main c1ec936] docs: add user service code review report
+ 1 file changed, 68 insertions(+)
+ create mode 100644 docs/code-review-report/code-review-2026-05-18-user-service-search.md
+warning: in the working copy of 'docs/code-review-report/code-review-2026-05-18-user-service-search.md', LF will be replaced by CRLF the next time Git touches it
+
+diff --git a/docs/code-review-report/code-review-2026-05-18-user-service-search.md b/docs/code-review-report/code-review-2026-05-18-user-service-search.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..c660a043bf9ba985329f7ba66254971313fcfb72
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-user-service-search.md
+@@ -0,0 +1,68 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/user-service.ts` 的使用者搜尋與依 ID 查詢實作  
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：`searchUsers` 直接拼接搜尋字串造成 SQL Injection
++- **檔案：** `src/user-service.ts:5`
++- **問題：** `term` 參數直接插入 SQL 字串，使用者可透過輸入控制 `LIKE` 條件甚至注入額外 SQL。
++- **影響：** 可能造成未授權資料讀取、查詢條件繞過，嚴重時可能破壞資料。
++- **建議修正：**
++  ```typescript
++  const query = `
++    SELECT id, name, email
++    FROM users
++    WHERE name LIKE $1 OR email LIKE $1
++  `;
++  const result = await pool.query(query, [`%${term}%`]);
++  ```
++
++#### 問題 2：`getUserById` 直接拼接 `id` 造成 SQL Injection 風險
++- **檔案：** `src/user-service.ts:11`
++- **問題：** 即使 `id` 型別宣告為 `number`，執行期輸入仍可能來自未驗證外部資料；直接嵌入 SQL 字串不應作為安全邊界。
++- **影響：** 若呼叫端傳入未清理資料或型別被繞過，可能導致 SQL Injection 或查詢條件被竄改。
++- **建議修正：**
++  ```typescript
++  const result = await pool.query(
++    'SELECT id, name, email FROM users WHERE id = $1',
++    [id],
++  );
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：`getUserById` 使用 `SELECT *` 擴大資料外洩面
++- **檔案：** `src/user-service.ts:11`
++- **問題：** `SELECT *` 會回傳資料表所有欄位，與 `searchUsers` 明確選取 `id, name, email` 的做法不一致。
++- **影響：** 若 `users` 表含有密碼雜湊、權限旗標或內部欄位，可能被上層流程意外暴露。
++- **建議修正：**
++  ```typescript
++  const result = await pool.query(
++    'SELECT id, name, email FROM users WHERE id = $1',
++    [id],
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：TODO 註解未追蹤
++- **檔案：** `src/user-service.ts:3`
++- **問題：** `// TODO: 之後要加分頁功能` 沒有對應 issue、任務編號或明確完成條件。
++- **影響：** 目前若仍在開發階段可暫留；進入正式實作前，容易讓分頁需求失去追蹤。
++- **建議：** 若分頁已列入需求，改連到正式任務；若只是想法，移到需求待辦文件或移除。
++
++#### 問題 2：被註解掉的舊版 `findUser` 函式形成 dead code as comments
++- **檔案：** `src/user-service.ts:15`
++- **問題：** 舊版實作整段以註解保留，會讓維護者不確定目前是否仍有遷移或回復需求。
++- **影響：** 測試或開發階段可短暫保留；正式化前應避免讓歷史程式碼留在主檔案中干擾判讀。
++- **建議：** 若仍需追蹤舊行為，改由 git history 或正式遷移任務保存；否則移除註解區塊。
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'git status --short --untracked-files=all' in C:\Users\tenns\.claude\skills
+ succeeded in 375ms:
+A  docs/code-review-report/code-review-2026-05-18-todo-item-spec.md
+
+diff --git a/docs/code-review-report/code-review-2026-05-18-user-service-search.md b/docs/code-review-report/code-review-2026-05-18-user-service-search.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..c660a043bf9ba985329f7ba66254971313fcfb72
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-user-service-search.md
+@@ -0,0 +1,68 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/user-service.ts` 的使用者搜尋與依 ID 查詢實作  
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：`searchUsers` 直接拼接搜尋字串造成 SQL Injection
++- **檔案：** `src/user-service.ts:5`
++- **問題：** `term` 參數直接插入 SQL 字串，使用者可透過輸入控制 `LIKE` 條件甚至注入額外 SQL。
++- **影響：** 可能造成未授權資料讀取、查詢條件繞過，嚴重時可能破壞資料。
++- **建議修正：**
++  ```typescript
++  const query = `
++    SELECT id, name, email
++    FROM users
++    WHERE name LIKE $1 OR email LIKE $1
++  `;
++  const result = await pool.query(query, [`%${term}%`]);
++  ```
++
++#### 問題 2：`getUserById` 直接拼接 `id` 造成 SQL Injection 風險
++- **檔案：** `src/user-service.ts:11`
++- **問題：** 即使 `id` 型別宣告為 `number`，執行期輸入仍可能來自未驗證外部資料；直接嵌入 SQL 字串不應作為安全邊界。
++- **影響：** 若呼叫端傳入未清理資料或型別被繞過，可能導致 SQL Injection 或查詢條件被竄改。
++- **建議修正：**
++  ```typescript
++  const result = await pool.query(
++    'SELECT id, name, email FROM users WHERE id = $1',
++    [id],
++  );
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：`getUserById` 使用 `SELECT *` 擴大資料外洩面
++- **檔案：** `src/user-service.ts:11`
++- **問題：** `SELECT *` 會回傳資料表所有欄位，與 `searchUsers` 明確選取 `id, name, email` 的做法不一致。
++- **影響：** 若 `users` 表含有密碼雜湊、權限旗標或內部欄位，可能被上層流程意外暴露。
++- **建議修正：**
++  ```typescript
++  const result = await pool.query(
++    'SELECT id, name, email FROM users WHERE id = $1',
++    [id],
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：TODO 註解未追蹤
++- **檔案：** `src/user-service.ts:3`
++- **問題：** `// TODO: 之後要加分頁功能` 沒有對應 issue、任務編號或明確完成條件。
++- **影響：** 目前若仍在開發階段可暫留；進入正式實作前，容易讓分頁需求失去追蹤。
++- **建議：** 若分頁已列入需求，改連到正式任務；若只是想法，移到需求待辦文件或移除。
++
++#### 問題 2：被註解掉的舊版 `findUser` 函式形成 dead code as comments
++- **檔案：** `src/user-service.ts:15`
++- **問題：** 舊版實作整段以註解保留，會讓維護者不確定目前是否仍有遷移或回復需求。
++- **影響：** 測試或開發階段可短暫保留；正式化前應避免讓歷史程式碼留在主檔案中干擾判讀。
++- **建議：** 若仍需追蹤舊行為，改由 git history 或正式遷移任務保存；否則移除註解區塊。
+
+codex
+## 📋 Code Review 摘要
+
+**審查範圍：** `src/user-service.ts` 的使用者搜尋與依 ID 查詢實作  
+**整體評估：** ❌ 不符合規格，需修正
+
+---
+
+### 🔴 必須修正（Critical）
+
+#### 問題 1：`searchUsers` 直接拼接搜尋字串造成 SQL Injection
+- **檔案：** `src/user-service.ts:5`
+- **問題：** `term` 參數直接插入 SQL 字串，使用者可透過輸入控制 `LIKE` 條件甚至注入額外 SQL。
+- **影響：** 可能造成未授權資料讀取、查詢條件繞過，嚴重時可能破壞資料。
+- **建議修正：**
+  ```typescript
+  const query = `
+    SELECT id, name, email
+    FROM users
+    WHERE name LIKE $1 OR email LIKE $1
+  `;
+  const result = await pool.query(query, [`%${term}%`]);
+  ```
+
+#### 問題 2：`getUserById` 直接拼接 `id` 造成 SQL Injection 風險
+- **檔案：** `src/user-service.ts:11`
+- **問題：** 即使 `id` 型別宣告為 `number`，執行期輸入仍可能來自未驗證外部資料；直接嵌入 SQL 字串不應作為安全邊界。
+- **影響：** 若呼叫端傳入未清理資料或型別被繞過，可能導致 SQL Injection 或查詢條件被竄改。
+- **建議修正：**
+  ```typescript
+  const result = await pool.query(
+    'SELECT id, name, email FROM users WHERE id = $1',
+    [id],
+  );
+  ```
+
+---
+
+### 🟠 建議改善（Warning）
+
+#### 問題 1：`getUserById` 使用 `SELECT *` 擴大資料外洩面
+- **檔案：** `src/user-service.ts:11`
+- **問題：** `SELECT *` 會回傳資料表所有欄位，與 `searchUsers` 明確選取 `id, name, email` 的做法不一致。
+- **影響：** 若 `users` 表含有密碼雜湊、權限旗標或內部欄位，可能被上層流程意外暴露。
+- **建議修正：**
+  ```typescript
+  const result = await pool.query(
+    'SELECT id, name, email FROM users WHERE id = $1',
+    [id],
+  );
+  ```
+
+---
+
+### ⚪ 使用者自行決定（註解類問題）
+
+#### 問題 1：TODO 註解未追蹤
+- **檔案：** `src/user-service.ts:3`
+- **問題：** `// TODO: 之後要加分頁功能` 沒有對應 issue、任務編號或明確完成條件。
+- **影響：** 目前若仍在開發階段可暫留；進入正式實作前，容易讓分頁需求失去追蹤。
+- **建議：** 若分頁已列入需求，改連到正式任務；若只是想法，移到需求待辦文件或移除。
+
+#### 問題 2：被註解掉的舊版 `findUser` 函式形成 dead code as comments
+- **檔案：** `src/user-service.ts:15`
+- **問題：** 舊版實作整段以註解保留，會讓維護者不確定目前是否仍有遷移或回復需求。
+- **影響：** 測試或開發階段可短暫保留；正式化前應避免讓歷史程式碼留在主檔案中干擾判讀。
+- **建議：** 若仍需追蹤舊行為，改由 git history 或正式遷移任務保存；否則移除註解區塊。
+
+📁 已存檔：`docs/code-review-report/code-review-2026-05-18-user-service-search.md`
+
+---
+
+## Grading
+
+E1: PASS — Review 未輸出「規格符合度」主要區塊，因為本次沒有提供規格文檔。  
+E2: PASS — 已指出 `searchUsers` 的 `term` 參數直接插入 SQL 字串，造成 SQL Injection。  
+E3: PASS — 已指出 `getUserById` 的 `id` 直接嵌入 SQL 字串，不應作為安全邊界。  
+E4: PASS — 已在「⚪ 使用者自行決定」指出 `TODO: 之後要加分頁功能` 未追蹤。  
+E5: PASS — 已在「⚪ 使用者自行決定」指出被註解掉的舊版 `findUser` 是 dead code as comments。  
+E6: PASS — 已建立並提交 `docs/code-review-report/code-review-2026-05-18-user-service-search.md`，slug 由 diff 推導。
+
+Workflow Gate：本次只新增 Markdown 審查報告，已跳過 build；因變更僅有文檔檔案，已跳過額外 code review。已提交 commit `c1ec936`。目前工作區仍有非本次產生的 staged 檔案 `docs/code-review-report/code-review-2026-05-18-todo-item-spec.md`，我未納入本次 commit。  
+
+diff --git a/docs/code-review-report/code-review-2026-05-18-user-service-search.md b/docs/code-review-report/code-review-2026-05-18-user-service-search.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..c660a043bf9ba985329f7ba66254971313fcfb72
+--- /dev/null
++++ b/docs/code-review-report/code-review-2026-05-18-user-service-search.md
+@@ -0,0 +1,68 @@
++# Code Review 紀錄 — 2026-05-18（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `src/user-service.ts` 的使用者搜尋與依 ID 查詢實作  
++**整體評估：** ❌ 不符合規格，需修正
++
++---
++
++### 🔴 必須修正（Critical）
++
++#### 問題 1：`searchUsers` 直接拼接搜尋字串造成 SQL Injection
++- **檔案：** `src/user-service.ts:5`
++- **問題：** `term` 參數直接插入 SQL 字串，使用者可透過輸入控制 `LIKE` 條件甚至注入額外 SQL。
++- **影響：** 可能造成未授權資料讀取、查詢條件繞過，嚴重時可能破壞資料。
++- **建議修正：**
++  ```typescript
++  const query = `
++    SELECT id, name, email
++    FROM users
++    WHERE name LIKE $1 OR email LIKE $1
++  `;
++  const result = await pool.query(query, [`%${term}%`]);
++  ```
++
++#### 問題 2：`getUserById` 直接拼接 `id` 造成 SQL Injection 風險
++- **檔案：** `src/user-service.ts:11`
++- **問題：** 即使 `id` 型別宣告為 `number`，執行期輸入仍可能來自未驗證外部資料；直接嵌入 SQL 字串不應作為安全邊界。
++- **影響：** 若呼叫端傳入未清理資料或型別被繞過，可能導致 SQL Injection 或查詢條件被竄改。
++- **建議修正：**
++  ```typescript
++  const result = await pool.query(
++    'SELECT id, name, email FROM users WHERE id = $1',
++    [id],
++  );
++  ```
++
++---
++
++### 🟠 建議改善（Warning）
++
++#### 問題 1：`getUserById` 使用 `SELECT *` 擴大資料外洩面
++- **檔案：** `src/user-service.ts:11`
++- **問題：** `SELECT *` 會回傳資料表所有欄位，與 `searchUsers` 明確選取 `id, name, email` 的做法不一致。
++- **影響：** 若 `users` 表含有密碼雜湊、權限旗標或內部欄位，可能被上層流程意外暴露。
++- **建議修正：**
++  ```typescript
++  const result = await pool.query(
++    'SELECT id, name, email FROM users WHERE id = $1',
++    [id],
++  );
++  ```
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++#### 問題 1：TODO 註解未追蹤
++- **檔案：** `src/user-service.ts:3`
++- **問題：** `// TODO: 之後要加分頁功能` 沒有對應 issue、任務編號或明確完成條件。
++- **影響：** 目前若仍在開發階段可暫留；進入正式實作前，容易讓分頁需求失去追蹤。
++- **建議：** 若分頁已列入需求，改連到正式任務；若只是想法，移到需求待辦文件或移除。
++
++#### 問題 2：被註解掉的舊版 `findUser` 函式形成 dead code as comments
++- **檔案：** `src/user-service.ts:15`
++- **問題：** 舊版實作整段以註解保留，會讓維護者不確定目前是否仍有遷移或回復需求。
++- **影響：** 測試或開發階段可短暫保留；正式化前應避免讓歷史程式碼留在主檔案中干擾判讀。
++- **建議：** 若仍需追蹤舊行為，改由 git history 或正式遷移任務保存；否則移除註解區塊。
+
+SUCCESS: The process with PID 1404 (child process of PID 17812) has been terminated.
+SUCCESS: The process with PID 17812 (child process of PID 9536) has been terminated.
+SUCCESS: The process with PID 9536 (child process of PID 17176) has been terminated.
+SUCCESS: The process with PID 17176 (child process of PID 9316) has been terminated.
+tokens used
+80,830
+## 📋 Code Review 摘要
+
+**審查範圍：** `src/user-service.ts` 的使用者搜尋與依 ID 查詢實作  
+**整體評估：** ❌ 不符合規格，需修正
+
+---
+
+### 🔴 必須修正（Critical）
+
+#### 問題 1：`searchUsers` 直接拼接搜尋字串造成 SQL Injection
+- **檔案：** `src/user-service.ts:5`
+- **問題：** `term` 參數直接插入 SQL 字串，使用者可透過輸入控制 `LIKE` 條件甚至注入額外 SQL。
+- **影響：** 可能造成未授權資料讀取、查詢條件繞過，嚴重時可能破壞資料。
+- **建議修正：**
+  ```typescript
+  const query = `
+    SELECT id, name, email
+    FROM users
+    WHERE name LIKE $1 OR email LIKE $1
+  `;
+  const result = await pool.query(query, [`%${term}%`]);
+  ```
+
+#### 問題 2：`getUserById` 直接拼接 `id` 造成 SQL Injection 風險
+- **檔案：** `src/user-service.ts:11`
+- **問題：** 即使 `id` 型別宣告為 `number`，執行期輸入仍可能來自未驗證外部資料；直接嵌入 SQL 字串不應作為安全邊界。
+- **影響：** 若呼叫端傳入未清理資料或型別被繞過，可能導致 SQL Injection 或查詢條件被竄改。
+- **建議修正：**
+  ```typescript
+  const result = await pool.query(
+    'SELECT id, name, email FROM users WHERE id = $1',
+    [id],
+  );
+  ```
+
+---
+
+### 🟠 建議改善（Warning）
+
+#### 問題 1：`getUserById` 使用 `SELECT *` 擴大資料外洩面
+- **檔案：** `src/user-service.ts:11`
+- **問題：** `SELECT *` 會回傳資料表所有欄位，與 `searchUsers` 明確選取 `id, name, email` 的做法不一致。
+- **影響：** 若 `users` 表含有密碼雜湊、權限旗標或內部欄位，可能被上層流程意外暴露。
+- **建議修正：**
+  ```typescript
+  const result = await pool.query(
+    'SELECT id, name, email FROM users WHERE id = $1',
+    [id],
+  );
+  ```
+
+---
+
+### ⚪ 使用者自行決定（註解類問題）
+
+#### 問題 1：TODO 註解未追蹤
+- **檔案：** `src/user-service.ts:3`
+- **問題：** `// TODO: 之後要加分頁功能` 沒有對應 issue、任務編號或明確完成條件。
+- **影響：** 目前若仍在開發階段可暫留；進入正式實作前，容易讓分頁需求失去追蹤。
+- **建議：** 若分頁已列入需求，改連到正式任務；若只是想法，移到需求待辦文件或移除。
+
+#### 問題 2：被註解掉的舊版 `findUser` 函式形成 dead code as comments
+- **檔案：** `src/user-service.ts:15`
+- **問題：** 舊版實作整段以註解保留，會讓維護者不確定目前是否仍有遷移或回復需求。
+- **影響：** 測試或開發階段可短暫保留；正式化前應避免讓歷史程式碼留在主檔案中干擾判讀。
+- **建議：** 若仍需追蹤舊行為，改由 git history 或正式遷移任務保存；否則移除註解區塊。
+
+📁 已存檔：`docs/code-review-report/code-review-2026-05-18-user-service-search.md`
+
+---
+
+## Grading
+
+E1: PASS — Review 未輸出「規格符合度」主要區塊，因為本次沒有提供規格文檔。  
+E2: PASS — 已指出 `searchUsers` 的 `term` 參數直接插入 SQL 字串，造成 SQL Injection。  
+E3: PASS — 已指出 `getUserById` 的 `id` 直接嵌入 SQL 字串，不應作為安全邊界。  
+E4: PASS — 已在「⚪ 使用者自行決定」指出 `TODO: 之後要加分頁功能` 未追蹤。  
+E5: PASS — 已在「⚪ 使用者自行決定」指出被註解掉的舊版 `findUser` 是 dead code as comments。  
+E6: PASS — 已建立並提交 `docs/code-review-report/code-review-2026-05-18-user-service-search.md`，slug 由 diff 推導。
+
+Workflow Gate：本次只新增 Markdown 審查報告，已跳過 build；因變更僅有文檔檔案，已跳過額外 code review。已提交 commit `c1ec936`。目前工作區仍有非本次產生的 staged 檔案 `docs/code-review-report/code-review-2026-05-18-todo-item-spec.md`，我未納入本次 commit。  
+
