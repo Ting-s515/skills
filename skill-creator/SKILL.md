@@ -417,6 +417,41 @@ if __name__ == "__main__":
     raise SystemExit(main())
 ```
 
+### BDD 自評分 runner（`run_evals_bdd.py`，選擇性建立）
+
+當 skill 的測試場景需要跨工具（Codex + Claude 皆可執行）且 **不依賴 filesystem 存取**時，可額外建立 `evals/run_evals_bdd.py`。兩者差異如下：
+
+| | `run_evals.py` | `run_evals_bdd.py` |
+|---|---|---|
+| diff 取得 | AI 執行 `git diff` | Python 計算後 embed 進 prompt |
+| 需要 filesystem | 是（建立 temp git repo） | 否 |
+| 評分方式 | 外部 grader | AI 在 prompt 內自評分（`E1: PASS/FAIL — 證據`） |
+| baseline 對照 | with_skill vs without_skill | 僅 with_skill |
+| validate_structure.py | 驗證 | 不驗證（非官方命名） |
+
+**適用時機：**
+- skill 的測試 fixture 有明確的 base/staged/spec 結構（可計算 diff）
+- 希望 Codex 也能執行相同的 BDD 測試，且不需要真實 git 環境
+- 想讓 AI 在單一 prompt 內完成審查與評分，便於快速迭代
+
+**BDD runner prompt 結構：**
+
+```
+[SKILL.md 內容]
+---
+[spec 文檔（若有）]
+[git diff（Python 計算）]
+[使用者 prompt]
+---
+## 評分任務
+E1. [expectation 1]
+E2. [expectation 2]
+...
+輸出格式：先 Code Review，再 ## Grading 區塊逐行 E1: PASS/FAIL — 證據
+```
+
+`evals.json` 的 `expectations` 欄位即為 BDD assertions 清單，與 `run_evals.py` 共用同一份 JSON，不需額外定義。
+
 ## Running and evaluating test cases
 
 This section is one continuous sequence — don't stop partway through. Do NOT use `/skill-test` or any other testing skill.
