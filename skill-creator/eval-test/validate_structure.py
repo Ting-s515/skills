@@ -127,6 +127,26 @@ def validate_skill_creator_patches(errors: list[str]) -> None:
         if pattern not in content:
             errors.append(message)
 
+def validate_runner_content(script_path: Path, errors: list[str]) -> None:
+    """驗證 run_evals_bdd.py 採用完全並行架構（ThreadPoolExecutor(max_workers=len(...))）。"""
+    content = script_path.read_text(encoding="utf-8", errors="replace")
+
+    required = [
+        (
+            "ThreadPoolExecutor",
+            "run_evals_bdd.py 缺少 ThreadPoolExecutor（未使用並行架構）",
+        ),
+        (
+            "max_workers=len(",
+            "run_evals_bdd.py 未使用 max_workers=len(evals) 完全並行模式",
+        ),
+    ]
+
+    for pattern, message in required:
+        if pattern not in content:
+            errors.append(message)
+
+
 def validate_syntax(script_path: Path, errors: list[str]) -> bool:
     result = subprocess.run(
         [sys.executable, "-m", "py_compile", str(script_path)],
@@ -216,6 +236,7 @@ def main() -> int:
         errors = []
 
         if validate_syntax(script_path, errors):
+            validate_runner_content(script_path, errors)
             evals_json = SKILLS_DIR / skill / "evals" / "evals.json"
             fixtures_dir = SKILLS_DIR / skill / "evals" / "fixtures"
             validate_evals_json(evals_json, fixtures_dir, errors)
