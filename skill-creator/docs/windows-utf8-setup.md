@@ -28,16 +28,19 @@ python -c "import sys; print(sys.flags.utf8_mode)"
 
 ### 方法 A：系統地區設定（最全域，影響所有程式）
 
+此方法修改的是 **Windows 系統 code page**，影響範圍不限於 PowerShell，
+**CMD、PowerShell、Windows Terminal 等所有繼承系統 code page 的終端機都會同時套用**，無需個別設定。
+
 1. 按 `Win + S`，搜尋「地區設定」，點選「變更地區設定」
 2. 點「變更系統地區設定」
 3. 勾選「Beta：使用 Unicode UTF-8 提供全球語言支援」
 4. 按確定，**重新開機**
 
-**驗證：**
+**驗證（PowerShell 或 CMD 均可）：**
 ```powershell
 chcp
 ```
-輸出 `字碼頁 65001` 表示設定成功。
+輸出 `65001` 表示設定成功，CMD 與 PowerShell 同時生效。
 
 ---
 
