@@ -160,7 +160,7 @@ Save test cases to `evals/evals.json`. Don't write assertions yet — just the p
 
 See `references/schemas.md` for the full schema (including the `expectations` field, which you'll fill in later).
 
-When creating eval tests, also create `evals/run_evals_bdd.py` alongside `evals.json`. This is the canonical eval runner — it computes the diff in Python, embeds diff + spec + expectations into a self-contained prompt, and the AI self-grades each expectation with `E1: PASS/FAIL — evidence`. Works cross-platform and cross-tool (Claude CLI and Codex CLI) without requiring filesystem access from the AI.
+When creating eval tests, also create `evals/run_evals_bdd.py` alongside `evals.json` — do this proactively even if the user only asks for eval tests without mentioning the runner. This is the canonical eval runner — it computes the diff in Python, embeds diff + spec + expectations into a self-contained prompt, and the AI self-grades each expectation with `E1: PASS/FAIL — evidence`. Works cross-platform and cross-tool (Claude CLI and Codex CLI) without requiring filesystem access from the AI.
 
 **Fixture structure** — create `evals/fixtures/eval-<id>/` for each eval:
 
