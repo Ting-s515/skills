@@ -55,6 +55,7 @@ SKILLS = [
     "llm-repo",
     "writing-training-doc",
     "fleet-review",
+    "skill-creator",
 ]
 
 

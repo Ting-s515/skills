@@ -5,17 +5,55 @@
       "id": 1,
       "name": "parallel-eval-runner-generation",
       "prompt": "我要建立一個新 skill 叫做 'url-summarizer'，功能是讀取網頁 URL 並摘要內容。請幫我產出 evals/evals.json 和 evals/run_evals_bdd.py 這兩個檔案的完整內容（直接輸出程式碼，不需要實際寫檔）。",
-      "expected_output": "產出的 run_evals_bdd.py 使用 ThreadPoolExecutor 並行執行所有 eval，AI 在 prompt 內自評分，輸出 E1: PASS/FAIL 格式",
-      "files": [],
       "expectations": [
-        "輸出包含 run_evals_bdd.py",
-        "輸出包含 ThreadPoolExecutor",
+        "輸出包含 run_evals_bdd.py 程式碼",
+        "輸出包含 ThreadPoolExecutor（並行執行機制）",
         "輸出包含 as_completed",
         "輸出包含 executor.submit",
         "輸出包含 DEFAULT_TIMEOUT",
-        "輸出包含 _GRADING_SUFFIX_TEMPLATE 或 __EXPECTATIONS_BLOCK__",
-        "輸出包含 parse_grading",
-        "輸出包含 compute_unified_diff 或 difflib"
+        "輸出包含 _GRADING_SUFFIX_TEMPLATE 或 __EXPECTATIONS_BLOCK__（自評分 prompt 模板）",
+        "輸出包含 parse_grading（解析 Grading 區塊）",
+        "輸出包含 compute_unified_diff 或 difflib（Python 計算 diff）"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "skill-md-frontmatter-and-structure",
+      "prompt": "我想建立一個新 skill 叫做 'git-commit-formatter'，功能是根據 git diff 自動產生符合 Conventional Commits 格式的 commit message。請幫我撰寫這個 skill 的 SKILL.md（直接輸出完整內容）。",
+      "expectations": [
+        "輸出包含 YAML frontmatter（--- 開頭與結尾）",
+        "frontmatter 包含 name: 欄位",
+        "frontmatter 包含 description: 欄位",
+        "description 包含觸發時機說明（when to use 或觸發情境）",
+        "輸出包含至少一個 Markdown 標題（# 或 ##）",
+        "輸出說明 Conventional Commits 格式（feat / fix / refactor 等 type）",
+        "輸出說明輸入來源（git diff 或 staged changes）"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "evals-json-with-expectations-field",
+      "prompt": "我有一個 'pdf-extractor' skill，功能是從 PDF 檔案中提取純文字。請幫我產出 evals/evals.json 的完整內容，至少包含 2 個測試案例，每個案例要有適當的 expectations 欄位。",
+      "expectations": [
+        "輸出包含 skill_name 欄位，值為 pdf-extractor",
+        "輸出包含至少 2 個 eval case",
+        "每個 eval case 包含 id 欄位",
+        "每個 eval case 包含 name 欄位（描述性命名）",
+        "每個 eval case 包含 prompt 欄位",
+        "每個 eval case 包含非空的 expectations 陣列",
+        "至少有一個 expectation 描述輸出的文字內容或格式"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "fixture-directory-structure-guidance",
+      "prompt": "我正在為 'code-reviewer' skill 建立 eval fixtures，這個 skill 會接收程式碼變更並審查問題。請說明每個 eval 的 fixture 目錄結構應該怎麼設置，以及 base/、staged/、spec/ 分別放什麼。",
+      "expectations": [
+        "提到 base/ 目錄用於放變更前的檔案",
+        "提到 staged/ 目錄用於放變更後的檔案（被審查的程式碼）",
+        "提到 staged/ 是必要目錄（不可省略）",
+        "提到 spec/ 目錄用於放規格文檔（選填）",
+        "提到 fixtures/eval-<id>/ 的命名規則"
       ]
     }
   ]
