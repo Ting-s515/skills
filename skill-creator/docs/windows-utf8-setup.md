@@ -1,8 +1,8 @@
 # Windows UTF-8 環境設定
 
-新環境必要步驟，確保 Python 腳本（含 `run_evals_bdd.py`）、PowerShell 與 Git Bash 全面使用 UTF-8，避免 Windows cp950 編碼問題。
+新環境必要步驟，確保 Python 腳本（含 `run_evals_bdd.py`）、PowerShell、Git Bash 與 WSL 全面使用 UTF-8，避免 Windows cp950 編碼問題。
 
-需設定三層：**Python 層**、**PowerShell 終端機層**、**Git Bash 層**。
+需設定四層：**Python 層**、**PowerShell 終端機層**、**Git Bash 層**、**WSL 層**。
 
 ---
 
@@ -106,18 +106,45 @@ git config --global core.quotepath
 
 ---
 
+## 層四：WSL UTF-8
+
+WSL（Windows Subsystem for Linux）執行 Linux 環境，與 Windows 終端機設定互相獨立。
+
+### 驗證是否已是 UTF-8
+
+進入 WSL（PowerShell 或 CMD 執行 `wsl`），確認 locale：
+
+```bash
+locale
+```
+
+`LANG` 為 `C.UTF-8` 或 `en_US.UTF-8` 均表示 UTF-8 已生效，**無需另外設定**。
+
+> **說明：** `C.UTF-8` 與 `en_US.UTF-8` 對 Python 腳本與 Git 編碼來說效果等效，差異只在排序規則與日期格式等 locale 行為。
+
+### 若 LANG 不是 UTF-8，在 WSL 內執行
+
+```bash
+echo 'export LANG=en_US.UTF-8' >> ~/.bashrc
+echo 'export LC_ALL=en_US.UTF-8' >> ~/.bashrc
+source ~/.bashrc
+```
+
+---
+
 ## 建議組合
 
 | 情境 | 建議 |
 |------|------|
-| 開發機長期使用 | 層一 + 方法 A（系統地區）+ 層三 |
-| 不想重開機 | 層一 + 方法 B（Profile）+ 層三 |
+| 開發機長期使用 | 層一 + 方法 A（系統地區）+ 層三 + 層四驗證 |
+| 不想重開機 | 層一 + 方法 B（Profile）+ 層三 + 層四驗證 |
 
 ---
 
 ## 效果說明
 
-三層都設定後：
+四層都設定後：
 - `sys.flags.utf8_mode` 為 `True`，`run_evals_bdd.py` 的 re-exec 邏輯不觸發，Python 直接以 UTF-8 啟動
-- PowerShell code page 為 65001，終端機顯示中文不亂碼
+- PowerShell / CMD code page 為 65001，終端機顯示中文不亂碼
 - Git Bash `LANG=en_US.UTF-8`，commit message、log、檔案路徑顯示正常
+- WSL `LANG=C.UTF-8` 或 `en_US.UTF-8`，Linux 環境中文讀寫正常
