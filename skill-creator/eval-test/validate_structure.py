@@ -11,6 +11,8 @@
   驗證項目：
     - run_evals_bdd.py 是否存在
     - run_evals_bdd.py 是否通過 Python 語法檢查
+    - run_evals_bdd.py 採用 ThreadPoolExecutor 完全並行架構
+    - run_evals_bdd.py 含 Windows UTF-8 re-exec 邏輯（PYTHONUTF8）
     - evals.json 是否存在且每個 eval 含 expectations 欄位
     - 每個 eval 的 fixtures/eval-<id>/staged/ 是否存在
 
@@ -139,6 +141,10 @@ def validate_runner_content(script_path: Path, errors: list[str]) -> None:
         (
             "max_workers=len(",
             "run_evals_bdd.py 未使用 max_workers=len(evals) 完全並行模式",
+        ),
+        (
+            "PYTHONUTF8",
+            "run_evals_bdd.py 缺少 Windows UTF-8 re-exec 邏輯（PYTHONUTF8），Windows cp950 終端機將無法正確輸出中文",
         ),
     ]
 
