@@ -109,4 +109,4 @@ skill-creator 的流程分為兩類：
 - `evals/local_extensions.md` — 本地擴充定義（受保護，update-skill-creator 不覆蓋）
 - `evals/MAINTENANCE.md` — 本文件，維護指南
 - `SKILL.md` — 官方技能主檔，Test Cases 段落已含 run_evals_bdd.py 完整模板
-- `update-skill-creator.py` / `.ps1` — 更新腳本，負責合併官方更新與本地擴充
+- `update-skill-creator.py` — 更新腳本，負責合併官方更新與本地擴充
