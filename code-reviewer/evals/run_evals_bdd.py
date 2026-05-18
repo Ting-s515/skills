@@ -31,12 +31,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
 
-if hasattr(sys.stdout, "reconfigure"):
-    # Windows cp950 consoles cannot encode some grading prompt/output characters.
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-if hasattr(sys.stderr, "reconfigure"):
-    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
-
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 EVALS_JSON = SCRIPT_DIR / "evals.json"
@@ -366,4 +360,16 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    # On Windows, re-exec with Python UTF-8 mode to avoid cp950 encoding errors.
+    # Setting PYTHONUTF8=1 + -X utf8 forces UTF-8 at the interpreter level,
+    # which is more reliable than reconfiguring sys.stdout after the fact.
+    if sys.platform == "win32" and not sys.flags.utf8_mode:
+        import os
+        env = os.environ.copy()
+        env["PYTHONUTF8"] = "1"
+        result = subprocess.run(
+            [sys.executable, "-X", "utf8", __file__] + sys.argv[1:],
+            env=env,
+        )
+        sys.exit(result.returncode)
     raise SystemExit(main())
