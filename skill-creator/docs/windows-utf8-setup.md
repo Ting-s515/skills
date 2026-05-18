@@ -68,7 +68,7 @@ chcp 65001 | Out-Null
 
 ## 層三：Git Bash UTF-8
 
-### Git 全域設定
+### Git 全域設定（PowerShell 或 Git Bash 均可執行）
 
 ```bash
 git config --global core.quotepath false
@@ -77,11 +77,18 @@ git config --global i18n.commit.encoding utf-8
 git config --global i18n.logoutputencoding utf-8
 ```
 
-### ~/.bashrc 或 ~/.bash_profile
+結果寫入 `~/.gitconfig`，兩種終端機執行效果相同。
+
+### ~/.bashrc（在 Git Bash 內執行）
+
+`export` 是 Bash 語法，必須在 **Git Bash** 中執行，不可在 PowerShell 執行。
+
+開啟 Git Bash，編輯 `~/.bashrc`：
 
 ```bash
-export LANG=en_US.UTF-8
-export LC_ALL=en_US.UTF-8
+echo 'export LANG=en_US.UTF-8' >> ~/.bashrc
+echo 'export LC_ALL=en_US.UTF-8' >> ~/.bashrc
+source ~/.bashrc
 ```
 
 儲存後重開 Git Bash。
