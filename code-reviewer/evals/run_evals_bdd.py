@@ -31,6 +31,12 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
 
+if hasattr(sys.stdout, "reconfigure"):
+    # Windows cp950 consoles cannot encode some grading prompt/output characters.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 EVALS_JSON = SCRIPT_DIR / "evals.json"
@@ -41,7 +47,7 @@ OUTPUT_DIR = SCRIPT_DIR.parent / "eval-results-bdd"
 DEFAULT_TIMEOUT = 300
 
 
-GRADING_PROMPT_SUFFIX = """\
+_GRADING_SUFFIX_TEMPLATE = """\
 
 ---
 
@@ -50,12 +56,14 @@ GRADING_PROMPT_SUFFIX = """\
 請在完成上方的 Code Review 後，接著評分以下每一條 Expectation。
 每條獨立一行，格式固定為：
 
-E{n}: PASS — {從你的 review 摘錄的證據（一句話）}
-E{n}: FAIL — {說明為何未達到}
+En: PASS — 從你的 review 摘錄的證據（一句話）
+En: FAIL — 說明為何未達到
+
+（n 為 Expectation 編號，例如 E1: PASS — ...）
 
 ### Expectations 清單
 
-{expectations_block}
+__EXPECTATIONS_BLOCK__
 
 ---
 
@@ -179,15 +187,15 @@ def build_prompt(
         f"E{i + 1}. {exp}" for i, exp in enumerate(expectations)
     )
 
-    grading_suffix = GRADING_PROMPT_SUFFIX.format(expectations_block=expectations_block)
+    grading_suffix = _GRADING_SUFFIX_TEMPLATE.replace("__EXPECTATIONS_BLOCK__", expectations_block)
 
     return (
         f"{skill_instructions}\n\n"
         f"---\n\n"
         f"Apply the above skill instructions to this task.\n\n"
         f"## 重要說明\n\n"
-        f"以下已提供所有必要資訊（diff、規格文檔），**不需要執行任何 shell 指令或讀取任何檔案**，"
-        f"直接根據提供的內容進行 Code Review 即可。\n\n"
+        f"以下已提供所有審查所需資訊（diff、規格文檔），不需要執行 shell 指令或讀取檔案來取得審查內容；"
+        f"但若 skill 指示要求輸出存檔，仍須依該指示建立審查 Markdown 檔案。\n\n"
         f"{spec_section}"
         f"## Git diff（base → staged）\n\n"
         f"```diff\n{unified_diff}```\n\n"
@@ -343,7 +351,7 @@ def main() -> int:
     for result in sorted(results, key=lambda r: r.eval_id):
         print(f"\n[eval-{result.eval_id}] {result.eval_name}  ({result.pass_count}/{result.total})")
         for i, (exp, (status, evidence)) in enumerate(zip(result.expectations, result.grades)):
-            icon = "✅" if status == "PASS" else "❌"
+            icon = "PASS" if status == "PASS" else "FAIL"
             print(f"  {icon} E{i+1}: {status}")
             print(f"       Exp: {exp[:80]}")
             print(f"       Evi: {evidence[:80]}")
