@@ -1,8 +1,24 @@
 #!/usr/bin/env python3
 """BDD-style self-grading eval runner for code-reviewer skill.
 
-為什麼使用 Python：Python 可在 Windows/macOS/Linux 以相同程式碼讀取 JSON、處理路徑並呼叫 CLI；
-避免依賴 Bash、jq、Git Bash 或平台特定 shell 語法。
+【用途】
+  讀取 evals/fixtures/eval-<id>/ 下的 base、staged、spec 目錄，
+  以 Python difflib 計算 base→staged 的 unified diff，連同 spec 文檔、
+  evals.json 的 expectations 清單，一起 embed 進單一 prompt 傳給 AI。
+  AI 完成任務後在同一輸出內自評分，格式為：
+    E1: PASS — 從輸出摘錄的證據（一句話）
+    E2: FAIL — 說明為何未達到
+  runner 解析 Grading 區塊，統計通過率並輸出 X/Y expectations passed。
+
+【fixture 結構】
+  evals/fixtures/eval-<id>/
+  ├── base/    # 變更前的檔案（空目錄 = 新增檔案情境）
+  ├── staged/  # 變更後的檔案（被審查的程式碼）—— 必要
+  └── spec/    # 規格文檔（選填，有則自動注入 prompt）
+
+【為什麼用 Python】
+  Python 可在 Windows/macOS/Linux 以相同程式碼讀取 JSON、處理路徑並呼叫 CLI；
+  避免依賴 Bash、jq、Git Bash 或平台特定 shell 語法。
 
 本地規則：Codex eval runner 必須固定使用 `--dangerously-bypass-approvals-and-sandbox`，
 不要改成 sandbox / approval 模式。這個 runner 預期只在一次性工作區或外部隔離環境中執行。
