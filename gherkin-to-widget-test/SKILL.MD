@@ -12,7 +12,7 @@ description: >
 
 ## 目的
 
-將 `02-gherkin.md` 中涉及 UI 行為的 Scenario，轉換為可執行的 `testWidgets` 測試：
+將 Gherkin 規格檔案中涉及 UI 行為的 Scenario，轉換為可執行的 `testWidgets` 測試：
 
 - 每個含有 UI 層 Then 步驟的 Scenario → 一個 `testWidgets` case
 - 使用 `ProviderScope` override 注入 in-memory fake，不依賴真實 SQLite / Drive
@@ -39,7 +39,7 @@ description: >
 依序讀取以下檔案作為實作參考：
 
 1. **既有 widget test 範例**（本專案已建立的模式）：
-   `test/features/category_management/category_management_screen_test.dart`
+   搜尋 `test/features/` 下現有的 `*_screen_test.dart`，取第一個作為風格參考
 
 2. **Support fake repositories**（可用的 in-memory fake）：
    `test/features/support/` 目錄下所有 `in_memory_*.dart`
@@ -86,7 +86,7 @@ T3_GivenValidForm_WhenSaved_ShouldResetFormToDefault
 T5_GivenGoogleNotSignedIn_WhenOpenHome_ShouldNotShowSyncIcon
 ```
 
-#### 基本結構（參考 category_management_screen_test.dart）
+#### 基本結構
 
 ```dart
 testWidgets('T{N}_{命名}', (tester) async {
