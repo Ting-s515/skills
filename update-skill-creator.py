@@ -10,7 +10,7 @@ from pathlib import Path
 
 REPO_URL = "https://github.com/anthropics/claude-plugins-official.git"
 SKILL_PATH = Path("plugins/skill-creator/skills/skill-creator")
-TARGET_DIR = Path.home() / ".claude" / "skills" / "skill-creator"
+TARGET_DIR = Path.home() / ".claude" / "skills" / "skill-creator-plus"
 PROTECTED_ITEMS = ["agents", "assets", "eval-viewer", "references", "scripts", "LICENSE.txt", "SKILL.md"]
 ANCHOR = "references/schemas.md` for the full schema"
 

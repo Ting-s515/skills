@@ -10,7 +10,7 @@
 但無法量化 skill eval test 通過率。`run_evals_bdd.py` 透過 `expectations` 欄位與自評分機制，
 每次執行都能得到具體的 X/Y expectations passed 結果，支援迭代改善 skill 品質。
 
-**修改原則：** 任何對 `run_evals_bdd.py` 模板的修改都必須同步更新 `skill-creator/SKILL.md`
+**修改原則：** 任何對 `run_evals_bdd.py` 模板的修改都必須同步更新 `skill-creator-plus/SKILL.md`
 與 `evals/local_extensions.md`（插入內容區塊），確保三者一致。
 
 ---
@@ -60,7 +60,7 @@
 1. 查此表找到對應 patch 的目的
 2. 確認官方 SKILL.md 是否更動了該段落
 3. 更新 `update-skill-creator.py` 裡的 `old` 字串以對齊新版官方內容
-4. 重新執行，確認 `python skill-creator/eval-test/validate_structure.py skill-creator-patches` 通過
+4. 重新執行，確認 `python skill-creator-plus/eval-test/validate_structure.py skill-creator-patches` 通過
 
 ---
 
