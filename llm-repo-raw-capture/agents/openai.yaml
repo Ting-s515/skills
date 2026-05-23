@@ -1,0 +1,4 @@
+interface:
+  display_name: "LLM Repo Raw Capture"
+  short_description: "將深度搜尋結果整理到本地 llm-repo raw 層"
+  default_prompt: "將剛完成的深度搜尋結果整理成 llm-repo raw 資料。"
