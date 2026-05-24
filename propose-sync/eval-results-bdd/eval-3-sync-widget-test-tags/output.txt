@@ -1,0 +1,683 @@
+OpenAI Codex v0.133.0
+--------
+workdir: C:\Users\tenns\AppData\Local\Temp\propose-sync-workspace-widget-tags-t3w4s5k0\workspace
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: danger-full-access
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 019e57fa-a795-7a63-81f7-4bc656d62a91
+--------
+user
+---
+name: propose-sync
+description: >
+  掃描專案 docs/propose/（或 frontend/docs/propose/、backend/docs/propose/）下所有功能資料夾，
+  依 03-tasks.md 的 checkbox 與任務標籤判斷是否全部完成，
+  並將已完成的功能同步更新至使用者指定的規格需求文檔最上方的 ## 已完成 區塊。
+  觸發情境包含但不限於：「propose-sync」、「同步完成狀態」、「更新規格文檔已完成功能」、
+  「哪些功能已經實作完成」、「幫我把完成的 propose 同步回規格文檔」。
+---
+
+# Propose Sync
+
+掃描 `docs/propose/` 所有功能資料夾的任務完成狀態，將已完成的功能同步回規格需求文檔。
+
+## 執行流程
+
+### Step 1：確認規格文檔路徑與掃描根目錄
+
+若使用者未提供規格文檔路徑，詢問：
+
+```
+請提供要同步的規格需求文檔路徑：
+（例如：docs/spec.md）
+```
+
+讀取規格文檔，從文檔內的 `> propose:` 標記自動推斷掃描根目錄：
+
+- 標記路徑以 `frontend/` 開頭 → 掃描 `frontend/docs/propose/`
+- 標記路徑以 `backend/` 開頭 → 掃描 `backend/docs/propose/`
+- 標記路徑以 `docs/propose/` 開頭（無前綴）→ 掃描 `docs/propose/`
+- 文檔內無任何 `> propose:` 標記 → **詢問使用者**確認掃描目錄
+
+### Step 2：掃描 propose 目錄
+
+讀取對應目錄下所有子資料夾的 `03-tasks.md`，判斷完成狀態：
+
+**完成判斷規則：**
+
+- 只判斷 `- [ ]`、`- [x]` 開頭的任務行；一般段落、標題、說明文字不納入判斷。
+- `[manual]` 任務不納入完成判斷；無論是否勾選，都不影響功能完成狀態。
+- 非 `[manual]` 任務以 checkbox 作為主要完成狀態：
+  - `- [x][bdd]` → 視為完成，代表非 UI 功能已完成 BDD 驗證。
+  - `- [x][widget-test]` → 視為完成，代表 UI 功能已完成 Widget Test 驗證。
+  - `- [x]` → 視為完成，適用於實作、文件更新、驗證、review 等非測試追蹤任務。
+  - `- [ ]`、`- [ ][bdd]`、`- [ ][widget-test]` 或任何未勾選的非 `[manual]` 任務 → 視為未完成。
+- 有任何非 `[manual]` 任務未完成 → 該功能視為未完成。
+- `03-tasks.md` 不存在 → 視為未完成
+
+掃描完成後**直接進入 Step 3 更新規格文檔**，無需等待使用者確認。
+
+### Step 3：更新規格文檔
+
+讀取規格文檔，更新最上方的 `## 已完成` 區塊：
+
+- 若 `## 已完成` 區塊**不存在**，在文檔最頂部插入
+- 若已存在，**完整替換**區塊內容（避免重複累積）
+
+格式：
+
+```markdown
+## 已完成
+
+| 功能       | 資料夾                               |
+| ---------- | ------------------------------------ |
+| <功能描述> | `<掃描路徑>/feature-a/` |
+| <功能描述> | `<掃描路徑>/feature-b/` |
+
+---
+```
+
+**功能描述**從規格文檔中對應的 `> propose:` 標記上方段落取得；若找不到對應標記，使用 folder name 作為描述。
+
+### Step 4：輸出結果
+
+```
+propose-sync 完成：
+
+同步至：<規格文檔路徑>
+
+已新增至 ## 已完成：
+  - feature-a
+  - feature-b
+
+未完成功能不受影響，可繼續使用 apply skill 實作。
+```
+
+
+---
+
+Apply the above propose-sync skill instructions to this isolated eval workspace.
+
+規格文檔路徑：C:\Users\tenns\AppData\Local\Temp\propose-sync-workspace-widget-tags-t3w4s5k0\workspace\spec.md
+
+請直接執行 propose-sync：
+- 讀取並更新上述規格文檔。
+- 掃描目前工作區內的 `docs/propose/`。
+- 不要等待使用者確認。
+- 不要執行 git commit。
+- 完成後輸出 propose-sync 完成摘要。
+
+codex
+我會套用 `propose-sync` skill 的流程，先讀取本機 skill 定義與這個 eval workspace 的 spec / propose 任務狀態，接著只更新指定的 `spec.md`，不做 commit。
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content -Raw -Encoding UTF8 'C:\\Users\\tenns\\.codex\\skills\\propose-sync\\SKILL.md'" in C:\Users\tenns\AppData\Local\Temp\propose-sync-workspace-widget-tags-t3w4s5k0\workspace
+ succeeded in 934ms:
+---
+name: propose-sync
+description: >
+  掃描專案 docs/propose/（或 frontend/docs/propose/、backend/docs/propose/）下所有功能資料夾，
+  依 03-tasks.md 的 checkbox 與任務標籤判斷是否全部完成，
+  並將已完成的功能同步更新至使用者指定的規格需求文檔最上方的 ## 已完成 區塊。
+  觸發情境包含但不限於：「propose-sync」、「同步完成狀態」、「更新規格文檔已完成功能」、
+  「哪些功能已經實作完成」、「幫我把完成的 propose 同步回規格文檔」。
+---
+
+# Propose Sync
+
+掃描 `docs/propose/` 所有功能資料夾的任務完成狀態，將已完成的功能同步回規格需求文檔。
+
+## 執行流程
+
+### Step 1：確認規格文檔路徑與掃描根目錄
+
+若使用者未提供規格文檔路徑，詢問：
+
+```
+請提供要同步的規格需求文檔路徑：
+（例如：docs/spec.md）
+```
+
+讀取規格文檔，從文檔內的 `> propose:` 標記自動推斷掃描根目錄：
+
+- 標記路徑以 `frontend/` 開頭 → 掃描 `frontend/docs/propose/`
+- 標記路徑以 `backend/` 開頭 → 掃描 `backend/docs/propose/`
+- 標記路徑以 `docs/propose/` 開頭（無前綴）→ 掃描 `docs/propose/`
+- 文檔內無任何 `> propose:` 標記 → **詢問使用者**確認掃描目錄
+
+### Step 2：掃描 propose 目錄
+
+讀取對應目錄下所有子資料夾的 `03-tasks.md`，判斷完成狀態：
+
+**完成判斷規則：**
+
+- 只判斷 `- [ ]`、`- [x]` 開頭的任務行；一般段落、標題、說明文字不納入判斷。
+- `[manual]` 任務不納入完成判斷；無論是否勾選，都不影響功能完成狀態。
+- 非 `[manual]` 任務以 checkbox 作為主要完成狀態：
+  - `- [x][bdd]` → 視為完成，代表非 UI 功能已完成 BDD 驗證。
+  - `- [x][widget-test]` → 視為完成，代表 UI 功能已完成 Widget Test 驗證。
+  - `- [x]` → 視為完成，適用於實作、文件更新、驗證、review 等非測試追蹤任務。
+  - `- [ ]`、`- [ ][bdd]`、`- [ ][widget-test]` 或任何未勾選的非 `[manual]` 任務 → 視為未完成。
+- 有任何非 `[manual]` 任務未完成 → 該功能視為未完成。
+- `03-tasks.md` 不存在 → 視為未完成
+
+掃描完成後**直接進入 Step 3 更新規格文檔**，無需等待使用者確認。
+
+### Step 3：更新規格文檔
+
+讀取規格文檔，更新最上方的 `## 已完成` 區塊：
+
+- 若 `## 已完成` 區塊**不存在**，在文檔最頂部插入
+- 若已存在，**完整替換**區塊內容（避免重複累積）
+
+格式：
+
+```markdown
+## 已完成
+
+| 功能       | 資料夾                               |
+| ---------- | ------------------------------------ |
+| <功能描述> | `<掃描路徑>/feature-a/` |
+| <功能描述> | `<掃描路徑>/feature-b/` |
+
+---
+```
+
+**功能描述**從規格文檔中對應的 `> propose:` 標記上方段落取得；若找不到對應標記，使用 folder name 作為描述。
+
+### Step 4：輸出結果
+
+```
+propose-sync 完成：
+
+同步至：<規格文檔路徑>
+
+已新增至 ## 已完成：
+  - feature-a
+  - feature-b
+
+未完成功能不受影響，可繼續使用 apply skill 實作。
+```
+
+
+codex
+skill 定義與你貼上的流程一致；下一步我會讀 `spec.md` 與 `docs/propose/*/03-tasks.md`，用 checkbox 規則判斷哪些 feature 已完成。
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'rg --files' in C:\Users\tenns\AppData\Local\Temp\propose-sync-workspace-widget-tags-t3w4s5k0\workspace
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content -Raw -Encoding UTF8 'spec.md'" in C:\Users\tenns\AppData\Local\Temp\propose-sync-workspace-widget-tags-t3w4s5k0\workspace
+ succeeded in 798ms:
+spec.md
+docs\propose\ui-incomplete\03-tasks.md
+docs\propose\ui-complete\03-tasks.md
+
+ succeeded in 2899ms:
+# Mobile App 規格
+
+## Mobile Shell
+
+App 需要底部主要操作列與低頻功能選單。
+
+> propose: `docs/propose/ui-complete/`
+
+## 月報 UI
+
+App 需要手機易掃讀的月份明細。
+
+> propose: `docs/propose/ui-incomplete/`
+
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content -Raw -Encoding UTF8 'docs\\propose\\ui-complete\\03-tasks.md'" in C:\Users\tenns\AppData\Local\Temp\propose-sync-workspace-widget-tags-t3w4s5k0\workspace
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content -Raw -Encoding UTF8 'docs\\propose\\ui-incomplete\\03-tasks.md'" in C:\Users\tenns\AppData\Local\Temp\propose-sync-workspace-widget-tags-t3w4s5k0\workspace
+ succeeded in 962ms:
+# 任務清單：Mobile Shell
+
+## 任務
+
+- [x][widget-test] T1: 覆蓋底部主要操作列 Widget Test（影響：`test/features/app_shell/app_shell_screen_test.dart`）
+- [x][widget-test] T2: 覆蓋低頻功能選單 Widget Test（影響：`test/features/app_shell/app_shell_screen_test.dart`）
+- [x] T3: 實作底部主要操作列（影響：`lib/core/presentation/app_shell.dart`）
+- [x] T4: 更新 Widget Test coverage 文件（影響：`docs/Widget-Test/ui-app-shell.md`）
+- [x] T5: 執行 `flutter test`、`flutter analyze` 與 build 驗證
+
+
+ succeeded in 1501ms:
+# 任務清單：月報 UI
+
+## 任務
+
+- [x][widget-test] T1: 覆蓋月份摘要 Widget Test（影響：`test/features/report/report_screen_test.dart`）
+- [ ][widget-test] T2: 覆蓋月份切換 Widget Test（影響：`test/features/report/report_screen_test.dart`）
+- [x] T3: 實作月份摘要區塊（影響：`lib/features/report/presentation/report_screen.dart`）
+
+
+codex
+掃描結果是 `ui-complete` 全部非 `[manual]` 任務都已勾選；`ui-incomplete` 有未勾選的 `[widget-test]` 任務，所以不會寫入已完成區塊。接著我會在 `spec.md` 最上方插入 `## 已完成`。
+apply patch
+patch: completed
+C:\Users\tenns\AppData\Local\Temp\propose-sync-workspace-widget-tags-t3w4s5k0\workspace\spec.md
+diff --git a/spec.md b/spec.md
+index 845ac032bb0534e7493fb4c5fb4c235bf4e30c0c..4fbc9e2319594d17b0ee9a68a9881b4b21931b0c
+--- a/spec.md
++++ b/spec.md
+@@ -1,6 +1,14 @@
+-# Mobile App 規格
+-
+-## Mobile Shell
++## 已完成
++
++| 功能 | 資料夾 |
++| ---- | ------ |
++| App 需要底部主要操作列與低頻功能選單。 | `docs/propose/ui-complete/` |
++
++---
++
++# Mobile App 規格
++
++## Mobile Shell
+
+ App 需要底部主要操作列與低頻功能選單。
+
+
+diff --git a/spec.md b/spec.md
+index 845ac032bb0534e7493fb4c5fb4c235bf4e30c0c..4fbc9e2319594d17b0ee9a68a9881b4b21931b0c
+--- a/spec.md
++++ b/spec.md
+@@ -1,6 +1,14 @@
+-# Mobile App 規格
+-
+-## Mobile Shell
++## 已完成
++
++| 功能 | 資料夾 |
++| ---- | ------ |
++| App 需要底部主要操作列與低頻功能選單。 | `docs/propose/ui-complete/` |
++
++---
++
++# Mobile App 規格
++
++## Mobile Shell
+
+ App 需要底部主要操作列與低頻功能選單。
+
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'git status --short' in C:\Users\tenns\AppData\Local\Temp\propose-sync-workspace-widget-tags-t3w4s5k0\workspace
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content -Raw -Encoding UTF8 'spec.md'" in C:\Users\tenns\AppData\Local\Temp\propose-sync-workspace-widget-tags-t3w4s5k0\workspace
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'git diff -- spec.md' in C:\Users\tenns\AppData\Local\Temp\propose-sync-workspace-widget-tags-t3w4s5k0\workspace
+ exited 1 in 853ms:
+fatal: not a git repository (or any of the parent directories): .git
+
+2026-05-24T03:16:00.260457Z ERROR codex_core::tools::router: error=Exit code: 1
+Wall time: 0.9 seconds
+Output:
+fatal: not a git repository (or any of the parent directories): .git
+
+ succeeded in 870ms:
+## 已完成
+
+| 功能 | 資料夾 |
+| ---- | ------ |
+| App 需要底部主要操作列與低頻功能選單。 | `docs/propose/ui-complete/` |
+
+---
+
+# Mobile App 規格
+
+## Mobile Shell
+
+App 需要底部主要操作列與低頻功能選單。
+
+> propose: `docs/propose/ui-complete/`
+
+## 月報 UI
+
+App 需要手機易掃讀的月份明細。
+
+> propose: `docs/propose/ui-incomplete/`
+
+
+ exited 1 in 1364ms:
+warning: Not a git repository. Use --no-index to compare two paths outside a working tree
+usage: git diff --no-index [<options>] <path> <path>
+
+Diff output format options
+    -p, --patch           generate patch
+    -s, --no-patch        suppress diff output
+    -u                    generate patch
+    -U, --unified[=<n>]   generate diffs with <n> lines context
+    -W, --[no-]function-context
+                          generate diffs with <n> lines context
+    --raw                 generate the diff in raw format
+    --patch-with-raw      synonym for '-p --raw'
+    --patch-with-stat     synonym for '-p --stat'
+    --numstat             machine friendly --stat
+    --shortstat           output only the last line of --stat
+    -X, --dirstat[=<param1>,<param2>...]
+                          output the distribution of relative amount of changes for each sub-directory
+    --cumulative          synonym for --dirstat=cumulative
+    --dirstat-by-file[=<param1>,<param2>...]
+                          synonym for --dirstat=files,<param1>,<param2>...
+    --check               warn if changes introduce conflict markers or whitespace errors
+    --summary             condensed summary such as creations, renames and mode changes
+    --name-only           show only names of changed files
+    --name-status         show only names and status of changed files
+    --stat[=<width>[,<name-width>[,<count>]]]
+                          generate diffstat
+    --stat-width <width>  generate diffstat with a given width
+    --stat-name-width <width>
+                          generate diffstat with a given name width
+    --stat-graph-width <width>
+                          generate diffstat with a given graph width
+    --stat-count <count>  generate diffstat with limited lines
+    --[no-]compact-summary
+                          generate compact summary in diffstat
+    --binary              output a binary diff that can be applied
+    --[no-]full-index     show full pre- and post-image object names on the "index" lines
+    --[no-]color[=<when>] show colored diff
+    --ws-error-highlight <kind>
+                          highlight whitespace errors in the 'context', 'old' or 'new' lines in the diff
+    -z                    do not munge pathnames and use NULs as output field terminators in --raw or --numstat
+    --[no-]abbrev[=<n>]   use <n> digits to display object names
+    --src-prefix <prefix> show the given source prefix instead of "a/"
+    --dst-prefix <prefix> show the given destination prefix instead of "b/"
+    --line-prefix <prefix>
+                          prepend an additional prefix to every line of output
+    --no-prefix           do not show any source or destination prefix
+    --default-prefix      use default prefixes a/ and b/
+    --inter-hunk-context <n>
+                          show context between diff hunks up to the specified number of lines
+    --output-indicator-new <char>
+                          specify the character to indicate a new line instead of '+'
+    --output-indicator-old <char>
+                          specify the character to indicate an old line instead of '-'
+    --output-indicator-context <char>
+                          specify the character to indicate a context instead of ' '
+
+Diff rename options
+    -B, --break-rewrites[=<n>[/<m>]]
+                          break complete rewrite changes into pairs of delete and create
+    -M, --find-renames[=<n>]
+                          detect renames
+    -D, --irreversible-delete
+                          omit the preimage for deletes
+    -C, --find-copies[=<n>]
+                          detect copies
+    --[no-]find-copies-harder
+                          use unmodified files as source to find copies
+    --no-renames          disable rename detection
+    --[no-]rename-empty   use empty blobs as rename source
+    --[no-]follow         continue listing the history of a file beyond renames
+    -l <n>                prevent rename/copy detection if the number of rename/copy targets exceeds given limit
+
+Diff algorithm options
+    --minimal             produce the smallest possible diff
+    -w, --ignore-all-space
+                          ignore whitespace when comparing lines
+    -b, --ignore-space-change
+                          ignore changes in amount of whitespace
+    --ignore-space-at-eol ignore changes in whitespace at EOL
+    --ignore-cr-at-eol    ignore carrier-return at the end of line
+    --ignore-blank-lines  ignore changes whose lines are all blank
+    -I, --[no-]ignore-matching-lines <regex>
+                          ignore changes whose all lines match <regex>
+    --[no-]indent-heuristic
+                          heuristic to shift diff hunk boundaries for easy reading
+    --patience            generate diff using the "patience diff" algorithm
+    --histogram           generate diff using the "histogram diff" algorithm
+    --diff-algorithm <algorithm>
+                          choose a diff algorithm
+    --anchored <text>     generate diff using the "anchored diff" algorithm
+    --word-diff[=<mode>]  show word diff, using <mode> to delimit changed words
+    --word-diff-regex <regex>
+                          use <regex> to decide what a word is
+    --color-words[=<regex>]
+                          equivalent to --word-diff=color --word-diff-regex=<regex>
+    --[no-]color-moved[=<mode>]
+                          moved lines of code are colored differently
+    --[no-]color-moved-ws <mode>
+                          how white spaces are ignored in --color-moved
+
+Other diff options
+    --[no-]relative[=<prefix>]
+                          when run from subdir, exclude changes outside and show relative paths
+    -a, --[no-]text       treat all files as text
+    -R                    swap two inputs, reverse the diff
+    --[no-]exit-code      exit with 1 if there were differences, 0 otherwise
+    --[no-]quiet          disable all output of the program
+    --[no-]ext-diff       allow an external diff helper to be executed
+    --[no-]textconv       run external text conversion filters when comparing binary files
+    --ignore-submodules[=<when>]
+                          ignore changes to submodules in the diff generation
+    --submodule[=<format>]
+                          specify how differences in submodules are shown
+    --ita-invisible-in-index
+                          hide 'git add -N' entries from the index
+    --ita-visible-in-index
+                          treat 'git add -N' entries as real in the index
+    -S <string>           look for differences that change the number of occurrences of the specified string
+    -G <regex>            look for differences that change the number of occurrences of the specified regex
+    --pickaxe-all         show all changes in the changeset with -S or -G
+    --pickaxe-regex       treat <string> in -S as extended POSIX regular expression
+    -O <file>             control the order in which files appear in the output
+    --rotate-to <path>    show the change in the specified path first
+    --skip-to <path>      skip the output to the specified path
+    --find-object <object-id>
+                          look for differences that change the number of occurrences of the specified object
+    --diff-filter [(A|C|D|M|R|T|U|X|B)...[*]]
+                          select files by diff type
+    --output <file>       output to a specific file
+
+
+2026-05-24T03:16:00.974078Z ERROR codex_core::tools::router: error=Exit code: 1
+Wall time: 1.4 seconds
+Output:
+warning: Not a git repository. Use --no-index to compare two paths outside a working tree
+usage: git diff --no-index [<options>] <path> <path>
+
+Diff output format options
+    -p, --patch           generate patch
+    -s, --no-patch        suppress diff output
+    -u                    generate patch
+    -U, --unified[=<n>]   generate diffs with <n> lines context
+    -W, --[no-]function-context
+                          generate diffs with <n> lines context
+    --raw                 generate the diff in raw format
+    --patch-with-raw      synonym for '-p --raw'
+    --patch-with-stat     synonym for '-p --stat'
+    --numstat             machine friendly --stat
+    --shortstat           output only the last line of --stat
+    -X, --dirstat[=<param1>,<param2>...]
+                          output the distribution of relative amount of changes for each sub-directory
+    --cumulative          synonym for --dirstat=cumulative
+    --dirstat-by-file[=<param1>,<param2>...]
+                          synonym for --dirstat=files,<param1>,<param2>...
+    --check               warn if changes introduce conflict markers or whitespace errors
+    --summary             condensed summary such as creations, renames and mode changes
+    --name-only           show only names of changed files
+    --name-status         show only names and status of changed files
+    --stat[=<width>[,<name-width>[,<count>]]]
+                          generate diffstat
+    --stat-width <width>  generate diffstat with a given width
+    --stat-name-width <width>
+                          generate diffstat with a given name width
+    --stat-graph-width <width>
+                          generate diffstat with a given graph width
+    --stat-count <count>  generate diffstat with limited lines
+    --[no-]compact-summary
+                          generate compact summary in diffstat
+    --binary              output a binary diff that can be applied
+    --[no-]full-index     show full pre- and post-image object names on the "index" lines
+    --[no-]color[=<when>] show colored diff
+    --ws-error-highlight <kind>
+                          highlight whitespace errors in the 'context', 'old' or 'new' lines in the diff
+    -z                    do not munge pathnames and use NULs as output field terminators in --raw or --numstat
+    --[no-]abbrev[=<n>]   use <n> digits to display object names
+    --src-prefix <prefix> show the given source prefix instead of "a/"
+    --dst-prefix <prefix> show the given destination prefix instead of "b/"
+    --line-prefix <prefix>
+                          prepend an additional prefix to every line of output
+    --no-prefix           do not show any source or destination prefix
+    --default-prefix      use default prefixes a/ and b/
+    --inter-hunk-context <n>
+                          show context between diff hunks up to the specified number of lines
+    --output-indicator-new <char>
+                          specify the character to indicate a new line instead of '+'
+    --output-indicator-old <char>
+                          specify the character to indicate an old line instead of '-'
+    --output-indicator-context <char>
+                          specify the character to indicate a context instead of ' '
+
+Diff rename options
+    -B, --break-rewrites[=<n>[/<m>]]
+                          break complete rewrite changes into pairs of delete and create
+    -M, --find-renames[=<n>]
+                          detect renames
+    -D, --irreversible-delete
+                          omit the preimage for deletes
+    -C, --find-copies[=<n>]
+                          detect copies
+    --[no-]find-copies-harder
+                          use unmodified files as source to find copies
+    --no-renames          disable rename detection
+    --[no-]rename-empty   use empty blobs as rename source
+    --[no-]follow         continue listing the history of a file beyond renames
+    -l <n>                prevent rename/copy detection if the number of rename/copy targets exceeds given limit
+
+Diff algorithm options
+    --minimal             produce the smallest possible diff
+    -w, --ignore-all-space
+                          ignore whitespace when comparing lines
+    -b, --ignore-space-change
+                          ignore changes in amount of whitespace
+    --ignore-space-at-eol ignore changes in whitespace at EOL
+    --ignore-cr-at-eol    ignore carrier-return at the end of line
+    --ignore-blank-lines  ignore changes whose lines are all blank
+    -I, --[no-]ignore-matching-lines <regex>
+                          ignore changes whose all lines match <regex>
+    --[no-]indent-heuristic
+                          heuristic to shift diff hunk boundaries for easy reading
+    --patience            generate diff using the "patience diff" algorithm
+    --histogram           generate diff using the "histogram diff" algorithm
+    --diff-algorithm <algorithm>
+                          choose a diff algorithm
+    --anchored <text>     generate diff using the "anchored diff" algorithm
+    --word-diff[=<mode>]  show word diff, using <mode> to delimit changed words
+    --word-diff-regex <regex>
+                          use <regex> to decide what a word is
+    --color-words[=<regex>]
+                          equivalent to --word-diff=color --word-diff-regex=<regex>
+    --[no-]color-moved[=<mode>]
+                          moved lines of code are colored differently
+    --[no-]color-moved-ws <mode>
+                          how white spaces are ignored in --color-moved
+
+Other diff options
+    --[no-]relative[=<prefix>]
+                          when run from subdir, exclude changes outside and show relative paths
+    -a, --[no-]text       treat all files as text
+    -R                    swap two inputs, reverse the diff
+    --[no-]exit-code      exit with 1 if there were differences, 0 otherwise
+    --[no-]quiet          disable all output of the program
+    --[no-]ext-diff       allow an external diff helper to be executed
+    --[no-]textconv       run external text conversion filters when comparing binary files
+    --ignore-submodules[=<when>]
+                          ignore changes to submodules in the diff generation
+    --submodule[=<format>]
+                          specify how differences in submodules are shown
+    --ita-invisible-in-index
+                          hide 'git add -N' entries from the index
+    --ita-visible-in-index
+                          treat 'git add -N' entries as real in the index
+    -S <string>           look for differences that change the number of occurrences of the specified string
+    -G <regex>            look for differences that change the number of occurrences of the specified regex
+    --pickaxe-all         show all changes in the changeset with -S or -G
+    --pickaxe-regex       treat <string> in -S as extended POSIX regular expression
+    -O <file>             control the order in which files appear in the output
+    --rotate-to <path>    show the change in the specified path first
+    --skip-to <path>      skip the output to the specified path
+    --find-object <object-id>
+                          look for differences that change the number of occurrences of the specified object
+    --diff-filter [(A|C|D|M|R|T|U|X|B)...[*]]
+                          select files by diff type
+    --output <file>       output to a specific file
+
+
+diff --git a/spec.md b/spec.md
+index 845ac032bb0534e7493fb4c5fb4c235bf4e30c0c..4fbc9e2319594d17b0ee9a68a9881b4b21931b0c
+--- a/spec.md
++++ b/spec.md
+@@ -1,6 +1,14 @@
+-# Mobile App 規格
+-
+-## Mobile Shell
++## 已完成
++
++| 功能 | 資料夾 |
++| ---- | ------ |
++| App 需要底部主要操作列與低頻功能選單。 | `docs/propose/ui-complete/` |
++
++---
++
++# Mobile App 規格
++
++## Mobile Shell
+
+ App 需要底部主要操作列與低頻功能選單。
+
+
+codex
+propose-sync 完成。
+
+同步至：[spec.md](C:/Users/tenns/AppData/Local/Temp/propose-sync-workspace-widget-tags-t3w4s5k0/workspace/spec.md:1)
+
+已新增至 `## 已完成`：
+- `ui-complete`：`docs/propose/ui-complete/`
+
+未同步：
+- `ui-incomplete`：`T2` 的 `[widget-test]` 任務未勾選
+
+驗證狀態：僅修改 `.md` 文件，已跳過 build、測試與 code review。依你的指示未執行 git commit；另外此 eval workspace 也不是 git repository。
+diff --git a/spec.md b/spec.md
+index 845ac032bb0534e7493fb4c5fb4c235bf4e30c0c..4fbc9e2319594d17b0ee9a68a9881b4b21931b0c
+--- a/spec.md
++++ b/spec.md
+@@ -1,6 +1,14 @@
+-# Mobile App 規格
+-
+-## Mobile Shell
++## 已完成
++
++| 功能 | 資料夾 |
++| ---- | ------ |
++| App 需要底部主要操作列與低頻功能選單。 | `docs/propose/ui-complete/` |
++
++---
++
++# Mobile App 規格
++
++## Mobile Shell
+
+ App 需要底部主要操作列與低頻功能選單。
+
+
+tokens used
+57,000
+propose-sync 完成。
+
+同步至：[spec.md](C:/Users/tenns/AppData/Local/Temp/propose-sync-workspace-widget-tags-t3w4s5k0/workspace/spec.md:1)
+
+已新增至 `## 已完成`：
+- `ui-complete`：`docs/propose/ui-complete/`
+
+未同步：
+- `ui-incomplete`：`T2` 的 `[widget-test]` 任務未勾選
+
+驗證狀態：僅修改 `.md` 文件，已跳過 build、測試與 code review。依你的指示未執行 git commit；另外此 eval workspace 也不是 git repository。

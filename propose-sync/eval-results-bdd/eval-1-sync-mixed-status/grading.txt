@@ -1,0 +1,4 @@
+E1: PASS - ## 已完成 區塊存在 - spec.md contains ## 已完成
+E2: PASS - feature-done（商品管理）加入 ## 已完成 - completed block includes feature-done/商品管理
+E3: PASS - feature-incomplete（訂單管理）不在 ## 已完成 - completed block excludes feature-incomplete/訂單管理
+E4: PASS - 輸出 propose-sync 完成訊息 - output contains completion summary

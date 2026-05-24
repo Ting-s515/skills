@@ -1,0 +1,46 @@
+{
+  "passed": 15,
+  "total": 15,
+  "evals": [
+    {
+      "id": "1",
+      "name": "sync-mixed-status",
+      "passed": 4,
+      "total": 4,
+      "exit_code": 0,
+      "timed_out": false,
+      "duration_seconds": 75.99337601661682,
+      "output_dir": "propose-sync/eval-results-bdd/eval-1-sync-mixed-status"
+    },
+    {
+      "id": "2",
+      "name": "create-no-existing-block",
+      "passed": 3,
+      "total": 3,
+      "exit_code": 0,
+      "timed_out": false,
+      "duration_seconds": 79.17422246932983,
+      "output_dir": "propose-sync/eval-results-bdd/eval-2-create-no-existing-block"
+    },
+    {
+      "id": "3",
+      "name": "sync-widget-test-tags",
+      "passed": 3,
+      "total": 3,
+      "exit_code": 0,
+      "timed_out": false,
+      "duration_seconds": 70.33237361907959,
+      "output_dir": "propose-sync/eval-results-bdd/eval-3-sync-widget-test-tags"
+    },
+    {
+      "id": "4",
+      "name": "sync-task-line-edge-cases",
+      "passed": 5,
+      "total": 5,
+      "exit_code": 0,
+      "timed_out": false,
+      "duration_seconds": 93.73996877670288,
+      "output_dir": "propose-sync/eval-results-bdd/eval-4-sync-task-line-edge-cases"
+    }
+  ]
+}

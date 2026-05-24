@@ -1,0 +1,5 @@
+E1: PASS - settings-complete 加入 ## 已完成 - completed block includes settings-complete/設定頁 Widget
+E2: PASS - 未勾選 [manual] 與非 checkbox 說明行不阻擋完成 - settings-complete listed as complete
+E3: PASS - [ ][bdd] 未完成任務排除功能 - completed block excludes sync-api-incomplete/同步 API
+E4: PASS - 一般 [ ] 未完成任務排除功能 - completed block excludes notification-incomplete/通知 UI
+E5: PASS - 缺少 03-tasks.md 排除功能 - completed block excludes missing-tasks/歷史資料匯入

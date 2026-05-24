@@ -1,0 +1,3 @@
+E1: PASS - ui-complete（Mobile Shell）加入 ## 已完成 - completed block includes ui-complete/Mobile Shell
+E2: PASS - ui-incomplete（月報 UI）不在 ## 已完成 - completed block excludes ui-incomplete/月報 UI
+E3: PASS - [x][widget-test] 與 [x] 混合任務可判定完成 - ui-complete listed as complete
