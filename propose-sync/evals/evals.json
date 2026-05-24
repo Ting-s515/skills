@@ -5,7 +5,7 @@
       "id": 1,
       "name": "sync-mixed-status",
       "prompt": "propose-sync，規格文檔：propose-sync/evals/files/workspace-mixed/spec.md",
-      "expected_output": "掃描 feature-done（全 [x][bdd]）和 feature-incomplete（有 [ ] 和 [x] 任務）；在規格文檔 ## 已完成 區塊只列出 feature-done（商品管理），不包含 feature-incomplete（訂單管理）。",
+      "expected_output": "掃描 feature-done（全 [x][bdd]）和 feature-incomplete（含一般 [x] 任務但仍有未勾選 [ ] 任務）；在規格文檔 ## 已完成 區塊只列出 feature-done（商品管理），不包含 feature-incomplete（訂單管理）。",
       "files": [
         "evals/files/workspace-mixed/spec.md",
         "evals/files/workspace-mixed/docs/propose/feature-done/03-tasks.md",
@@ -51,6 +51,66 @@
         {
           "name": "原有功能說明內容保留",
           "check": "spec.md still contains the original '## 報表匯出' section and its description after ## 已完成 is added"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "sync-widget-test-tags",
+      "prompt": "propose-sync，規格文檔：propose-sync/evals/files/workspace-widget-tags/spec.md",
+      "expected_output": "掃描 ui-complete（混合 [x][widget-test] 與 [x] 任務）和 ui-incomplete（仍有 [ ][widget-test] 任務）；在規格文檔 ## 已完成 區塊只列出 ui-complete（Mobile Shell），不包含 ui-incomplete（月報 UI）。",
+      "files": [
+        "evals/files/workspace-widget-tags/spec.md",
+        "evals/files/workspace-widget-tags/docs/propose/ui-complete/03-tasks.md",
+        "evals/files/workspace-widget-tags/docs/propose/ui-incomplete/03-tasks.md"
+      ],
+      "assertions": [
+        {
+          "name": "ui-complete（Mobile Shell）加入 ## 已完成",
+          "check": "spec.md ## 已完成 table contains ui-complete folder path or Mobile Shell"
+        },
+        {
+          "name": "ui-incomplete（月報 UI）不在 ## 已完成",
+          "check": "spec.md ## 已完成 table does NOT contain ui-incomplete folder path or 月報 UI"
+        },
+        {
+          "name": "[x][widget-test] 與 [x] 混合任務可判定完成",
+          "check": "output or resulting spec treats ui-complete as complete even though its completed tasks include both [x][widget-test] and plain [x]"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "sync-task-line-edge-cases",
+      "prompt": "propose-sync，規格文檔：propose-sync/evals/files/workspace-task-line-rules/spec.md",
+      "expected_output": "掃描 settings-complete、sync-api-incomplete、notification-incomplete 與 missing-tasks；只有 settings-complete 應列入 ## 已完成，因為它包含 [x][widget-test]、[x][bdd]、一般 [x]、未勾選 [manual] 與非 checkbox 說明行但所有非 manual checkbox 任務都已完成；sync-api-incomplete 有 [ ][bdd]、notification-incomplete 有一般 [ ]、missing-tasks 沒有 03-tasks.md，因此三者都不可列入。",
+      "files": [
+        "evals/files/workspace-task-line-rules/spec.md",
+        "evals/files/workspace-task-line-rules/docs/propose/settings-complete/03-tasks.md",
+        "evals/files/workspace-task-line-rules/docs/propose/sync-api-incomplete/03-tasks.md",
+        "evals/files/workspace-task-line-rules/docs/propose/notification-incomplete/03-tasks.md",
+        "evals/files/workspace-task-line-rules/docs/propose/missing-tasks/01-flow.md"
+      ],
+      "assertions": [
+        {
+          "name": "settings-complete 加入 ## 已完成",
+          "check": "spec.md ## 已完成 table contains settings-complete folder path or 設定頁 Widget"
+        },
+        {
+          "name": "未勾選 [manual] 與非 checkbox 說明行不阻擋完成",
+          "check": "settings-complete is treated as complete even though 03-tasks.md contains an unchecked [manual] task and a non-checkbox bullet"
+        },
+        {
+          "name": "[ ][bdd] 未完成任務排除功能",
+          "check": "spec.md ## 已完成 table does NOT contain sync-api-incomplete folder path or 同步 API"
+        },
+        {
+          "name": "一般 [ ] 未完成任務排除功能",
+          "check": "spec.md ## 已完成 table does NOT contain notification-incomplete folder path or 通知 UI"
+        },
+        {
+          "name": "缺少 03-tasks.md 排除功能",
+          "check": "spec.md ## 已完成 table does NOT contain missing-tasks folder path or 歷史資料匯入"
         }
       ]
     }
