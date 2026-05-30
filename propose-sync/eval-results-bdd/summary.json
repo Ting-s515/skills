@@ -1,6 +1,6 @@
 {
-  "passed": 15,
-  "total": 15,
+  "passed": 18,
+  "total": 18,
   "evals": [
     {
       "id": "1",
@@ -9,7 +9,7 @@
       "total": 4,
       "exit_code": 0,
       "timed_out": false,
-      "duration_seconds": 75.99337601661682,
+      "duration_seconds": 75.31814646720886,
       "output_dir": "propose-sync/eval-results-bdd/eval-1-sync-mixed-status"
     },
     {
@@ -19,7 +19,7 @@
       "total": 3,
       "exit_code": 0,
       "timed_out": false,
-      "duration_seconds": 79.17422246932983,
+      "duration_seconds": 75.29019904136658,
       "output_dir": "propose-sync/eval-results-bdd/eval-2-create-no-existing-block"
     },
     {
@@ -29,7 +29,7 @@
       "total": 3,
       "exit_code": 0,
       "timed_out": false,
-      "duration_seconds": 70.33237361907959,
+      "duration_seconds": 96.85827231407166,
       "output_dir": "propose-sync/eval-results-bdd/eval-3-sync-widget-test-tags"
     },
     {
@@ -39,8 +39,18 @@
       "total": 5,
       "exit_code": 0,
       "timed_out": false,
-      "duration_seconds": 93.73996877670288,
+      "duration_seconds": 80.14789724349976,
       "output_dir": "propose-sync/eval-results-bdd/eval-4-sync-task-line-edge-cases"
+    },
+    {
+      "id": "5",
+      "name": "sync-case-insensitive-tags",
+      "passed": 3,
+      "total": 3,
+      "exit_code": 0,
+      "timed_out": false,
+      "duration_seconds": 91.796706199646,
+      "output_dir": "propose-sync/eval-results-bdd/eval-5-sync-case-insensitive-tags"
     }
   ]
 }

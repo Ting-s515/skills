@@ -1,6 +1,6 @@
-propose-sync 完成：
+propose-sync 完成。
 
-同步至：[spec.md](C:/Users/tenns/AppData/Local/Temp/propose-sync-workspace-mixed-8ud3fab1/workspace/spec.md:1)
+同步至：`C:\Users\tenns\AppData\Local\Temp\propose-sync-workspace-mixed-y4ddxaii\workspace\spec.md`
 
 已新增至 `## 已完成`：
 
@@ -10,6 +10,4 @@ propose-sync 完成：
 
 - `feature-incomplete`：仍有未勾選的非 `[manual]` 任務
 
-驗證：已重新讀取 `spec.md` 確認內容更新完成。
-Code Review / Build 跳過原因：本次只修改 `.md` 文檔。
-Git commit 跳過原因：你明確要求不要執行 `git commit`；另外此 workspace 也不是 git repository。
+本次只修改 Markdown 規格文檔，build 跳過；Code Review 跳過原因：本次變更僅有文檔檔案。未執行 git commit：你已明確要求不要 commit，且此 workspace 不是 git repository。

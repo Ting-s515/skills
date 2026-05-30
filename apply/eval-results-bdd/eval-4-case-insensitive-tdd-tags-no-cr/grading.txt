@@ -1,0 +1,4 @@
+E1: PASS - `T1` 的 `[bDd]` 被保留為既有 BDD 狀態處理，未對 T1 重新撰寫測試。
+E2: PASS - `T_manual` 的 `[MANUAL]` 被辨識為人工任務，未納入自動測試與實作。
+E3: PASS - `T2` 先新增 BDD 測試並標記 `[BDD]`，確認紅燈後才開始實作 `formatCurrency`。
+E4: PASS - `03-tasks.md` 目前只使用 `T1/T2 [x][BDD]` 與 `T_manual [MANUAL]`，輸出與任務檔未產生額外完成標記或審查流程文字。

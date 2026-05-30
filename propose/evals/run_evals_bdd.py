@@ -130,13 +130,25 @@ def run_codex(command: list[str], prompt: str, output_file: Path, timeout: int) 
     try:
         stdout, _ = process.communicate(input=prompt, timeout=timeout)
         output_file.write_text(stdout, encoding="utf-8")
+        strip_trailing_whitespace_file(output_file)
         return process.returncode, False
     except subprocess.TimeoutExpired as exc:
         process.kill()
         stdout, _ = process.communicate()
         partial = exc.output or stdout or ""
         output_file.write_text(f"{partial}\n[timeout] killed after {timeout}s\n", encoding="utf-8")
+        strip_trailing_whitespace_file(output_file)
         return -1, True
+
+
+def strip_trailing_whitespace_file(path: Path) -> None:
+    if not path.is_file():
+        return
+    text = path.read_text(encoding="utf-8", errors="replace")
+    cleaned = re.sub(r"[ \t]+(\r?\n)", r"\1", text)
+    cleaned = re.sub(r"(\r?\n){2,}$", "\n", cleaned)
+    if cleaned != text:
+        path.write_text(cleaned, encoding="utf-8")
 
 
 def parse_grades(text: str, count: int) -> list[tuple[str, str]]:
@@ -177,6 +189,8 @@ def run_eval(eval_case: dict, skill: str, timeout: int) -> EvalResult:
             "\n".join(f"E{i + 1}: {status} - {evidence}" for i, (status, evidence) in enumerate(grades)) + "\n",
             encoding="utf-8",
         )
+        strip_trailing_whitespace_file(case_dir / "grading.txt")
+        strip_trailing_whitespace_file(last_message)
         return EvalResult(eval_id, eval_name, exit_code, timed_out, duration, grades, case_dir)
     finally:
         shutil.rmtree(workspace.parent, ignore_errors=True)

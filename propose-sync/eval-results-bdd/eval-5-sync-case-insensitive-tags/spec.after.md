@@ -1,0 +1,21 @@
+## 已完成
+
+| 功能 | 資料夾 |
+| ---------- | ------------------------------------ |
+| 大小寫混用的完成標記應可被同步為已完成。 | `docs/propose/mixed-case-complete/` |
+
+---
+
+# 大小寫標記同步規格
+
+## 大小寫標記完成
+
+大小寫混用的完成標記應可被同步為已完成。
+
+> propose: `docs/propose/mixed-case-complete/`
+
+## 大小寫標記未完成
+
+大小寫混用的未完成標記仍應阻擋同步。
+
+> propose: `docs/propose/mixed-case-incomplete/`

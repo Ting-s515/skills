@@ -1,0 +1,2331 @@
+OpenAI Codex v0.135.0
+--------
+workdir: C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: danger-full-access
+reasoning effort: high
+reasoning summaries: none
+session id: 019e77b2-8ff8-77c1-943e-95e3dfa2da24
+--------
+user
+---
+name: apply
+description: >
+  當使用者指定 propose 產出的功能資料夾路徑，並要求開始或繼續實作時，必須載入此技能。
+  從路徑自動推斷根路徑，讀取資料夾下的三份文檔，依 TDD 流程先逐一撰寫測試，再實作未完成任務並更新 checkbox 狀態。
+  觸發情境包含但不限於：「apply」、「開始實作」、「繼續實作」、「apply frontend/docs/propose/feature-name」、
+  「apply backend/docs/propose/feature-name」、「apply docs/propose/feature-name」、「按照任務清單實作」。
+  使用者通常會在新 session 中指定功能路徑來呼叫此技能，不依賴 propose 的對話 context。
+---
+
+# Apply
+
+依照 `propose` 產出的三份文檔，以 TDD 流程逐一撰寫測試、實作任務並更新完成狀態。
+
+## 前置確認
+
+### 根路徑與文檔定位
+
+從使用者提供的路徑或指令中自動推斷根路徑 `{root}`，依序嘗試：
+
+1. 路徑包含 `frontend/` 前綴 → `{root}` = `frontend`
+2. 路徑包含 `backend/` 前綴 → `{root}` = `backend`
+3. 未指定前綴 → 依序嘗試 `frontend/docs/propose/<feature-name>/`、`backend/docs/propose/<feature-name>/`、`docs/propose/<feature-name>/`，找到三份文檔（`01-flow.md`、`02-gherkin.md`、`03-tasks.md`）的路徑即為正確根路徑
+
+三個路徑都找不到文檔，才詢問使用者確認路徑。
+
+---
+
+## 執行流程
+
+### 1. 載入 context
+
+讀取三份文檔：
+
+- `01-flow.md`：了解業務邏輯與邊界
+- `02-gherkin.md`：了解每個任務的完成標準
+- `03-tasks.md`：取得任務清單，依以下格式判斷狀態：
+  - 所有方括號標記皆採大小寫不敏感比對，例如 `[bdd]`、`[BDD]`、`[Bdd]` 視為相同標記
+  - `- [ ] Tx:` → 測試尚未撰寫，實作尚未開始
+  - `- [BDD] Tx:` → 測試已撰寫，等待實作
+  - `- [x][BDD] Tx:` → 測試與實作已完成，測試已通過
+  - `- [x] Tx:` → 舊版標記，視為實作已完成但尚未依 TDD 流程補齊 BDD 狀態
+  - `- [x][bdd] Tx:` → 舊版完成標記，視為已完成；若本次需要編輯該行，統一更新為 `[x][BDD]`
+
+### 2. 測試先行階段
+
+依照 `03-tasks.md` 的任務順序，先為所有一般任務（無 `[manual]` 標記）逐一撰寫測試。只要仍有一般任務未標記 `[BDD]`、`[x][BDD]` 或舊版 `[x][bdd]`，不得開始實作任何任務。
+
+1. 告知使用者目前執行哪個任務（`T1: <描述>`）
+2. 使用 **Skill tool** 呼叫 `bdd-unit-test`，依 `02-gherkin.md` 與該任務描述撰寫該任務的 BDD 行為測試
+3. `02-gherkin.md` 為**唯讀文件，禁止修改**
+4. 若發現 `02-gherkin.md` 中的行為定義有誤（如邏輯矛盾、與實作架構根本衝突），**必須立即停止，回報給使用者討論**，等待確認後再繼續，禁止自行修改 `02-gherkin.md`
+5. 測試撰寫完成後，將 `03-tasks.md` 中該任務的 `[ ]` 更新為 `[BDD]`
+6. 若專案已有可執行的目標測試指令，先執行該測試確認測試檔可被載入；測試因尚未實作而失敗是 TDD 的預期紅燈，但語法錯誤、測試框架設定錯誤或與需求無關的錯誤必須先修正
+7. 宣告「Tx 測試完成」，直接繼續下一個任務（不等待使用者確認）
+
+若任務有依賴關係（`依賴 Tx`），測試階段只需要依任務順序撰寫測試，不要求依賴任務已完成實作。
+
+### 3. 逐任務實作
+
+所有需要自動處理的一般任務都已標記 `[BDD]`、`[x][BDD]` 或舊版 `[x][bdd]` 後，才進入實作階段。依照 `03-tasks.md` 的任務順序，每次實作一個任務：
+
+1. 告知使用者目前實作哪個任務（`T1: <描述>`）
+2. 實作該任務，依照 `01-flow.md` 的邏輯、`02-gherkin.md` 的驗收條件與已撰寫的 BDD 測試
+3. 實作完成後，執行對應測試；若測試失敗，自動分析錯誤並修正**實作程式碼**（不修改 `02-gherkin.md`），重複執行直到該任務相關測試通過
+4. 測試通過後，將 `03-tasks.md` 中該任務的 `[BDD]` 更新為 `[x][BDD]`
+5. 產生該任務的 commit message（格式：`<type>: <description>`）
+6. 宣告「Tx 完成」，直接繼續下一個任務（不等待使用者確認）
+
+若任務有依賴關係（`依賴 Tx`），實作階段必須先確認依賴任務已完成（`[x][BDD]` 或舊版 `[x][bdd]`）再執行。
+
+### 4. 實作規範
+
+遵循專案 `CLAUDE.md` 的規範：
+
+- 禁止三元嵌套
+- 需要加註解的地方：後端業務邏輯、前端邏輯判斷、hook 邏輯、工具函式邏輯
+- 不加註解：純 UI 樣式、簡單賦值
+
+---
+
+## 全部完成後
+
+所有一般任務（無 `[manual]` 標記）皆為 `[x][BDD]` 或舊版 `[x][bdd]` 後，執行一次整體驗證：
+
+- 執行本次功能相關的完整測試指令，確認所有已撰寫的 BDD 測試通過
+- 若測試失敗，自動分析錯誤並修正**實作程式碼**或測試中與規格不一致的部分；不得修改 `02-gherkin.md`
+- 驗證通過後，向使用者回覆完成訊息，說明所有一般任務已依 TDD 流程完成測試、實作與驗證
+
+---
+
+## 中途繼續
+
+若使用者在任務進行到一半時重新開啟對話：
+
+- 讀取 `03-tasks.md`，依整體狀態決定行動：
+  - 所有一般任務皆為 `[x][BDD]` 或舊版 `[x][bdd]`：全部完成，告知使用者即可
+  - 存在 `[ ]` 任務：回到「測試先行階段」，從第一個 `[ ]` 任務開始補測試；不得先實作後面的 `[BDD]` 任務
+  - 不存在 `[ ]`，但存在 `[BDD]` 任務：所有待寫測試已完成，從第一個 `[BDD]` 任務進入「逐任務實作」
+  - 存在舊版 `[x]` 任務：視為舊流程殘留，先為該任務補齊或驗證 BDD 測試，再依實際狀態更新為 `[x][BDD]`
+- 告知使用者目前進度，例如：「T1、T2 已完成測試標記 `[BDD]`，T3 尚未撰寫測試，先從 T3 補測試」
+
+
+---
+
+Apply the above apply skill instructions to this isolated eval workspace.
+
+使用者請求：
+apply apply/evals/files/workspace-partial/docs/propose/feature-partial
+
+執行規則：
+- 直接執行 apply，不要等待使用者確認。
+- 可以讀寫目前隔離工作區內的檔案。
+- 不要執行 git commit。
+- 若需要呼叫 bdd-unit-test，請依 apply 技能流程執行；本 eval 重點是流程順序與 task 標記。
+
+完成後請輸出任務結果，接著輸出：
+
+---
+## Grading
+請逐條評分以下 expectations，格式固定為：
+E1: PASS - 證據
+E1: FAIL - 原因
+
+E1. T1 舊狀態被辨識並補齊 BDD 狀態: transcript indicates T1 is already implemented or in legacy [x] state and verifies or updates its BDD status instead of re-creating currency.js from scratch
+E2. 先為 T2 撰寫測試: transcript shows T2 test-writing via bdd-unit-test before T2 implementation
+E3. 測試標記完成後才建立 T2 匯出檔: transcript shows index.js implementation starts after T2 is marked [BDD]
+E4. 呼叫 bdd-unit-test skill: transcript shows calling bdd-unit-test skill during the test-writing phase, before implementation
+E5. T2 最終為 [x][BDD]: 03-tasks.md T2 is updated from [ ] to [BDD], then to [x][BDD] after the run
+
+codex
+我會依這次明確指定的 eval 規則執行 `apply`：會讀取技能流程與工作區文件、可修改隔離工作區檔案，但不會做 git commit。
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content -Raw C:\\Users\\tenns\\.codex\\skills\\apply\\SKILL.md" in C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content -Raw C:\\Users\\tenns\\.codex\\skills\\bdd-unit-test\\SKILL.md" in C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'Get-ChildItem -Force' in C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace
+ succeeded in 3240ms:
+---
+name: bdd-unit-test
+description: >
+  指定一或多個檔案並要求撰寫單元測試時，必須載入此技能。
+  根據 BDD（行為驅動開發）原則，分析指定檔案的公開方法與邏輯分支，產出涵蓋 Happy Path、Edge Cases、Error Cases 的測試。
+  觸發情境包含但不限於：「幫這個檔案寫單測」、「write unit test」、「add unit test」。
+  即使只說「寫測試」或「補測試」，只要有指定目標檔案或貼上程式碼片段，也應載入此技能。
+---
+
+# 單元測試撰寫指南（BDD 原則）
+
+## 執行流程
+
+1. **判別語言**：根據檔案副檔名判別程式語言，載入對應範例
+2. **分析原始碼**：讀取一或多個指定檔案，識別所有公開方法、條件分支、邊界情況
+3. **列出測試場景**：使用 BDD 格式列出所有需測試的場景（先輸出給用戶確認）
+4. **撰寫測試**：根據確認的場景撰寫測試程式碼
+5. **輸出測試檔案**：依據語言規範輸出到正確位置
+
+## 測試範圍
+
+### ✅ 包含
+- 純邏輯函數（計算、驗證、轉換）
+- 服務層方法（business logic）
+- 工具函數（utils/helpers）
+- 資料處理（parsing、formatting）
+- 狀態管理邏輯（非 UI 綁定部分）
+
+### ❌ 不包含
+- **UI 畫面測試**：不測試 React/Vue 元件的渲染結果、DOM 結構
+- **視覺回歸測試**：不測試樣式、佈局、截圖比對
+- **E2E 測試**：不測試完整使用者流程、瀏覽器互動
+- **整合測試**：不測試多個模組的整合行為
+
+## 語言判別規則
+
+根據目標檔案的副檔名判別語言，分兩條路徑處理：
+
+### 已知語言（有 reference 範例）
+
+| 副檔名 | 語言 | 載入範例 |
+|--------|------|----------|
+| `.ts`, `.tsx` | TypeScript | `references/typescript-example.test.ts` |
+| `.js`, `.jsx` | JavaScript | `references/typescript-example.test.ts` |
+| `.cs` | C# | `references/csharp-example-test.cs` |
+| `.java` | Java | `references/java-example-test.java` |
+| `.py` | Python | `references/python-example-test.py` |
+| `.dart` | Flutter/Dart | `references/flutter-example.dart` |
+
+**執行步驟：**
+1. 取得目標檔案的副檔名
+2. 根據上表判別語言
+3. 讀取對應的 example 檔案作為撰寫測試的參考
+4. 依照該語言的規範（框架、命名、輸出位置）產出測試
+
+### 未知語言（無 reference 範例，fallback）
+
+副檔名不在上表時，直接以 LLM 通用知識處理：
+- 根據副檔名推斷語言與該語言主流測試框架（如 `.dart` → `flutter_test`、`.rb` → RSpec、`.go` → `testing` 套件）
+- 套用相同的 BDD 原則、Given/When/Then 命名、場景分類（Happy / Edge / Error）
+- 依該語言慣例決定檔案命名與輸出位置
+- 不讀取任何 reference 檔案，不需告知使用者
+
+## BDD 核心原則
+
+### Given-When-Then 結構
+```
+Given [前置條件/初始狀態]
+When  [執行的動作/觸發事件]
+Then  [預期結果/驗證行為]
+```
+
+### 測試場景分類（必須涵蓋）
+| 分類 | 說明 | 範例 |
+|------|------|------|
+| ✅ Happy Path | 正常流程、預期輸入 | 有效參數、正確格式 |
+| ⚠️ Edge Cases | 邊界條件 | 空值、最大/最小值、零 |
+| ❌ Error Cases | 異常處理 | 無效輸入、例外拋出 |
+| 🔄 State Changes | 狀態轉換 | 初始化、重置、更新 |
+
+### 測試命名規範
+採用 `Given條件_When動作_Should預期行為` 格式：
+```
+GivenNoItems_WhenGetList_ShouldReturnEmptyList
+GivenNullInput_WhenValidate_ShouldThrowException
+GivenItemsExist_WhenCalculateTotal_ShouldReturnCorrectSum
+```
+
+---
+
+## 語言別測試規範
+
+### 🟨 JavaScript/TypeScript (.ts, .tsx)
+| 項目 | 規範 |
+|------|------|
+| 框架 | Jest |
+| 檔案命名 | `[ComponentName].test.tsx` |
+| 輸出位置 | 同目錄的 `__tests__/` 資料夾 |
+| Mock 工具 | `jest.mock()` |
+| 斷言風格 | `expect(result).toBe(expected)` |
+
+**結構範例：**
+```typescript
+describe('模組/元件名稱', () => {
+  describe('方法名稱', () => {
+    it('Given[條件]_When[動作]_Should[預期行為]', () => {
+      // Given - 準備測試資料
+      const input = { ... };
+
+      // When - 執行被測方法
+      const result = targetMethod(input);
+
+      // Then - 驗證結果
+      expect(result).toEqual(expected);
+    });
+  });
+});
+```
+
+### 🟦 C# (.cs)
+| 項目 | 規範 |
+|------|------|
+| 框架 | xUnit |
+| 檔案命名 | `[ClassName]Test.cs` |
+| 輸出位置 | 對應的 `.Tests` 專案資料夾 |
+| Mock 工具 | Moq |
+| 斷言風格 | `Assert.Equal(expected, actual)` |
+
+**結構範例：**
+```csharp
+public class UserServiceTests
+{
+    [Fact]
+    public void GivenUserExists_WhenGetUser_ShouldReturnUser()
+    {
+        // Given
+        var mockRepo = new Mock<IUserRepository>();
+        mockRepo.Setup(r => r.GetById(1)).Returns(new User { Id = 1 });
+        var service = new UserService(mockRepo.Object);
+
+        // When
+        var result = service.GetUser(1);
+
+        // Then
+        Assert.NotNull(result);
+        Assert.Equal(1, result.Id);
+    }
+}
+```
+
+### ☕ Java (.java)
+| 項目 | 規範 |
+|------|------|
+| 框架 | JUnit 5 / TestNG |
+| 檔案命名 | `[ClassName]Test.java` |
+| 輸出位置 | `src/test/java/` 對應套件路徑 |
+| Mock 工具 | Mockito, MockK (Kotlin) |
+| 斷言風格 | AssertJ: `assertThat(result).isEqualTo(expected)` |
+
+**結構範例：**
+```java
+@ExtendWith(MockitoExtension.class)
+class OrderServiceTest {
+
+    @Mock
+    private OrderRepository orderRepository;
+
+    @InjectMocks
+    private OrderService orderService;
+
+    @Test
+    @DisplayName("應該在訂單存在時返回訂單")
+    void GivenOrderExists_WhenGetOrder_ShouldReturnOrder() {
+        // Given - 設定 mock 行為
+        Order expected = new Order(1L, "item");
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(expected));
+
+        // When - 執行被測方法
+        Order result = orderService.getOrder(1L);
+
+        // Then - 驗證結果
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(1L);
+    }
+}
+```
+
+### 🐍 Python (.py)
+| 項目 | 規範 |
+|------|------|
+| 框架 | pytest / unittest |
+| 檔案命名 | `test_[module_name].py` |
+| 輸出位置 | `tests/` 資料夾，保持與 src 相同結構 |
+| Mock 工具 | `unittest.mock`, `pytest-mock` |
+| 斷言風格 | `assert result == expected` |
+
+**結構範例：**
+```python
+import pytest
+from unittest.mock import Mock, patch
+
+class TestUserService:
+    """UserService 單元測試"""
+
+    def test_GivenUserExists_WhenGetUser_ShouldReturnUserData(self):
+        """應該在用戶存在時返回用戶資料"""
+        # Given
+        mock_repo = Mock()
+        mock_repo.get_by_id.return_value = {"id": 1, "name": "Test"}
+        service = UserService(mock_repo)
+
+        # When
+        result = service.get_user(1)
+
+        # Then
+        assert result is not None
+        assert result["id"] == 1
+```
+
+### 🐦 Flutter/Dart (.dart)
+| 項目 | 規範 |
+|------|------|
+| 框架 | flutter_test + mocktail |
+| 檔案命名 | `[class_name]_test.dart` |
+| 輸出位置 | `test/` 資料夾，保持與 lib 相同結構 |
+| Mock 工具 | mocktail（`class MockX extends Mock implements X {}`） |
+| 斷言風格 | `expect(result, equals(expected))` |
+
+**結構範例：**
+```dart
+void main() {
+  late CartService cartService;
+  late MockProductRepository mockProductRepo;
+
+  setUp(() {
+    mockProductRepo = MockProductRepository();
+    cartService = CartService(mockProductRepo);
+  });
+
+  group('CartService', () {
+    group('addItem', () {
+      test('GivenProductExists_WhenAddItem_ShouldAddToCart', () {
+        // Given
+        when(() => mockProductRepo.findById(1)).thenReturn(product);
+
+        // When
+        final result = cartService.addItem(1, 2);
+
+        // Then
+        expect(result.items, hasLength(1));
+      });
+    });
+  });
+}
+```
+
+---
+
+## Mock 使用原則
+
+### 何時使用 Mock
+- 📦 外部套件依賴（npm packages、第三方函式庫）
+- 🌐 外部 API 呼叫（HTTP requests）
+- 🗄️ 資料庫操作
+- 📁 檔案系統存取
+- ⏰ 時間相關函數（Date.now, datetime）
+- 🎲 隨機數生成
+
+### Mock 最佳實踐
+1. **只 Mock 直接依賴**：不要 Mock 被測單元的內部實作
+2. **驗證互動**：確認 Mock 被正確呼叫（次數、參數）
+3. **重置狀態**：每個測試後清理 Mock 狀態
+4. **避免過度 Mock**：過多 Mock 可能表示耦合度太高
+
+---
+
+## 輸出格式
+
+執行此 skill 時，請依序輸出：
+
+### 1️⃣ 場景分析
+```markdown
+## 📋 測試場景分析
+
+**目標檔案：** `path/to/file.ts`, `path/to/other.ts`（單檔時僅列一個）
+**識別的公開方法：** methodA, methodB, methodC
+
+### 測試場景列表
+
+| # | 方法 | 場景類型 | 描述 |
+|---|------|----------|------|
+| 1 | methodA | ✅ Happy | 當輸入有效時應返回正確結果 |
+| 2 | methodA | ⚠️ Edge | 當輸入為空時應返回空陣列 |
+| 3 | methodA | ❌ Error | 當輸入為 null 時應拋出例外 |
+
+確認以上場景後，我將開始撰寫測試。
+```
+
+### 2️⃣ 測試程式碼
+依據確認的場景，輸出完整測試檔案，包含：
+- 必要的 import
+- 完整的測試結構
+- 每個測試的 Given/When/Then 註解
+
+---
+
+## 參考範例
+
+根據判別的語言，讀取對應的範例檔案：
+
+- **TypeScript/JavaScript**: `references/typescript-example.test.ts`
+- **C#**: `references/csharp-example-test.cs`
+- **Java**: `references/java-example-test.java`
+- **Python**: `references/python-example-test.py`
+- **Flutter/Dart**: `references/flutter-example.dart`
+
+**注意**：撰寫測試前必須先讀取對應語言的範例，確保遵循一致的風格與結構。
+
+ succeeded in 3466ms:
+---
+name: apply
+description: >
+  當使用者指定 propose 產出的功能資料夾路徑，並要求開始或繼續實作時，必須載入此技能。
+  從路徑自動推斷根路徑，讀取資料夾下的三份文檔，自動逐一實作未完成任務並更新 checkbox 狀態。
+  觸發情境包含但不限於：「apply」、「開始實作」、「繼續實作」、「apply frontend/docs/propose/feature-name」、
+  「apply backend/docs/propose/feature-name」、「apply docs/propose/feature-name」、「按照任務清單實作」。
+  使用者通常會在新 session 中指定功能路徑來呼叫此技能，不依賴 propose 的對話 context。
+---
+
+# Apply
+
+依照 `propose` 產出的三份文檔，逐一實作任務並更新完成狀態。
+
+## 前置確認
+
+### 根路徑與文檔定位
+
+從使用者提供的路徑或指令中自動推斷根路徑 `{root}`，依序嘗試：
+
+1. 路徑包含 `frontend/` 前綴 → `{root}` = `frontend`
+2. 路徑包含 `backend/` 前綴 → `{root}` = `backend`
+3. 未指定前綴 → 依序嘗試 `frontend/docs/propose/<feature-name>/`、`backend/docs/propose/<feature-name>/`、`docs/propose/<feature-name>/`，找到三份文檔（`01-flow.md`、`02-gherkin.md`、`03-tasks.md`）的路徑即為正確根路徑
+
+三個路徑都找不到文檔，才詢問使用者確認路徑。
+
+---
+
+## 執行流程
+
+### 1. 載入 context
+
+讀取三份文檔：
+
+- `01-flow.md`：了解業務邏輯與邊界
+- `02-gherkin.md`：了解每個任務的完成標準
+- `03-tasks.md`：取得任務清單，依以下格式判斷狀態：
+  - `- [ ] Tx:` → 未開始
+  - `- [x] Tx:` → 實作完成，BDD 測試尚未執行
+  - `- [x][bdd] Tx:` → 實作 + BDD 測試全部通過，跳過
+
+### 2. 逐任務實作
+
+依照 `03-tasks.md` 的任務順序，每次實作一個任務：
+
+1. 告知使用者目前執行哪個任務（`T1: <描述>`）
+2. 實作該任務，依照 `01-flow.md` 的邏輯與 `02-gherkin.md` 的驗收條件
+3. 實作完成後，將 `03-tasks.md` 中該任務的 `[ ]` 更新為 `[x]`
+4. 產生該任務的 commit message（格式：`<type>: <description>`）
+5. 使用 Agent tool 開啟 subagent 執行 code review（每個單一任務完成後立即執行）：
+   - 規格文檔路徑：`{root}/docs/propose/<feature-name>/`（含三份文檔）
+   - use `code-reviewer` skill 執行審查
+6. subagent 回傳結果後，**立即** 用 Edit tool 將 `03-tasks.md` 中該任務的 `[x]` 改為 `[x][cr]`，作為 code review 已完成的持久記錄。這一步不可遺漏——subagent 完成不等於 checkbox 已更新，必須主動執行 Edit。
+7. 宣告「Tx 完成 ✓」，直接繼續下一個任務（不等待使用者確認）
+
+若任務有依賴關係（`依賴 Tx`），必須先確認依賴任務已完成（`[x]` 或 `[x][bdd]`）再執行。
+
+### 3. 實作規範
+
+遵循專案 `CLAUDE.md` 的規範：
+
+- 禁止三元嵌套
+- 需要加註解的地方：後端業務邏輯、前端邏輯判斷、hook 邏輯、工具函式邏輯
+- 不加註解：純 UI 樣式、簡單賦值
+
+---
+
+## 全部完成後
+
+所有一般任務（無 `[manual]` 標記）皆為 `[x]` 後，執行以下步驟：
+
+### 撰寫 BDD 行為測試
+
+使用 **Skill tool** 呼叫 `bdd-unit-test`，依 `02-gherkin.md` 中定義的行為撰寫測試：
+
+- `02-gherkin.md` 為**唯讀文件，禁止修改**
+- 若發現 `02-gherkin.md` 中的行為定義有誤（如邏輯矛盾、與實作架構根本衝突），**必須立即停止，回報給使用者討論**，等待確認後再繼續，禁止自行修改 `02-gherkin.md`
+- 測試撰寫完成後，執行測試指令
+- 若測試失敗，自動分析錯誤並修正**實作程式碼**（不修改 `02-gherkin.md`），重複執行直到所有測試通過
+
+### 測試全數通過後：更新完成狀態
+
+BDD 測試全數通過後，使用 **Edit tool** 將 `{root}/docs/propose/<feature-name>/03-tasks.md` 所有一般任務的 `[x]` 改為 `[x][bdd]`（`[manual]` 任務不動）。
+
+更新完成後，向使用者回覆完成訊息，說明所有任務已通過 BDD 測試驗證。
+
+---
+
+## 中途繼續
+
+若使用者在任務進行到一半時重新開啟對話：
+
+- 讀取 `03-tasks.md`，依整體狀態決定行動：
+  - 所有任務皆為 `[x][bdd]`：全部完成，告知使用者即可
+  - 存在 `[ ]` 任務：從第一個 `[ ]` 繼續實作，完成後再執行「撰寫 BDD 行為測試 → 更新 `[x][bdd]`」的完整流程
+  - 所有任務皆為 `[x]`（無 `[x][bdd]`）：實作已完成但 BDD 尚未執行，從「撰寫 BDD 行為測試」接續執行，通過後用 Edit tool 更新所有 `[x]` → `[x][bdd]`
+- 告知使用者目前進度，例如：「T1、T2 已完成實作，T3 尚未開始，從 T3 繼續實作」
+
+
+ succeeded in 3621ms:
+
+    Directory: C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace
+
+[32;1mMode   [0m[32;1m              LastWriteTime[0m [32;1;3m        Length[0m[32;1m Name[0m
+[32;1m----   [0m [32;1m             -------------[0m [32;1m        ------[0m [32;1m----[0m
+d----         2026/5/30 下午 03:04                [44;1mapply[0m
+
+
+codex
+本機 `apply` 技能內容與這次 prompt 內嵌版本不同；我會以使用者這次提供的 eval 版流程為準，因為它明確要求 TDD、任務標記順序與不 commit。接著先讀三份 propose 文件與現有檔案狀態。
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content -Raw apply\\evals\\files\\workspace-partial\\docs\\propose\\feature-partial\\01-flow.md" in C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "rg --files apply\\evals\\files\\workspace-partial" in C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content -Raw apply\\evals\\files\\workspace-partial\\docs\\propose\\feature-partial\\03-tasks.md" in C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content -Raw apply\\evals\\files\\workspace-partial\\docs\\propose\\feature-partial\\02-gherkin.md" in C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace
+ succeeded in 1622ms:
+# 功能流程：formatCurrency 工具函式
+
+## 功能概述
+提供一個純函式，將數字格式化為台幣貨幣字串。
+
+## 流程說明
+
+### formatCurrency(amount, options)
+
+輸入：
+- amount (number)：要格式化的金額
+- options.symbol (string)：貨幣符號（預設 "NT$"）
+- options.decimals (number)：小數位數（預設 0）
+
+輸出：格式化後的字串
+
+邏輯：
+1. 若 amount 為 NaN 或 Infinity → 回傳 `${symbol}0`
+2. 依 decimals 對 amount 四捨五入
+3. 整數部分加上千分位逗號
+4. 前綴貨幣符號
+
+範例：
+- formatCurrency(1234) → "NT$1,234"
+- formatCurrency(1234.567, { decimals: 2 }) → "NT$1,234.57"
+- formatCurrency(NaN) → "NT$0"
+- formatCurrency(500, { symbol: "$" }) → "$500"
+- formatCurrency(500) → "NT$500"
+
+
+ succeeded in 2620ms:
+apply\evals\files\workspace-partial\package.json
+apply\evals\files\workspace-partial\src\utils\currency.js
+apply\evals\files\workspace-partial\docs\propose\feature-partial\03-tasks.md
+apply\evals\files\workspace-partial\docs\propose\feature-partial\02-gherkin.md
+apply\evals\files\workspace-partial\docs\propose\feature-partial\01-flow.md
+
+ succeeded in 3381ms:
+# 任務清單：formatCurrency 工具函式
+
+## 參考文檔
+- 結構化流程：docs/propose/feature-partial/01-flow.md
+- 驗收條件：docs/propose/feature-partial/02-gherkin.md
+
+## 任務
+
+- [x][BDD] T1: 實作 formatCurrency 函式（影響：`src/utils/currency.js`）
+- [ ] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
+
+
+ succeeded in 4235ms:
+# Gherkin：formatCurrency 工具函式
+
+Feature: formatCurrency 貨幣格式化
+
+  Scenario: 格式化整數金額（千分位）
+    Given 輸入金額 1234
+    When 呼叫 formatCurrency(1234)
+    Then 回傳 "NT$1,234"
+
+  Scenario: 格式化帶小數的金額
+    Given 輸入金額 1234.567，設定 decimals: 2
+    When 呼叫 formatCurrency(1234.567, { decimals: 2 })
+    Then 回傳 "NT$1,234.57"
+
+  Scenario: 輸入無效數字
+    Given 輸入 NaN
+    When 呼叫 formatCurrency(NaN)
+    Then 回傳 "NT$0"
+
+  Scenario: 自訂貨幣符號
+    Given 輸入金額 500，symbol 設為 "$"
+    When 呼叫 formatCurrency(500, { symbol: "$" })
+    Then 回傳 "$500"
+
+  Scenario: 小金額無千分位
+    Given 輸入金額 500
+    When 呼叫 formatCurrency(500)
+    Then 回傳 "NT$500"
+
+
+codex
+目前狀態符合中途繼續：T1 已是 `[x][BDD]`，不會重建 `currency.js`；T2 還是 `[ ]`，所以先進入測試先行階段，先為 T2 補 BDD 測試再實作匯出檔。
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content -Raw apply\\evals\\files\\workspace-partial\\src\\utils\\currency.js" in C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content -Raw apply\\evals\\files\\workspace-partial\\package.json" in C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-ChildItem -Recurse -Force apply\\evals\\files\\workspace-partial\\src" in C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace
+ succeeded in 1327ms:
+export function formatCurrency(amount, options = {}) {
+  const { symbol = 'NT$', decimals = 0 } = options;
+  if (isNaN(amount) || !isFinite(amount)) {
+    return `${symbol}0`;
+  }
+  const fixed = Number(amount).toFixed(decimals);
+  const parts = fixed.split('.');
+  const intPart = Number(parts[0]).toLocaleString('en-US');
+  return parts[1] ? `${symbol}${intPart}.${parts[1]}` : `${symbol}${intPart}`;
+}
+
+
+ succeeded in 2047ms:
+{
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}
+
+
+ succeeded in 2931ms:
+
+    Directory: C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace\a
+pply\evals\files\workspace-partial\src
+
+[32;1mMode   [0m[32;1m              LastWriteTime[0m [32;1;3m        Length[0m[32;1m Name[0m
+[32;1m----   [0m [32;1m             -------------[0m [32;1m        ------[0m [32;1m----[0m
+d----         2026/5/30 下午 03:03                [44;1mutils[0m
+
+    Directory: C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace\a
+pply\evals\files\workspace-partial\src\utils
+
+[32;1mMode   [0m[32;1m              LastWriteTime[0m [32;1;3m        Length[0m[32;1m Name[0m
+[32;1m----   [0m [32;1m             -------------[0m [32;1m        ------[0m [32;1m----[0m
+d----         2026/5/30 下午 03:03                [44;1m__tests__[0m
+-a---         2026/5/14 上午 12:13            415 [32;1mcurrency.js[0m
+
+
+2026-05-30T07:05:01.774389Z ERROR codex_core::tools::router: error=Exit code: 1
+Wall time: 1.9 seconds
+Output:
+
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-ChildItem -Recurse -Force apply\\evals\\files\\workspace-partial\\src\\utils\\__tests__" in C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "rg --files apply\\evals\\files\\workspace-partial\\src\\utils\\__tests__" in C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace
+ exited 1 in 1931ms:
+ succeeded in 3503ms:
+codex
+`bdd-unit-test` 技能已載入。現在為 T2 撰寫 BDD 測試，目標是先驗證 `src/utils/index.js` 會匯出既有的 `formatCurrency`，此時預期會因檔案尚未實作而紅燈。
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content -Raw C:\\Users\\tenns\\.codex\\skills\\bdd-unit-test\\references\\typescript-example.test.ts" in C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace
+ succeeded in 1272ms:
+/**
+ * TypeScript/Jest BDD 單元測試範例
+ *
+ * 示範：購物車服務的單元測試
+ * 命名規範：Given條件_When動作_Should預期行為
+ */
+
+import { CartService } from '../CartService';
+import { ProductRepository } from '../ProductRepository';
+
+// Mock 外部依賴
+jest.mock('../ProductRepository');
+
+describe('CartService', () => {
+  // 共用的測試變數
+  let cartService: CartService;
+  let mockProductRepo: jest.Mocked<ProductRepository>;
+
+  // 每個測試前重置狀態
+  beforeEach(() => {
+    mockProductRepo = new ProductRepository() as jest.Mocked<ProductRepository>;
+    cartService = new CartService(mockProductRepo);
+  });
+
+  describe('addItem', () => {
+    it('GivenProductExists_WhenAddItem_ShouldAddToCart', () => {
+      // Given - 產品存在於倉庫中
+      const product = { id: 1, name: 'Apple', price: 100 };
+      mockProductRepo.findById.mockReturnValue(product);
+
+      // When - 將產品加入購物車
+      const result = cartService.addItem(1, 2);
+
+      // Then - 購物車應包含該產品
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]).toEqual({
+        productId: 1,
+        quantity: 2,
+        subtotal: 200,
+      });
+    });
+
+    it('GivenProductNotExists_WhenAddItem_ShouldThrowError', () => {
+      // Given - 產品不存在
+      mockProductRepo.findById.mockReturnValue(null);
+
+      // When & Then - 應拋出 ProductNotFoundError
+      expect(() => cartService.addItem(999, 1)).toThrow('Product not found');
+    });
+
+    it('GivenItemAlreadyInCart_WhenAddSameItem_ShouldIncreaseQuantity', () => {
+      // Given - 購物車已有該產品
+      const product = { id: 1, name: 'Apple', price: 100 };
+      mockProductRepo.findById.mockReturnValue(product);
+      cartService.addItem(1, 2); // 先加入 2 個
+
+      // When - 再加入 3 個
+      const result = cartService.addItem(1, 3);
+
+      // Then - 數量應累加為 5
+      expect(result.items[0].quantity).toBe(5);
+      expect(result.items[0].subtotal).toBe(500);
+    });
+  });
+
+  describe('removeItem', () => {
+    it('GivenItemInCart_WhenRemoveItem_ShouldRemoveFromCart', () => {
+      // Given - 購物車有產品
+      const product = { id: 1, name: 'Apple', price: 100 };
+      mockProductRepo.findById.mockReturnValue(product);
+      cartService.addItem(1, 2);
+
+      // When - 移除該產品
+      const result = cartService.removeItem(1);
+
+      // Then - 購物車應為空
+      expect(result.items).toHaveLength(0);
+    });
+
+    it('GivenItemNotInCart_WhenRemoveItem_ShouldDoNothing', () => {
+      // Given - 購物車為空
+
+      // When - 嘗試移除不存在的產品
+      const result = cartService.removeItem(999);
+
+      // Then - 不應拋出錯誤，購物車保持為空
+      expect(result.items).toHaveLength(0);
+    });
+  });
+
+  describe('calculateTotal', () => {
+    it('GivenEmptyCart_WhenCalculateTotal_ShouldReturnZero', () => {
+      // Given - 空購物車
+
+      // When - 計算總金額
+      const total = cartService.calculateTotal();
+
+      // Then - 總金額應為 0
+      expect(total).toBe(0);
+    });
+
+    it('GivenMultipleItems_WhenCalculateTotal_ShouldReturnCorrectSum', () => {
+      // Given - 購物車有多個產品
+      mockProductRepo.findById
+        .mockReturnValueOnce({ id: 1, name: 'Apple', price: 100 })
+        .mockReturnValueOnce({ id: 2, name: 'Banana', price: 50 });
+
+      cartService.addItem(1, 2);  // 100 * 2 = 200
+      cartService.addItem(2, 3);  // 50 * 3 = 150
+
+      // When - 計算總金額
+      const total = cartService.calculateTotal();
+
+      // Then - 總金額應為 350
+      expect(total).toBe(350);
+    });
+
+    it('GivenTotalExceedsThreshold_WhenCalculateTotal_ShouldApplyDiscount', () => {
+      // Given - 購物車總金額超過折扣門檻 (1000)
+      mockProductRepo.findById.mockReturnValue({ id: 1, name: 'Laptop', price: 500 });
+      cartService.addItem(1, 3);  // 500 * 3 = 1500
+
+      // When - 計算總金額（含 10% 折扣）
+      const total = cartService.calculateTotal();
+
+      // Then - 應套用 10% 折扣：1500 * 0.9 = 1350
+      expect(total).toBe(1350);
+    });
+  });
+});
+
+
+codex
+T2 測試階段：我會新增 `index.test.js`，再把 `03-tasks.md` 的 T2 從 `[ ]` 更新成 `[BDD]`；完成測試標記後才會建立 `src/utils/index.js`。
+apply patch
+patch: completed
+C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace\apply\evals\files\workspace-partial\docs\propose\feature-partial\03-tasks.md
+C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace\apply\evals\files\workspace-partial\src\utils\__tests__\index.test.js
+diff --git a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+index 5c9d439753fa5d28d9665de7fef2b804efb24b5f..e8ccfc40fa0928cb6908f6b77872dbca41760616
+--- a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
++++ b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+@@ -7,4 +7,4 @@
+ ## 任務
+
+ - [x][BDD] T1: 實作 formatCurrency 函式（影響：`src/utils/currency.js`）
+-- [ ] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
++- [BDD] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
+diff --git a/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..247d789113d19196964d2b4746b5544f05db2a17
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+@@ -0,0 +1,11 @@
++import { describe, it } from 'node:test';
++import assert from 'node:assert/strict';
++import { formatCurrency } from '../index.js';
++
++describe('utils index exports', () => {
++  it('GivenFormatCurrencyExists_WhenImportFromUtilsIndex_ShouldReturnFormattedCurrency', () => {
++    const result = formatCurrency(1234);
++
++    assert.equal(result, 'NT$1,234');
++  });
++});
+
+diff --git a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+index 5c9d439753fa5d28d9665de7fef2b804efb24b5f..e8ccfc40fa0928cb6908f6b77872dbca41760616
+--- a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
++++ b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+@@ -7,4 +7,4 @@
+ ## 任務
+
+ - [x][BDD] T1: 實作 formatCurrency 函式（影響：`src/utils/currency.js`）
+-- [ ] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
++- [BDD] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
+diff --git a/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..247d789113d19196964d2b4746b5544f05db2a17
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+@@ -0,0 +1,11 @@
++import { describe, it } from 'node:test';
++import assert from 'node:assert/strict';
++import { formatCurrency } from '../index.js';
++
++describe('utils index exports', () => {
++  it('GivenFormatCurrencyExists_WhenImportFromUtilsIndex_ShouldReturnFormattedCurrency', () => {
++    const result = formatCurrency(1234);
++
++    assert.equal(result, 'NT$1,234');
++  });
++});
+
+codex
+T2 測試已建立並標記為 `[BDD]`。現在先執行目標測試確認紅燈原因是尚未實作 `index.js`，不是測試語法或框架設定問題。
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'npm test -- src/utils/__tests__/index.test.js' in C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace\apply\evals\files\workspace-partial
+ exited 1 in 4389ms:
+
+> test
+> node --test src/utils/__tests__/index.test.js
+
+TAP version 13
+# node:internal/modules/esm/resolve:265
+#     throw new ERR_MODULE_NOT_FOUND(
+#           ^
+# Error [ERR_MODULE_NOT_FOUND]: Cannot find module 'C:\\Users\\tenns\\AppData\\Local\\Temp\\apply-eval-m8mj5q0m\\workspace\\apply\\evals\\files\\workspace-partial\\src\\utils\\index.js' imported from C:\\Users\\tenns\\AppData\\Local\\Temp\\apply-eval-m8mj5q0m\\workspace\\apply\\evals\\files\\workspace-partial\\src\\utils\\__tests__\\index.test.js
+#     at finalizeResolution (node:internal/modules/esm/resolve:265:11)
+#     at moduleResolve (node:internal/modules/esm/resolve:933:10)
+#     at defaultResolve (node:internal/modules/esm/resolve:1169:11)
+#     at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:540:12)
+#     at ModuleLoader.resolve (node:internal/modules/esm/loader:509:25)
+#     at ModuleLoader.getModuleJob (node:internal/modules/esm/loader:239:38)
+#     at ModuleWrap.<anonymous> (node:internal/modules/esm/module_job:96:40)
+#     at link (node:internal/modules/esm/module_job:95:36) {
+#   code: 'ERR_MODULE_NOT_FOUND',
+#   url: 'file:///C:/Users/tenns/AppData/Local/Temp/apply-eval-m8mj5q0m/workspace/apply/evals/files/workspace-partial/src/utils/index.js'
+# }
+# Node.js v20.17.0
+# Subtest: C:\\Users\\tenns\\AppData\\Local\\Temp\\apply-eval-m8mj5q0m\\workspace\\apply\\evals\\files\\workspace-partial\\src\\utils\\__tests__\\index.test.js
+not ok 1 - C:\\Users\\tenns\\AppData\\Local\\Temp\\apply-eval-m8mj5q0m\\workspace\\apply\\evals\\files\\workspace-partial\\src\\utils\\__tests__\\index.test.js
+  ---
+  duration_ms: 1842.5619
+  location: 'C:\\Users\\tenns\\AppData\\Local\\Temp\\apply-eval-m8mj5q0m\\workspace\\apply\\evals\\files\\workspace-partial\\src\\utils\\__tests__\\index.test.js:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1847.4453
+
+2026-05-30T07:05:31.164928Z ERROR codex_core::tools::router: error=Exit code: 1
+Wall time: 4.4 seconds
+Output:
+
+> test
+> node --test src/utils/__tests__/index.test.js
+
+TAP version 13
+# node:internal/modules/esm/resolve:265
+#     throw new ERR_MODULE_NOT_FOUND(
+#           ^
+# Error [ERR_MODULE_NOT_FOUND]: Cannot find module 'C:\\Users\\tenns\\AppData\\Local\\Temp\\apply-eval-m8mj5q0m\\workspace\\apply\\evals\\files\\workspace-partial\\src\\utils\\index.js' imported from C:\\Users\\tenns\\AppData\\Local\\Temp\\apply-eval-m8mj5q0m\\workspace\\apply\\evals\\files\\workspace-partial\\src\\utils\\__tests__\\index.test.js
+#     at finalizeResolution (node:internal/modules/esm/resolve:265:11)
+#     at moduleResolve (node:internal/modules/esm/resolve:933:10)
+#     at defaultResolve (node:internal/modules/esm/resolve:1169:11)
+#     at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:540:12)
+#     at ModuleLoader.resolve (node:internal/modules/esm/loader:509:25)
+#     at ModuleLoader.getModuleJob (node:internal/modules/esm/loader:239:38)
+#     at ModuleWrap.<anonymous> (node:internal/modules/esm/module_job:96:40)
+#     at link (node:internal/modules/esm/module_job:95:36) {
+#   code: 'ERR_MODULE_NOT_FOUND',
+#   url: 'file:///C:/Users/tenns/AppData/Local/Temp/apply-eval-m8mj5q0m/workspace/apply/evals/files/workspace-partial/src/utils/index.js'
+# }
+# Node.js v20.17.0
+# Subtest: C:\\Users\\tenns\\AppData\\Local\\Temp\\apply-eval-m8mj5q0m\\workspace\\apply\\evals\\files\\workspace-partial\\src\\utils\\__tests__\\index.test.js
+not ok 1 - C:\\Users\\tenns\\AppData\\Local\\Temp\\apply-eval-m8mj5q0m\\workspace\\apply\\evals\\files\\workspace-partial\\src\\utils\\__tests__\\index.test.js
+  ---
+  duration_ms: 1842.5619
+  location: 'C:\\Users\\tenns\\AppData\\Local\\Temp\\apply-eval-m8mj5q0m\\workspace\\apply\\evals\\files\\workspace-partial\\src\\utils\\__tests__\\index.test.js:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1847.4453
+
+diff --git a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+index 5c9d439753fa5d28d9665de7fef2b804efb24b5f..e8ccfc40fa0928cb6908f6b77872dbca41760616
+--- a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
++++ b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+@@ -7,4 +7,4 @@
+ ## 任務
+
+ - [x][BDD] T1: 實作 formatCurrency 函式（影響：`src/utils/currency.js`）
+-- [ ] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
++- [BDD] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
+diff --git a/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..247d789113d19196964d2b4746b5544f05db2a17
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+@@ -0,0 +1,11 @@
++import { describe, it } from 'node:test';
++import assert from 'node:assert/strict';
++import { formatCurrency } from '../index.js';
++
++describe('utils index exports', () => {
++  it('GivenFormatCurrencyExists_WhenImportFromUtilsIndex_ShouldReturnFormattedCurrency', () => {
++    const result = formatCurrency(1234);
++
++    assert.equal(result, 'NT$1,234');
++  });
++});
+
+codex
+紅燈結果符合預期：測試框架可執行，失敗原因是 `src/utils/index.js` 尚不存在。現在進入 T2 實作，只新增匯出檔，不改 `02-gherkin.md` 或重做 T1。
+apply patch
+patch: completed
+C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace\apply\evals\files\workspace-partial\src\utils\index.js
+diff --git a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+index 5c9d439753fa5d28d9665de7fef2b804efb24b5f..e8ccfc40fa0928cb6908f6b77872dbca41760616
+--- a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
++++ b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+@@ -7,4 +7,4 @@
+ ## 任務
+
+ - [x][BDD] T1: 實作 formatCurrency 函式（影響：`src/utils/currency.js`）
+-- [ ] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
++- [BDD] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
+diff --git a/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..247d789113d19196964d2b4746b5544f05db2a17
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+@@ -0,0 +1,11 @@
++import { describe, it } from 'node:test';
++import assert from 'node:assert/strict';
++import { formatCurrency } from '../index.js';
++
++describe('utils index exports', () => {
++  it('GivenFormatCurrencyExists_WhenImportFromUtilsIndex_ShouldReturnFormattedCurrency', () => {
++    const result = formatCurrency(1234);
++
++    assert.equal(result, 'NT$1,234');
++  });
++});
+diff --git a/apply/evals/files/workspace-partial/src/utils/index.js b/apply/evals/files/workspace-partial/src/utils/index.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..4ce6e23ea59fd598bb2f3b4593655a2669382e6f
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/index.js
+@@ -0,0 +1 @@
++export { formatCurrency } from './currency.js';
+
+diff --git a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+index 5c9d439753fa5d28d9665de7fef2b804efb24b5f..e8ccfc40fa0928cb6908f6b77872dbca41760616
+--- a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
++++ b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+@@ -7,4 +7,4 @@
+ ## 任務
+
+ - [x][BDD] T1: 實作 formatCurrency 函式（影響：`src/utils/currency.js`）
+-- [ ] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
++- [BDD] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
+diff --git a/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..247d789113d19196964d2b4746b5544f05db2a17
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+@@ -0,0 +1,11 @@
++import { describe, it } from 'node:test';
++import assert from 'node:assert/strict';
++import { formatCurrency } from '../index.js';
++
++describe('utils index exports', () => {
++  it('GivenFormatCurrencyExists_WhenImportFromUtilsIndex_ShouldReturnFormattedCurrency', () => {
++    const result = formatCurrency(1234);
++
++    assert.equal(result, 'NT$1,234');
++  });
++});
+diff --git a/apply/evals/files/workspace-partial/src/utils/index.js b/apply/evals/files/workspace-partial/src/utils/index.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..4ce6e23ea59fd598bb2f3b4593655a2669382e6f
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/index.js
+@@ -0,0 +1 @@
++export { formatCurrency } from './currency.js';
+
+codex
+T2 匯出檔已建立。接著跑目標測試；通過後才會把 T2 從 `[BDD]` 更新為 `[x][BDD]`。
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'npm test -- src/utils/__tests__/index.test.js' in C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace\apply\evals\files\workspace-partial
+ succeeded in 3258ms:
+
+> test
+> node --test src/utils/__tests__/index.test.js
+
+TAP version 13
+# Subtest: utils index exports
+    # Subtest: GivenFormatCurrencyExists_WhenImportFromUtilsIndex_ShouldReturnFormattedCurrency
+    ok 1 - GivenFormatCurrencyExists_WhenImportFromUtilsIndex_ShouldReturnFormattedCurrency
+      ---
+      duration_ms: 69.577
+      ...
+    1..1
+ok 1 - utils index exports
+  ---
+  duration_ms: 71.5359
+  type: 'suite'
+  ...
+1..1
+# tests 1
+# suites 1
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 211.2904
+
+diff --git a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+index 5c9d439753fa5d28d9665de7fef2b804efb24b5f..e8ccfc40fa0928cb6908f6b77872dbca41760616
+--- a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
++++ b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+@@ -7,4 +7,4 @@
+ ## 任務
+
+ - [x][BDD] T1: 實作 formatCurrency 函式（影響：`src/utils/currency.js`）
+-- [ ] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
++- [BDD] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
+diff --git a/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..247d789113d19196964d2b4746b5544f05db2a17
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+@@ -0,0 +1,11 @@
++import { describe, it } from 'node:test';
++import assert from 'node:assert/strict';
++import { formatCurrency } from '../index.js';
++
++describe('utils index exports', () => {
++  it('GivenFormatCurrencyExists_WhenImportFromUtilsIndex_ShouldReturnFormattedCurrency', () => {
++    const result = formatCurrency(1234);
++
++    assert.equal(result, 'NT$1,234');
++  });
++});
+diff --git a/apply/evals/files/workspace-partial/src/utils/index.js b/apply/evals/files/workspace-partial/src/utils/index.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..4ce6e23ea59fd598bb2f3b4593655a2669382e6f
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/index.js
+@@ -0,0 +1 @@
++export { formatCurrency } from './currency.js';
+
+apply patch
+patch: completed
+C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace\apply\evals\files\workspace-partial\docs\propose\feature-partial\03-tasks.md
+diff --git a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+index 5c9d439753fa5d28d9665de7fef2b804efb24b5f..cfb5a967035043415d24b45fff5a9c01ee183841
+--- a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
++++ b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+@@ -7,4 +7,4 @@
+ ## 任務
+
+ - [x][BDD] T1: 實作 formatCurrency 函式（影響：`src/utils/currency.js`）
+-- [ ] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
++- [x][BDD] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
+diff --git a/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..247d789113d19196964d2b4746b5544f05db2a17
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+@@ -0,0 +1,11 @@
++import { describe, it } from 'node:test';
++import assert from 'node:assert/strict';
++import { formatCurrency } from '../index.js';
++
++describe('utils index exports', () => {
++  it('GivenFormatCurrencyExists_WhenImportFromUtilsIndex_ShouldReturnFormattedCurrency', () => {
++    const result = formatCurrency(1234);
++
++    assert.equal(result, 'NT$1,234');
++  });
++});
+diff --git a/apply/evals/files/workspace-partial/src/utils/index.js b/apply/evals/files/workspace-partial/src/utils/index.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..4ce6e23ea59fd598bb2f3b4593655a2669382e6f
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/index.js
+@@ -0,0 +1 @@
++export { formatCurrency } from './currency.js';
+
+diff --git a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+index 5c9d439753fa5d28d9665de7fef2b804efb24b5f..cfb5a967035043415d24b45fff5a9c01ee183841
+--- a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
++++ b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+@@ -7,4 +7,4 @@
+ ## 任務
+
+ - [x][BDD] T1: 實作 formatCurrency 函式（影響：`src/utils/currency.js`）
+-- [ ] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
++- [x][BDD] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
+diff --git a/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..247d789113d19196964d2b4746b5544f05db2a17
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+@@ -0,0 +1,11 @@
++import { describe, it } from 'node:test';
++import assert from 'node:assert/strict';
++import { formatCurrency } from '../index.js';
++
++describe('utils index exports', () => {
++  it('GivenFormatCurrencyExists_WhenImportFromUtilsIndex_ShouldReturnFormattedCurrency', () => {
++    const result = formatCurrency(1234);
++
++    assert.equal(result, 'NT$1,234');
++  });
++});
+diff --git a/apply/evals/files/workspace-partial/src/utils/index.js b/apply/evals/files/workspace-partial/src/utils/index.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..4ce6e23ea59fd598bb2f3b4593655a2669382e6f
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/index.js
+@@ -0,0 +1 @@
++export { formatCurrency } from './currency.js';
+
+codex
+T2 相關測試已通過，任務標記已更新為 `[x][BDD]`。現在執行一次功能相關完整測試，確認整體狀態。
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'npm test' in C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace\apply\evals\files\workspace-partial
+ succeeded in 1896ms:
+
+> test
+> node --test
+
+TAP version 13
+# Subtest: utils index exports
+    # Subtest: GivenFormatCurrencyExists_WhenImportFromUtilsIndex_ShouldReturnFormattedCurrency
+    ok 1 - GivenFormatCurrencyExists_WhenImportFromUtilsIndex_ShouldReturnFormattedCurrency
+      ---
+      duration_ms: 16.91
+      ...
+    1..1
+ok 1 - utils index exports
+  ---
+  duration_ms: 18.1252
+  type: 'suite'
+  ...
+1..1
+# tests 1
+# suites 1
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 170.4467
+
+diff --git a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+index 5c9d439753fa5d28d9665de7fef2b804efb24b5f..cfb5a967035043415d24b45fff5a9c01ee183841
+--- a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
++++ b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+@@ -7,4 +7,4 @@
+ ## 任務
+
+ - [x][BDD] T1: 實作 formatCurrency 函式（影響：`src/utils/currency.js`）
+-- [ ] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
++- [x][BDD] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
+diff --git a/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..247d789113d19196964d2b4746b5544f05db2a17
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+@@ -0,0 +1,11 @@
++import { describe, it } from 'node:test';
++import assert from 'node:assert/strict';
++import { formatCurrency } from '../index.js';
++
++describe('utils index exports', () => {
++  it('GivenFormatCurrencyExists_WhenImportFromUtilsIndex_ShouldReturnFormattedCurrency', () => {
++    const result = formatCurrency(1234);
++
++    assert.equal(result, 'NT$1,234');
++  });
++});
+diff --git a/apply/evals/files/workspace-partial/src/utils/index.js b/apply/evals/files/workspace-partial/src/utils/index.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..4ce6e23ea59fd598bb2f3b4593655a2669382e6f
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/index.js
+@@ -0,0 +1 @@
++export { formatCurrency } from './currency.js';
+
+codex
+完整測試通過。依專案 gate，我還會檢查本次變更、產生 commit message、做 code review；但依 eval 明確規則，最後不會執行 git commit。
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'git status --short' in C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command 'git diff -- apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md apply/evals/files/workspace-partial/src/utils/index.js apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js' in C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "rg -i --files C:\\Users\\tenns\\.codex\\skills C:\\Users\\tenns\\.claude\\skills | rg -i \"("'^|'"\\\\/)code-reviewer(\\\\|/).*skill\\.md"'$|(''^|'"\\\\/)code-reviewer(\\\\|/).*skill\\.md"'$"' in C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace
+ exited 1 in 1161ms:
+fatal: not a git repository (or any of the parent directories): .git
+
+2026-05-30T07:06:14.710519Z ERROR codex_core::tools::router: error=Exit code: 1
+Wall time: 1.2 seconds
+Output:
+fatal: not a git repository (or any of the parent directories): .git
+
+ exited 1 in 1836ms:
+warning: Not a git repository. Use --no-index to compare two paths outside a working tree
+usage: git diff --no-index [<options>] <path> <path>
+
+Diff output format options
+    -p, --patch           generate patch
+    -s, --no-patch        suppress diff output
+    -u                    generate patch
+    -U, --unified[=<n>]   generate diffs with <n> lines context
+    -W, --[no-]function-context
+                          generate diffs with <n> lines context
+    --raw                 generate the diff in raw format
+    --patch-with-raw      synonym for '-p --raw'
+    --patch-with-stat     synonym for '-p --stat'
+    --numstat             machine friendly --stat
+    --shortstat           output only the last line of --stat
+    -X, --dirstat[=<param1>,<param2>...]
+                          output the distribution of relative amount of changes for each sub-directory
+    --cumulative          synonym for --dirstat=cumulative
+    --dirstat-by-file[=<param1>,<param2>...]
+                          synonym for --dirstat=files,<param1>,<param2>...
+    --check               warn if changes introduce conflict markers or whitespace errors
+    --summary             condensed summary such as creations, renames and mode changes
+    --name-only           show only names of changed files
+    --name-status         show only names and status of changed files
+    --stat[=<width>[,<name-width>[,<count>]]]
+                          generate diffstat
+    --stat-width <width>  generate diffstat with a given width
+    --stat-name-width <width>
+                          generate diffstat with a given name width
+    --stat-graph-width <width>
+                          generate diffstat with a given graph width
+    --stat-count <count>  generate diffstat with limited lines
+    --[no-]compact-summary
+                          generate compact summary in diffstat
+    --binary              output a binary diff that can be applied
+    --[no-]full-index     show full pre- and post-image object names on the "index" lines
+    --[no-]color[=<when>] show colored diff
+    --ws-error-highlight <kind>
+                          highlight whitespace errors in the 'context', 'old' or 'new' lines in the diff
+    -z                    do not munge pathnames and use NULs as output field terminators in --raw or --numstat
+    --[no-]abbrev[=<n>]   use <n> digits to display object names
+    --src-prefix <prefix> show the given source prefix instead of "a/"
+    --dst-prefix <prefix> show the given destination prefix instead of "b/"
+    --line-prefix <prefix>
+                          prepend an additional prefix to every line of output
+    --no-prefix           do not show any source or destination prefix
+    --default-prefix      use default prefixes a/ and b/
+    --inter-hunk-context <n>
+                          show context between diff hunks up to the specified number of lines
+    --output-indicator-new <char>
+                          specify the character to indicate a new line instead of '+'
+    --output-indicator-old <char>
+                          specify the character to indicate an old line instead of '-'
+    --output-indicator-context <char>
+                          specify the character to indicate a context instead of ' '
+
+Diff rename options
+    -B, --break-rewrites[=<n>[/<m>]]
+                          break complete rewrite changes into pairs of delete and create
+    -M, --find-renames[=<n>]
+                          detect renames
+    -D, --irreversible-delete
+                          omit the preimage for deletes
+    -C, --find-copies[=<n>]
+                          detect copies
+    --[no-]find-copies-harder
+                          use unmodified files as source to find copies
+    --no-renames          disable rename detection
+    --[no-]rename-empty   use empty blobs as rename source
+    --[no-]follow         continue listing the history of a file beyond renames
+    -l <n>                prevent rename/copy detection if the number of rename/copy targets exceeds given limit
+
+Diff algorithm options
+    --minimal             produce the smallest possible diff
+    -w, --ignore-all-space
+                          ignore whitespace when comparing lines
+    -b, --ignore-space-change
+                          ignore changes in amount of whitespace
+    --ignore-space-at-eol ignore changes in whitespace at EOL
+    --ignore-cr-at-eol    ignore carrier-return at the end of line
+    --ignore-blank-lines  ignore changes whose lines are all blank
+    -I, --[no-]ignore-matching-lines <regex>
+                          ignore changes whose all lines match <regex>
+    --[no-]indent-heuristic
+                          heuristic to shift diff hunk boundaries for easy reading
+    --patience            generate diff using the "patience diff" algorithm
+    --histogram           generate diff using the "histogram diff" algorithm
+    --diff-algorithm <algorithm>
+                          choose a diff algorithm
+    --anchored <text>     generate diff using the "anchored diff" algorithm
+    --word-diff[=<mode>]  show word diff, using <mode> to delimit changed words
+    --word-diff-regex <regex>
+                          use <regex> to decide what a word is
+    --color-words[=<regex>]
+                          equivalent to --word-diff=color --word-diff-regex=<regex>
+    --[no-]color-moved[=<mode>]
+                          moved lines of code are colored differently
+    --[no-]color-moved-ws <mode>
+                          how white spaces are ignored in --color-moved
+
+Other diff options
+    --[no-]relative[=<prefix>]
+                          when run from subdir, exclude changes outside and show relative paths
+    -a, --[no-]text       treat all files as text
+    -R                    swap two inputs, reverse the diff
+    --[no-]exit-code      exit with 1 if there were differences, 0 otherwise
+    --[no-]quiet          disable all output of the program
+    --[no-]ext-diff       allow an external diff helper to be executed
+    --[no-]textconv       run external text conversion filters when comparing binary files
+    --ignore-submodules[=<when>]
+                          ignore changes to submodules in the diff generation
+    --submodule[=<format>]
+                          specify how differences in submodules are shown
+    --ita-invisible-in-index
+                          hide 'git add -N' entries from the index
+    --ita-visible-in-index
+                          treat 'git add -N' entries as real in the index
+    -S <string>           look for differences that change the number of occurrences of the specified string
+    -G <regex>            look for differences that change the number of occurrences of the specified regex
+    --pickaxe-all         show all changes in the changeset with -S or -G
+    --pickaxe-regex       treat <string> in -S as extended POSIX regular expression
+    -O <file>             control the order in which files appear in the output
+    --rotate-to <path>    show the change in the specified path first
+    --skip-to <path>      skip the output to the specified path
+    --find-object <object-id>
+                          look for differences that change the number of occurrences of the specified object
+    --diff-filter [(A|C|D|M|R|T|U|X|B)...[*]]
+                          select files by diff type
+    --output <file>       output to a specific file
+
+
+2026-05-30T07:06:15.400816Z ERROR codex_core::tools::router: error=Exit code: 1
+Wall time: 1.8 seconds
+Output:
+warning: Not a git repository. Use --no-index to compare two paths outside a working tree
+usage: git diff --no-index [<options>] <path> <path>
+
+Diff output format options
+    -p, --patch           generate patch
+    -s, --no-patch        suppress diff output
+    -u                    generate patch
+    -U, --unified[=<n>]   generate diffs with <n> lines context
+    -W, --[no-]function-context
+                          generate diffs with <n> lines context
+    --raw                 generate the diff in raw format
+    --patch-with-raw      synonym for '-p --raw'
+    --patch-with-stat     synonym for '-p --stat'
+    --numstat             machine friendly --stat
+    --shortstat           output only the last line of --stat
+    -X, --dirstat[=<param1>,<param2>...]
+                          output the distribution of relative amount of changes for each sub-directory
+    --cumulative          synonym for --dirstat=cumulative
+    --dirstat-by-file[=<param1>,<param2>...]
+                          synonym for --dirstat=files,<param1>,<param2>...
+    --check               warn if changes introduce conflict markers or whitespace errors
+    --summary             condensed summary such as creations, renames and mode changes
+    --name-only           show only names of changed files
+    --name-status         show only names and status of changed files
+    --stat[=<width>[,<name-width>[,<count>]]]
+                          generate diffstat
+    --stat-width <width>  generate diffstat with a given width
+    --stat-name-width <width>
+                          generate diffstat with a given name width
+    --stat-graph-width <width>
+                          generate diffstat with a given graph width
+    --stat-count <count>  generate diffstat with limited lines
+    --[no-]compact-summary
+                          generate compact summary in diffstat
+    --binary              output a binary diff that can be applied
+    --[no-]full-index     show full pre- and post-image object names on the "index" lines
+    --[no-]color[=<when>] show colored diff
+    --ws-error-highlight <kind>
+                          highlight whitespace errors in the 'context', 'old' or 'new' lines in the diff
+    -z                    do not munge pathnames and use NULs as output field terminators in --raw or --numstat
+    --[no-]abbrev[=<n>]   use <n> digits to display object names
+    --src-prefix <prefix> show the given source prefix instead of "a/"
+    --dst-prefix <prefix> show the given destination prefix instead of "b/"
+    --line-prefix <prefix>
+                          prepend an additional prefix to every line of output
+    --no-prefix           do not show any source or destination prefix
+    --default-prefix      use default prefixes a/ and b/
+    --inter-hunk-context <n>
+                          show context between diff hunks up to the specified number of lines
+    --output-indicator-new <char>
+                          specify the character to indicate a new line instead of '+'
+    --output-indicator-old <char>
+                          specify the character to indicate an old line instead of '-'
+    --output-indicator-context <char>
+                          specify the character to indicate a context instead of ' '
+
+Diff rename options
+    -B, --break-rewrites[=<n>[/<m>]]
+                          break complete rewrite changes into pairs of delete and create
+    -M, --find-renames[=<n>]
+                          detect renames
+    -D, --irreversible-delete
+                          omit the preimage for deletes
+    -C, --find-copies[=<n>]
+                          detect copies
+    --[no-]find-copies-harder
+                          use unmodified files as source to find copies
+    --no-renames          disable rename detection
+    --[no-]rename-empty   use empty blobs as rename source
+    --[no-]follow         continue listing the history of a file beyond renames
+    -l <n>                prevent rename/copy detection if the number of rename/copy targets exceeds given limit
+
+Diff algorithm options
+    --minimal             produce the smallest possible diff
+    -w, --ignore-all-space
+                          ignore whitespace when comparing lines
+    -b, --ignore-space-change
+                          ignore changes in amount of whitespace
+    --ignore-space-at-eol ignore changes in whitespace at EOL
+    --ignore-cr-at-eol    ignore carrier-return at the end of line
+    --ignore-blank-lines  ignore changes whose lines are all blank
+    -I, --[no-]ignore-matching-lines <regex>
+                          ignore changes whose all lines match <regex>
+    --[no-]indent-heuristic
+                          heuristic to shift diff hunk boundaries for easy reading
+    --patience            generate diff using the "patience diff" algorithm
+    --histogram           generate diff using the "histogram diff" algorithm
+    --diff-algorithm <algorithm>
+                          choose a diff algorithm
+    --anchored <text>     generate diff using the "anchored diff" algorithm
+    --word-diff[=<mode>]  show word diff, using <mode> to delimit changed words
+    --word-diff-regex <regex>
+                          use <regex> to decide what a word is
+    --color-words[=<regex>]
+                          equivalent to --word-diff=color --word-diff-regex=<regex>
+    --[no-]color-moved[=<mode>]
+                          moved lines of code are colored differently
+    --[no-]color-moved-ws <mode>
+                          how white spaces are ignored in --color-moved
+
+Other diff options
+    --[no-]relative[=<prefix>]
+                          when run from subdir, exclude changes outside and show relative paths
+    -a, --[no-]text       treat all files as text
+    -R                    swap two inputs, reverse the diff
+    --[no-]exit-code      exit with 1 if there were differences, 0 otherwise
+    --[no-]quiet          disable all output of the program
+    --[no-]ext-diff       allow an external diff helper to be executed
+    --[no-]textconv       run external text conversion filters when comparing binary files
+    --ignore-submodules[=<when>]
+                          ignore changes to submodules in the diff generation
+    --submodule[=<format>]
+                          specify how differences in submodules are shown
+    --ita-invisible-in-index
+                          hide 'git add -N' entries from the index
+    --ita-visible-in-index
+                          treat 'git add -N' entries as real in the index
+    -S <string>           look for differences that change the number of occurrences of the specified string
+    -G <regex>            look for differences that change the number of occurrences of the specified regex
+    --pickaxe-all         show all changes in the changeset with -S or -G
+    --pickaxe-regex       treat <string> in -S as extended POSIX regular expression
+    -O <file>             control the order in which files appear in the output
+    --rotate-to <path>    show the change in the specified path first
+    --skip-to <path>      skip the output to the specified path
+    --find-object <object-id>
+                          look for differences that change the number of occurrences of the specified object
+    --diff-filter [(A|C|D|M|R|T|U|X|B)...[*]]
+                          select files by diff type
+    --output <file>       output to a specific file
+
+
+ exited 1 in 2323ms:
+2026-05-30T07:06:15.901790Z ERROR codex_core::tools::router: error=Exit code: 1
+Wall time: 2.3 seconds
+Output:
+
+diff --git a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+index 5c9d439753fa5d28d9665de7fef2b804efb24b5f..cfb5a967035043415d24b45fff5a9c01ee183841
+--- a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
++++ b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+@@ -7,4 +7,4 @@
+ ## 任務
+
+ - [x][BDD] T1: 實作 formatCurrency 函式（影響：`src/utils/currency.js`）
+-- [ ] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
++- [x][BDD] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
+diff --git a/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..247d789113d19196964d2b4746b5544f05db2a17
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+@@ -0,0 +1,11 @@
++import { describe, it } from 'node:test';
++import assert from 'node:assert/strict';
++import { formatCurrency } from '../index.js';
++
++describe('utils index exports', () => {
++  it('GivenFormatCurrencyExists_WhenImportFromUtilsIndex_ShouldReturnFormattedCurrency', () => {
++    const result = formatCurrency(1234);
++
++    assert.equal(result, 'NT$1,234');
++  });
++});
+diff --git a/apply/evals/files/workspace-partial/src/utils/index.js b/apply/evals/files/workspace-partial/src/utils/index.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..4ce6e23ea59fd598bb2f3b4593655a2669382e6f
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/index.js
+@@ -0,0 +1 @@
++export { formatCurrency } from './currency.js';
+
+codex
+這個隔離 workspace 不是 git repository，所以 `git status`/`git diff` 不可用；我會改用實際檔案內容做最終檢查。接著確認是否有本機 `code-reviewer` skill 可用，沒有才由我直接做一般 review。
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content -Raw apply\\evals\\files\\workspace-partial\\docs\\propose\\feature-partial\\03-tasks.md" in C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-ChildItem -Path C:\\Users\\tenns\\.codex\\skills,C:\\Users\\tenns\\.claude\\skills -Recurse -File -Include SKILL.md,SKILL.MD | Where-Object { "'$_.FullName -match '"'(?i)[\\\\/]code-reviewer[\\\\/]' } | Select-Object -ExpandProperty FullName" in C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content -Raw apply\\evals\\files\\workspace-partial\\src\\utils\\index.js" in C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content -Raw apply\\evals\\files\\workspace-partial\\src\\utils\\__tests__\\index.test.js" in C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace
+ succeeded in 1428ms:
+# 任務清單：formatCurrency 工具函式
+
+## 參考文檔
+- 結構化流程：docs/propose/feature-partial/01-flow.md
+- 驗收條件：docs/propose/feature-partial/02-gherkin.md
+
+## 任務
+
+- [x][BDD] T1: 實作 formatCurrency 函式（影響：`src/utils/currency.js`）
+- [x][BDD] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
+
+
+ succeeded in 2204ms:
+export { formatCurrency } from './currency.js';
+
+
+ succeeded in 2739ms:
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import { formatCurrency } from '../index.js';
+
+describe('utils index exports', () => {
+  it('GivenFormatCurrencyExists_WhenImportFromUtilsIndex_ShouldReturnFormattedCurrency', () => {
+    const result = formatCurrency(1234);
+
+    assert.equal(result, 'NT$1,234');
+  });
+});
+
+
+ succeeded in 3555ms:
+C:\Users\tenns\.codex\skills\code-reviewer\SKILL.MD
+C:\Users\tenns\.claude\skills\code-reviewer\SKILL.MD
+
+diff --git a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+index 5c9d439753fa5d28d9665de7fef2b804efb24b5f..cfb5a967035043415d24b45fff5a9c01ee183841
+--- a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
++++ b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+@@ -7,4 +7,4 @@
+ ## 任務
+
+ - [x][BDD] T1: 實作 formatCurrency 函式（影響：`src/utils/currency.js`）
+-- [ ] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
++- [x][BDD] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
+diff --git a/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..247d789113d19196964d2b4746b5544f05db2a17
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+@@ -0,0 +1,11 @@
++import { describe, it } from 'node:test';
++import assert from 'node:assert/strict';
++import { formatCurrency } from '../index.js';
++
++describe('utils index exports', () => {
++  it('GivenFormatCurrencyExists_WhenImportFromUtilsIndex_ShouldReturnFormattedCurrency', () => {
++    const result = formatCurrency(1234);
++
++    assert.equal(result, 'NT$1,234');
++  });
++});
+diff --git a/apply/evals/files/workspace-partial/src/utils/index.js b/apply/evals/files/workspace-partial/src/utils/index.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..4ce6e23ea59fd598bb2f3b4593655a2669382e6f
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/index.js
+@@ -0,0 +1 @@
++export { formatCurrency } from './currency.js';
+
+codex
+找到本機 `code-reviewer` skill，且檔名大小寫是 `SKILL.MD`。我會讀取它後依流程做本次變更的審查；因這是 eval 工作區且不支援 git diff，我會以三個實際變更檔與驗收文件作為審查依據。
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Get-Content -Raw C:\\Users\\tenns\\.codex\\skills\\code-reviewer\\SKILL.MD" in C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace
+ succeeded in 1363ms:
+---
+name: code-reviewer
+description: >
+  當使用者提供業務邏輯文檔（需求規格、User Story、API 文件、流程說明等），並要求審查程式碼實作時，必須載入此技能。
+  使用 git diff 比對業務邏輯與程式碼變更，確認功能是否正確實作、找出邏輯衝突、潛在問題與副作用，並檢視是否符合最佳實踐。
+  觸發情境包含但不限於：「對照文件幫我 review」、「幫我審查這次的實作」、「這個 PR 符合需求嗎」、
+  「依照業務邏輯檢查程式碼」、「根據規格審查這次變更」。
+  即使使用者只說「幫我 review」或「有沒有符合需求」，只要上下文中有提供業務邏輯文檔，也應載入此技能。
+  此技能也適用於 subagent 情境：當 prompt 中包含規格文檔路徑時，自動讀取並對照審查。
+---
+
+# Code Review 流程
+
+## 1. 取得規格文檔
+
+從 prompt 或對話中識別需求規格文檔：
+- 若 prompt 中有明確路徑 → 讀取該檔案
+- 若對話中使用者曾提供規格內容 → 直接使用
+- 若兩者皆無 → 告知使用者需要提供規格文檔才能進行對照審查，但仍可執行通用 code review
+
+## 2. 取得變更內容
+
+依序嘗試以下指令，取得有意義的 diff：
+
+```bash
+git diff HEAD        # 包含已暫存與未暫存的所有變更
+git diff --staged    # 僅已暫存（即將提交）的變更
+git diff main...HEAD # 與主分支的完整差異（適用於 feature branch）
+```
+
+選擇能取得最完整變更的指令。若 diff 為空，告知使用者並停止。
+
+## 3. 前端檔案 React 最佳實踐審查（優先於規格審查）
+
+分析 diff 中是否包含前端 React 相關檔案：
+
+**判斷前端檔案的條件（符合任一即視為前端變更）：**
+- 副檔名為 `.tsx`、`.jsx`
+- 副檔名為 `.ts`、`.js`，且路徑包含 `components?/`、`hooks?/`、`contexts?/`、`pages/` 或 `views/`
+
+**若包含前端檔案，必須先載入並執行 `react-design` skill，依照其原則對 diff 進行審查。**
+
+審查完成後，將結果整理為「React 最佳實踐」區塊，再繼續進行後續的規格審查。
+
+## 4. 對照規格審查（有提供規格文檔時必做）
+
+逐項比對規格文檔的功能需求與實際 diff：
+
+- 規格中要求的功能，實作是否完整？
+- 規格中定義的 API / 資料結構，實作是否一致？
+- 規格中描述的邊界條件與錯誤處理，是否有涵蓋？
+- 是否有實作規格以外的功能（over-engineering 或偏離需求）？
+
+## 5. 通用程式碼審查
+
+### 🔴 邏輯衝突與錯誤（最高優先）
+- 條件判斷邏輯是否正確（邊界條件）
+- 資料流是否完整，有無遺漏的狀態更新
+- 非同步操作的順序與錯誤處理
+- 型別不匹配或隱性型別轉換
+
+### 🟠 潛在風險
+- 安全漏洞（XSS、SQL Injection、Command Injection 等）
+- 效能問題（N+1 查詢、記憶體洩漏）
+- 邊界情況是否處理
+
+### 🟡 程式碼品質
+- 命名是否清晰表達意圖
+- 函數/元件職責是否單一
+- 是否有未使用的變數或 import
+
+### 🔵 型別安全
+- 不安全的型別斷言（如 `as any`、強制 cast、非空斷言 `!`）是否合理
+- 型別縮窄是否完整（union / discriminated union 是否覆蓋所有分支）
+- 序列化邊界（API request/response、JSON.parse、外部資料）是否有驗證或型別守衛
+- 泛型參數是否被正確約束，避免退化為 `unknown` 或 `any`
+
+### ⚪ 註解類問題（測試/開發階段保留）
+- 是否有 `TODO`、`FIXME`、`XXX`、暫時性偵錯註解未清除
+- 是否有被註解掉的程式碼（dead code as comments）
+- 是否有暫時保留的診斷/偏差說明註解，需在進入正式實作前處理
+
+> 註解類問題不直接判定為缺陷，因為測試或開發階段可能刻意保留；
+> 統一歸入輸出格式中的「使用者自行決定」區塊，由使用者依目前階段判斷是否清除。
+
+## 6. 輸出格式
+
+使用繁體中文輸出，格式如下：
+
+```markdown
+## 📋 Code Review 摘要
+
+**審查範圍：** [描述變更涵蓋的檔案/功能]
+**整體評估：** ✅ 符合規格可合併 / ⚠️ 部分符合，建議修改 / ❌ 不符合規格，需修正
+
+---
+
+### ⚛️ React 最佳實踐（僅前端變更時輸出此區塊）
+
+#### ✅ 符合最佳實踐
+- [原則]：[簡述實作如何符合]
+
+#### ⚠️ 需改善
+- [原則]：[描述問題與建議方向]
+  ```tsx
+  // 建議修正方向
+  ```
+
+---
+
+### 📐 規格符合度（有提供規格文檔時才輸出此區塊）
+
+#### ✅ 符合規格的項目
+- [規格項目]：[簡單說明實作如何對應]
+
+#### ❌ 不符合或缺漏的項目
+- [規格項目]：[說明缺漏或偏差之處]
+
+---
+
+### 🔴 必須修正（Critical）
+
+#### 問題 1：[問題標題]
+- **檔案：** `path/to/file.ts:行號`
+- **問題：** [描述問題]
+- **影響：** [說明可能造成的後果]
+- **建議修正：**
+  ```typescript
+  // 修正後的程式碼
+  ```
+
+---
+
+### 🟠 建議改善（Warning）
+
+[同上格式]
+
+---
+
+### ⚪ 使用者自行決定（註解類問題）
+
+#### 問題 1：[問題標題]
+- **檔案：** `path/to/file.ts:行號`
+- **問題：** [說明註解為何可能造成維護混淆，例如 TODO 未追蹤、被註解掉的程式碼、暫時偵錯註解]
+- **影響：** [說明此問題是否只影響正式化前的程式碼品質]
+- **建議：** [若目前為測試/開發階段可保留；若進入正式實作應移除或改寫]
+
+---
+
+## 7. 輸出存檔（必做）
+
+完成 Code Review 後，除了在對話中輸出「## 📋 Code Review 摘要」以外，必須將**該摘要的原始內容**獨立存檔成一份 Markdown 文件，便於後續追蹤與分享。
+
+### 存檔規則
+
+- **存放位置：** 專案根目錄下的 `docs/code-review-report` 資料夾（若不存在則自動建立）
+- **檔名格式：** `code-review-YYYY-MM-DD-<feature-slug>.md`
+  - `YYYY-MM-DD` 為本機今日日期
+  - `<feature-slug>` 為**本次審查所對照規格文檔的檔名 slug**（取規格檔名去掉副檔名、轉成 kebab-case）
+  - 範例：
+    - 規格 `docs/spec/login.md` → `docs/code-review-report/code-review-2026-05-17-login.md`
+    - 規格 `docs/specs/user-profile.md` → `docs/code-review-report/code-review-2026-05-17-user-profile.md`
+    - 規格 `docs/PRD-Checkout Flow.md` → `docs/code-review-report/code-review-2026-05-17-checkout-flow.md`
+- **內容範圍：** 檔案最上方為 H1 輪數標題（見「輪數判斷與標題」），其下為與對話輸出的「## 📋 Code Review 摘要」**完全一致**的內容，包含所有子區塊（React 最佳實踐 / 規格符合度 / 必須修正 / 建議改善 / 使用者自行決定等），不可省略、改寫或濃縮
+- **不另加額外章節：** 除了 H1 輪數標題之外，不要在檔案中再加入「審查時間」、「審查者」等對話中沒有的欄位；以原始內容為準
+
+### 規格 slug 推導規則
+
+- 取規格文檔的**檔名主體**（去掉路徑與副檔名）
+- 全部轉小寫，空白與底線一律改為 `-`
+- 連續多個 `-` 合併為一個，前後 `-` 去除
+- 僅保留英數字與 `-`；非 ASCII 字元（如中文）以 transliteration 失敗時 fallback 為英文摘要詞
+
+### 沒有規格文檔時的 fallback
+
+- 若使用者**沒有提供規格文檔**（純通用 code review），改以 **git diff 中本次主要實作的功能**作為 `<feature-slug>`：
+  - 閱讀 diff，歸納本次變更實際在做的事情（例如「新增登入流程」、「修正購物車數量計算」、「重構訂單匯出邏輯」）
+  - 將該功能描述濃縮為簡短英文 slug（kebab-case、僅英數與 `-`），例如：
+    - 新增登入流程 → `login-flow`
+    - 修正購物車數量計算 → `fix-cart-quantity`
+    - 重構訂單匯出邏輯 → `refactor-order-export`
+  - 保持簡潔（建議 2~4 個單字內），讓檔名一眼就能辨識審查對象
+- 若 diff 過於發散難以歸納單一功能，才 fallback 為 `general`
+
+### 重複審查的覆蓋規則
+
+- 若同一天、同一規格的審查再次執行（檔名完全相同），**直接完全覆蓋**整份檔案內容
+- **不需要保留舊紀錄、不需要追加 changelog 區塊、不需要備份舊版**；每次審查都是當下狀態的快照
+- 不同功能（slug 不同）或不同日期會自然產生不同檔名，互不干擾
+- 雖然檔案內容會被覆蓋，但**輪數必須依照「輪數判斷與標題」遞增**，讓使用者一眼看出這份檔案累積審查過幾次
+
+### 輪數判斷與標題
+
+寫檔前，**必須**先用 `Read` 工具讀取目標路徑（即步驟一推導出的最終檔名），依結果決定本輪輪數：
+
+- 檔案不存在 → 視為**第 1 輪**
+- 檔案存在 → 用 regex `第\s*(\d+)\s*輪` 從檔案開頭抓出舊輪數，**新輪數 = 舊輪數 + 1**
+- 檔案存在但抓不到輪數（例如歷史檔尚未套用此規則）→ 視為**第 1 輪**
+
+判斷完成後，在檔案最上方加入 H1 標題（**位於所有內容之前**），格式固定為：
+
+```
+# Code Review 紀錄 — YYYY-MM-DD（第 N 輪）
+```
+
+- `YYYY-MM-DD` 與檔名中的日期一致（本機今日日期）
+- `N` 為上面推導出的輪數，使用阿拉伯數字
+- H1 標題下方空一行，再接原本的 `## 📋 Code Review 摘要` 與其後所有內容（內容本身不因輪數而改變）
+
+> 設計動機：subagent 是 cold start，無法靠記憶判斷「現在是第幾輪」；唯一可靠的線索就是現存檔案。
+> 透過「讀檔 → 解析 → +1」的固定流程，把輪數變成可重現的行為，而非依賴模型自發補上。
+
+### 執行時機
+
+- 在對話中輸出「## 📋 Code Review 摘要」**之後**立即執行寫檔
+- 寫檔完成後，在回覆中以一行簡短訊息告知使用者檔案路徑，例如：
+  `📁 已存檔：docs/code-review-report/code-review-2026-05-17-login.md`
+
+> 設計動機：按功能切分檔名是為了避免「同日多功能審查互相覆蓋」（規格檔名越具體越好，
+> 像 `README` 這種通用名應改找更具體的來源）；同功能同日直接覆蓋則是因為同一審查週期
+> 只有最新結論才有效，歷史變化請依賴 git history，不要在檔內自行追加 changelog。
+
+---
+
+## 注意事項
+
+- 專注於這次變更本身，不對未修改的程式碼提出建議
+- 若發現變更可能影響其他未修改的程式碼，明確指出關聯性
+- 提供具體可執行的修正建議，而非模糊的指導
+- 建議修正的程式碼只列出關鍵行，用 `// ...` 省略無關的上下文，避免輸出過長
+
+
+diff --git a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+index 5c9d439753fa5d28d9665de7fef2b804efb24b5f..cfb5a967035043415d24b45fff5a9c01ee183841
+--- a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
++++ b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+@@ -7,4 +7,4 @@
+ ## 任務
+
+ - [x][BDD] T1: 實作 formatCurrency 函式（影響：`src/utils/currency.js`）
+-- [ ] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
++- [x][BDD] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
+diff --git a/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..247d789113d19196964d2b4746b5544f05db2a17
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+@@ -0,0 +1,11 @@
++import { describe, it } from 'node:test';
++import assert from 'node:assert/strict';
++import { formatCurrency } from '../index.js';
++
++describe('utils index exports', () => {
++  it('GivenFormatCurrencyExists_WhenImportFromUtilsIndex_ShouldReturnFormattedCurrency', () => {
++    const result = formatCurrency(1234);
++
++    assert.equal(result, 'NT$1,234');
++  });
++});
+diff --git a/apply/evals/files/workspace-partial/src/utils/index.js b/apply/evals/files/workspace-partial/src/utils/index.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..4ce6e23ea59fd598bb2f3b4593655a2669382e6f
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/index.js
+@@ -0,0 +1 @@
++export { formatCurrency } from './currency.js';
+
+codex
+Code review 結論是本次 T2 變更符合規格：`index.js` 只 re-export 既有函式，測試從 public index 匯入並驗證格式化結果，沒有發現必須修正項。依 `code-reviewer` 規則，我會把審查摘要存到專案的 `docs/code-review-report`。
+exec
+"C:\\Program Files\\PowerShell\\7\\pwsh.exe" -Command "Test-Path apply\\evals\\files\\workspace-partial\\docs\\code-review-report\\code-review-2026-05-30-feature-partial.md; if (Test-Path apply\\evals\\files\\workspace-partial\\docs\\code-review-report\\code-review-2026-05-30-feature-partial.md) { Get-Content -Raw apply\\evals\\files\\workspace-partial\\docs\\code-review-report\\code-review-2026-05-30-feature-partial.md }" in C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace
+ succeeded in 993ms:
+False
+
+diff --git a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+index 5c9d439753fa5d28d9665de7fef2b804efb24b5f..cfb5a967035043415d24b45fff5a9c01ee183841
+--- a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
++++ b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+@@ -7,4 +7,4 @@
+ ## 任務
+
+ - [x][BDD] T1: 實作 formatCurrency 函式（影響：`src/utils/currency.js`）
+-- [ ] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
++- [x][BDD] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
+diff --git a/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..247d789113d19196964d2b4746b5544f05db2a17
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+@@ -0,0 +1,11 @@
++import { describe, it } from 'node:test';
++import assert from 'node:assert/strict';
++import { formatCurrency } from '../index.js';
++
++describe('utils index exports', () => {
++  it('GivenFormatCurrencyExists_WhenImportFromUtilsIndex_ShouldReturnFormattedCurrency', () => {
++    const result = formatCurrency(1234);
++
++    assert.equal(result, 'NT$1,234');
++  });
++});
+diff --git a/apply/evals/files/workspace-partial/src/utils/index.js b/apply/evals/files/workspace-partial/src/utils/index.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..4ce6e23ea59fd598bb2f3b4593655a2669382e6f
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/index.js
+@@ -0,0 +1 @@
++export { formatCurrency } from './currency.js';
+
+apply patch
+patch: completed
+C:\Users\tenns\AppData\Local\Temp\apply-eval-m8mj5q0m\workspace\apply\evals\files\workspace-partial\docs\code-review-report\code-review-2026-05-30-feature-partial.md
+diff --git a/apply/evals/files/workspace-partial/docs/code-review-report/code-review-2026-05-30-feature-partial.md b/apply/evals/files/workspace-partial/docs/code-review-report/code-review-2026-05-30-feature-partial.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..08b8ba8ed47ed11577227b4293a38a8cf5b28288
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/docs/code-review-report/code-review-2026-05-30-feature-partial.md
+@@ -0,0 +1,37 @@
++# Code Review 紀錄 — 2026-05-30（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `feature-partial` 的 T2 匯出入口實作、對應 BDD 測試與任務狀態更新。
++**整體評估：** ✅ 符合規格可合併
++
++---
++
++### 📐 規格符合度
++
++#### ✅ 符合規格的項目
++- T1 舊狀態處理：`03-tasks.md` 已保留 T1 的 `[x][BDD]`，未重建或改動 `src/utils/currency.js`。
++- T2 測試先行：新增 `src/utils/__tests__/index.test.js`，從 `src/utils/index.js` 匯入 `formatCurrency` 並驗證格式化結果。
++- T2 匯出入口：新增 `src/utils/index.js`，以 named export 轉出既有 `formatCurrency`。
++- 任務完成狀態：T2 已由 `[ ]` 經測試階段更新為 `[BDD]`，實作與測試通過後更新為 `[x][BDD]`。
++
++#### ❌ 不符合或缺漏的項目
++- 無。
++
++---
++
++### 🔴 必須修正（Critical）
++
++無。
++
++---
++
++### 🟠 建議改善（Warning）
++
++無。
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++無。
+diff --git a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+index 5c9d439753fa5d28d9665de7fef2b804efb24b5f..cfb5a967035043415d24b45fff5a9c01ee183841
+--- a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
++++ b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+@@ -7,4 +7,4 @@
+ ## 任務
+
+ - [x][BDD] T1: 實作 formatCurrency 函式（影響：`src/utils/currency.js`）
+-- [ ] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
++- [x][BDD] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
+diff --git a/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..247d789113d19196964d2b4746b5544f05db2a17
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+@@ -0,0 +1,11 @@
++import { describe, it } from 'node:test';
++import assert from 'node:assert/strict';
++import { formatCurrency } from '../index.js';
++
++describe('utils index exports', () => {
++  it('GivenFormatCurrencyExists_WhenImportFromUtilsIndex_ShouldReturnFormattedCurrency', () => {
++    const result = formatCurrency(1234);
++
++    assert.equal(result, 'NT$1,234');
++  });
++});
+diff --git a/apply/evals/files/workspace-partial/src/utils/index.js b/apply/evals/files/workspace-partial/src/utils/index.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..4ce6e23ea59fd598bb2f3b4593655a2669382e6f
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/index.js
+@@ -0,0 +1 @@
++export { formatCurrency } from './currency.js';
+
+diff --git a/apply/evals/files/workspace-partial/docs/code-review-report/code-review-2026-05-30-feature-partial.md b/apply/evals/files/workspace-partial/docs/code-review-report/code-review-2026-05-30-feature-partial.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..08b8ba8ed47ed11577227b4293a38a8cf5b28288
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/docs/code-review-report/code-review-2026-05-30-feature-partial.md
+@@ -0,0 +1,37 @@
++# Code Review 紀錄 — 2026-05-30（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `feature-partial` 的 T2 匯出入口實作、對應 BDD 測試與任務狀態更新。
++**整體評估：** ✅ 符合規格可合併
++
++---
++
++### 📐 規格符合度
++
++#### ✅ 符合規格的項目
++- T1 舊狀態處理：`03-tasks.md` 已保留 T1 的 `[x][BDD]`，未重建或改動 `src/utils/currency.js`。
++- T2 測試先行：新增 `src/utils/__tests__/index.test.js`，從 `src/utils/index.js` 匯入 `formatCurrency` 並驗證格式化結果。
++- T2 匯出入口：新增 `src/utils/index.js`，以 named export 轉出既有 `formatCurrency`。
++- 任務完成狀態：T2 已由 `[ ]` 經測試階段更新為 `[BDD]`，實作與測試通過後更新為 `[x][BDD]`。
++
++#### ❌ 不符合或缺漏的項目
++- 無。
++
++---
++
++### 🔴 必須修正（Critical）
++
++無。
++
++---
++
++### 🟠 建議改善（Warning）
++
++無。
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++無。
+diff --git a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+index 5c9d439753fa5d28d9665de7fef2b804efb24b5f..cfb5a967035043415d24b45fff5a9c01ee183841
+--- a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
++++ b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+@@ -7,4 +7,4 @@
+ ## 任務
+
+ - [x][BDD] T1: 實作 formatCurrency 函式（影響：`src/utils/currency.js`）
+-- [ ] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
++- [x][BDD] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
+diff --git a/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..247d789113d19196964d2b4746b5544f05db2a17
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+@@ -0,0 +1,11 @@
++import { describe, it } from 'node:test';
++import assert from 'node:assert/strict';
++import { formatCurrency } from '../index.js';
++
++describe('utils index exports', () => {
++  it('GivenFormatCurrencyExists_WhenImportFromUtilsIndex_ShouldReturnFormattedCurrency', () => {
++    const result = formatCurrency(1234);
++
++    assert.equal(result, 'NT$1,234');
++  });
++});
+diff --git a/apply/evals/files/workspace-partial/src/utils/index.js b/apply/evals/files/workspace-partial/src/utils/index.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..4ce6e23ea59fd598bb2f3b4593655a2669382e6f
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/index.js
+@@ -0,0 +1 @@
++export { formatCurrency } from './currency.js';
+
+codex
+已完成 apply 流程：T1 保留既有 `[x][BDD]`，未重建 `currency.js`；T2 先新增 BDD 測試並更新為 `[BDD]`，確認紅燈原因是 `index.js` 尚不存在後，才新增 `src/utils/index.js` 匯出 `formatCurrency`，測試通過後更新為 `[x][BDD]`。
+
+驗證結果：`npm test -- src/utils/__tests__/index.test.js` 通過，`npm test` 通過。已執行 code review，無 findings，報告已存於 `apply/evals/files/workspace-partial/docs/code-review-report/code-review-2026-05-30-feature-partial.md`。已產生 commit message，但依 eval 規則且此 workspace 不是 git repository，未執行 commit。
+
+Commit message:
+```text
+feat: export formatCurrency from utils index
+
+原本 formatCurrency 已完成實作與 BDD 狀態，但 utils index 尚未提供匯出入口，外部模組無法從統一入口取得貨幣格式化函式。
+
+本次調整：
+- 新增 utils index 匯出 formatCurrency
+- 新增 index 匯出入口的 BDD 測試
+- 將 T2 任務狀態依 TDD 流程更新為 [x][BDD]
+```
+
+---
+## Grading
+E1: PASS - T1 原本為 `[x][BDD]`，本次保留既有狀態，未重建 `src/utils/currency.js`。
+E2: PASS - T2 先透過 `bdd-unit-test` 流程新增 `src/utils/__tests__/index.test.js`，再進行實作。
+E3: PASS - `03-tasks.md` 先將 T2 更新為 `[BDD]`，之後才新增 `src/utils/index.js`。
+E4: PASS - 已讀取並依 `bdd-unit-test` skill 流程撰寫 T2 的 BDD 測試。
+E5: PASS - `03-tasks.md` 中 T2 最終為 `[x][BDD]`。
+diff --git a/apply/evals/files/workspace-partial/docs/code-review-report/code-review-2026-05-30-feature-partial.md b/apply/evals/files/workspace-partial/docs/code-review-report/code-review-2026-05-30-feature-partial.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..08b8ba8ed47ed11577227b4293a38a8cf5b28288
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/docs/code-review-report/code-review-2026-05-30-feature-partial.md
+@@ -0,0 +1,37 @@
++# Code Review 紀錄 — 2026-05-30（第 1 輪）
++
++## 📋 Code Review 摘要
++
++**審查範圍：** `feature-partial` 的 T2 匯出入口實作、對應 BDD 測試與任務狀態更新。
++**整體評估：** ✅ 符合規格可合併
++
++---
++
++### 📐 規格符合度
++
++#### ✅ 符合規格的項目
++- T1 舊狀態處理：`03-tasks.md` 已保留 T1 的 `[x][BDD]`，未重建或改動 `src/utils/currency.js`。
++- T2 測試先行：新增 `src/utils/__tests__/index.test.js`，從 `src/utils/index.js` 匯入 `formatCurrency` 並驗證格式化結果。
++- T2 匯出入口：新增 `src/utils/index.js`，以 named export 轉出既有 `formatCurrency`。
++- 任務完成狀態：T2 已由 `[ ]` 經測試階段更新為 `[BDD]`，實作與測試通過後更新為 `[x][BDD]`。
++
++#### ❌ 不符合或缺漏的項目
++- 無。
++
++---
++
++### 🔴 必須修正（Critical）
++
++無。
++
++---
++
++### 🟠 建議改善（Warning）
++
++無。
++
++---
++
++### ⚪ 使用者自行決定（註解類問題）
++
++無。
+diff --git a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+index 5c9d439753fa5d28d9665de7fef2b804efb24b5f..cfb5a967035043415d24b45fff5a9c01ee183841
+--- a/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
++++ b/apply/evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md
+@@ -7,4 +7,4 @@
+ ## 任務
+
+ - [x][BDD] T1: 實作 formatCurrency 函式（影響：`src/utils/currency.js`）
+-- [ ] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
++- [x][BDD] T2: 從 index.js 匯出 formatCurrency（影響：`src/utils/index.js`）
+diff --git a/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..247d789113d19196964d2b4746b5544f05db2a17
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/__tests__/index.test.js
+@@ -0,0 +1,11 @@
++import { describe, it } from 'node:test';
++import assert from 'node:assert/strict';
++import { formatCurrency } from '../index.js';
++
++describe('utils index exports', () => {
++  it('GivenFormatCurrencyExists_WhenImportFromUtilsIndex_ShouldReturnFormattedCurrency', () => {
++    const result = formatCurrency(1234);
++
++    assert.equal(result, 'NT$1,234');
++  });
++});
+diff --git a/apply/evals/files/workspace-partial/src/utils/index.js b/apply/evals/files/workspace-partial/src/utils/index.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..4ce6e23ea59fd598bb2f3b4593655a2669382e6f
+--- /dev/null
++++ b/apply/evals/files/workspace-partial/src/utils/index.js
+@@ -0,0 +1 @@
++export { formatCurrency } from './currency.js';
+
+tokens used
+51,758
+已完成 apply 流程：T1 保留既有 `[x][BDD]`，未重建 `currency.js`；T2 先新增 BDD 測試並更新為 `[BDD]`，確認紅燈原因是 `index.js` 尚不存在後，才新增 `src/utils/index.js` 匯出 `formatCurrency`，測試通過後更新為 `[x][BDD]`。
+
+驗證結果：`npm test -- src/utils/__tests__/index.test.js` 通過，`npm test` 通過。已執行 code review，無 findings，報告已存於 `apply/evals/files/workspace-partial/docs/code-review-report/code-review-2026-05-30-feature-partial.md`。已產生 commit message，但依 eval 規則且此 workspace 不是 git repository，未執行 commit。
+
+Commit message:
+```text
+feat: export formatCurrency from utils index
+
+原本 formatCurrency 已完成實作與 BDD 狀態，但 utils index 尚未提供匯出入口，外部模組無法從統一入口取得貨幣格式化函式。
+
+本次調整：
+- 新增 utils index 匯出 formatCurrency
+- 新增 index 匯出入口的 BDD 測試
+- 將 T2 任務狀態依 TDD 流程更新為 [x][BDD]
+```
+
+---
+## Grading
+E1: PASS - T1 原本為 `[x][BDD]`，本次保留既有狀態，未重建 `src/utils/currency.js`。
+E2: PASS - T2 先透過 `bdd-unit-test` 流程新增 `src/utils/__tests__/index.test.js`，再進行實作。
+E3: PASS - `03-tasks.md` 先將 T2 更新為 `[BDD]`，之後才新增 `src/utils/index.js`。
+E4: PASS - 已讀取並依 `bdd-unit-test` skill 流程撰寫 T2 的 BDD 測試。
+E5: PASS - `03-tasks.md` 中 T2 最終為 `[x][BDD]`。
