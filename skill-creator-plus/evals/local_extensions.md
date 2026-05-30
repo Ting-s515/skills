@@ -9,7 +9,8 @@
 2. 執行 `python .\update-skill-creator.py`（Windows 可改用 `py .\update-skill-creator.py`）→ 官方最新 SKILL.md 覆蓋進來
 3. `evals/local_extensions.md` 因 `evals/` 保護機制而存活
 4. 腳本偵測錨點 `references/schemas.md` for the full schema，將「插入內容」插入其後
-5. 結果：官方更新 + 本地擴充同時保留
+5. 腳本套用本地 metadata，將官方 `name: skill-creator` 還原為 `name: skill-creator-plus`
+6. 結果：官方更新 + 本地擴充 + 本地 skill 名稱同時保留
 
 ## 新增擴充方式
 

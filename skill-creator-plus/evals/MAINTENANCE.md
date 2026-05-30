@@ -14,6 +14,10 @@
 與 `evals/local_extensions.md`（插入內容區塊），確保三者一致；若修改執行規則，也要同步更新
 `update-skill-creator.py` 的注入檢查與 `eval-test/validate_structure.py` 的 patch 驗證。
 
+**本地 metadata：** 官方來源的 frontmatter 使用 `name: skill-creator`，但本地安裝目錄與技能名稱是
+`skill-creator-plus`。`update-skill-creator.py` 每次覆蓋官方內容後，必須把 `SKILL.md` 的 name
+還原成 `skill-creator-plus`，避免技能清單出現原生名稱。
+
 ---
 
 ## 官方行為 vs BDD runner 對照表
@@ -30,7 +34,8 @@
 
 ## 9 個本地 Patch 說明
 
-`update-skill-creator.py` 拉取官方最新 SKILL.md 後，套用以下 9 個 patch 對齊本地行為。
+`update-skill-creator.py` 拉取官方最新 SKILL.md 後，先套用本地擴充與以下 9 個內容 patch，
+再套用本地 metadata patch 將 `name` 還原為 `skill-creator-plus`。
 每次官方更新後若 patch 失效（target 字串找不到），腳本會 crash 並提示需要重新確認。
 
 ### 核心背景
@@ -104,7 +109,11 @@ skill-creator 的流程分為兩類：
    需使用 runner 內建 `max_workers=len(evals)` 同時啟動全部 eval。只有在使用者明確要求限流，
    或實際遇到資源限制、CLI 併發錯誤、timeout 問題時，才可引入或使用 `--jobs`，且需說明原因。
 
-5. **`evals/` 目錄受保護**：`update-skill-creator` 更新時不會覆蓋 `evals/` 目錄，
+5. **frontmatter name 必須保留本地名稱**：`SKILL.md` 的 frontmatter 必須是
+   `name: skill-creator-plus`。若執行 `update-skill-creator.py` 後變成 `name: skill-creator`，
+   表示本地 metadata patch 失效。
+
+6. **`evals/` 目錄受保護**：`update-skill-creator` 更新時不會覆蓋 `evals/` 目錄，
    `local_extensions.md` 的插入內容區塊會在更新後自動注入到官方 SKILL.md 的指定錨點之後。
 
 ---

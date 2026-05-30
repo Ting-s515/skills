@@ -19,6 +19,7 @@
   skill-creator-plus 額外驗證（指定 skill-creator-patches）：
     - SKILL.md 的 9 個本地 patch 是否仍有效套用
     - 本地擴充（local_extensions.md）是否正確注入 SKILL.md
+    - frontmatter name 是否維持本地 `skill-creator-plus`
 
 【使用時機】
   - 修改任何 skill 的 run_evals_bdd.py 之後
@@ -76,6 +77,12 @@ def validate_skill_creator_patches(errors: list[str]) -> None:
         return
 
     content = skill_md.read_text(encoding="utf-8")
+    lines = content.splitlines()
+
+    if not any(line.strip() == "name: skill-creator-plus" for line in lines):
+        errors.append("本地 metadata 失效：SKILL.md frontmatter 缺少 name: skill-creator-plus")
+    if any(line.strip() == "name: skill-creator" for line in lines):
+        errors.append("本地 metadata 失效：SKILL.md frontmatter 仍為官方 name: skill-creator")
 
     # 不應出現的字串（patch 應已移除）
     absent = [

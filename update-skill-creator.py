@@ -11,6 +11,7 @@ from pathlib import Path
 REPO_URL = "https://github.com/anthropics/claude-plugins-official.git"
 SKILL_PATH = Path("plugins/skill-creator/skills/skill-creator")
 TARGET_DIR = Path.home() / ".claude" / "skills" / "skill-creator-plus"
+LOCAL_SKILL_NAME = "skill-creator-plus"
 PROTECTED_ITEMS = ["agents", "assets", "eval-viewer", "references", "scripts", "LICENSE.txt", "SKILL.md"]
 ANCHOR = "references/schemas.md` for the full schema"
 
@@ -95,6 +96,39 @@ def patch_skill_md(content: str, old: str, new: str, name: str) -> str:
             f"Patch [{name}] 失敗：找不到目標字串，官方 SKILL.md 可能已更動，請確認此 patch 是否仍適用。"
         )
     return content.replace(old_norm, new.replace("\r\n", "\n"))
+
+
+def apply_local_metadata() -> None:
+    skill_md = TARGET_DIR / "SKILL.md"
+    if not skill_md.is_file():
+        return
+
+    content = skill_md.read_text(encoding="utf-8").replace("\r\n", "\n")
+    lines = content.splitlines()
+    if len(lines) < 3 or lines[0] != "---":
+        fail("SKILL.md frontmatter 格式不正確，無法套用本地 skill 名稱。")
+
+    try:
+        frontmatter_end = lines.index("---", 1)
+    except ValueError:
+        fail("SKILL.md 缺少 frontmatter 結束標記，無法套用本地 skill 名稱。")
+
+    updated_name = False
+    for i in range(1, frontmatter_end):
+        if lines[i].startswith("name:"):
+            lines[i] = f"name: {LOCAL_SKILL_NAME}"
+            updated_name = True
+            break
+
+    if not updated_name:
+        fail("SKILL.md frontmatter 缺少 name 欄位，無法套用本地 skill 名稱。")
+
+    updated = "\n".join(lines)
+    if content.endswith("\n"):
+        updated += "\n"
+
+    skill_md.write_text(updated, encoding="utf-8", newline="\n")
+    print(f">>> 已套用本地 metadata (name: {LOCAL_SKILL_NAME})")
 
 
 def apply_patches() -> None:
@@ -295,6 +329,7 @@ def main() -> int:
 
     apply_local_extension()
     apply_patches()
+    apply_local_metadata()
     print(">>> 完成！skill-creator 已更新至最新版本。")
     return 0
 
