@@ -113,6 +113,31 @@
           "check": "spec.md ## 已完成 table does NOT contain missing-tasks folder path or 歷史資料匯入"
         }
       ]
+    },
+    {
+      "id": 5,
+      "name": "sync-case-insensitive-tags",
+      "prompt": "propose-sync，規格文檔：propose-sync/evals/files/workspace-case-tags/spec.md",
+      "expected_output": "掃描 mixed-case-complete 與 mixed-case-incomplete；mixed-case-complete 使用 [x][BDD]、[x][Widget-Test]、[ ][MANUAL] 等大小寫混用標記仍應判定完成並列入 ## 已完成；mixed-case-incomplete 的 [ ][Bdd] 未完成任務應排除。",
+      "files": [
+        "evals/files/workspace-case-tags/spec.md",
+        "evals/files/workspace-case-tags/docs/propose/mixed-case-complete/03-tasks.md",
+        "evals/files/workspace-case-tags/docs/propose/mixed-case-incomplete/03-tasks.md"
+      ],
+      "assertions": [
+        {
+          "name": "mixed-case-complete 加入 ## 已完成",
+          "check": "spec.md ## 已完成 table contains mixed-case-complete folder path or 大小寫標記完成"
+        },
+        {
+          "name": "mixed-case-incomplete 不在 ## 已完成",
+          "check": "spec.md ## 已完成 table does NOT contain mixed-case-incomplete folder path or 大小寫標記未完成"
+        },
+        {
+          "name": "大小寫混用完成標記可判定完成",
+          "check": "output or resulting spec treats mixed-case-complete as complete even though completed tasks use [x][BDD], [x][Widget-Test], and [ ][MANUAL]"
+        }
+      ]
     }
   ]
 }

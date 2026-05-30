@@ -116,6 +116,31 @@
           "check": "transcript shows creating a fix-* folder for the 並發下單/race-condition/庫存 bug"
         }
       ]
+    },
+    {
+      "id": 5,
+      "name": "case-insensitive-tags",
+      "prompt": "開始 propose propose/evals/files/spec-case-insensitive.md（後端）",
+      "expected_output": "大小寫不敏感處理標記：已有 > ProPose: 標記的商品管理需跳過；[Quick-Fix] bug 列入直接實作清單；[PROPOSE] bug 建立 fix-* 功能資料夾並產出三份文檔；未標記 bug 依準則自動分流。",
+      "files": ["evals/files/spec-case-insensitive.md"],
+      "assertions": [
+        {
+          "name": "大小寫混用 > ProPose 標記被視為既有 propose",
+          "check": "transcript or output indicates 商品管理 or product-management is skipped because the existing > ProPose: marker is recognized case-insensitively"
+        },
+        {
+          "name": "[Quick-Fix] 被視為 quick-fix",
+          "check": "output shows 匯出按鈕文字 bug listed under quick-fix direct implementation despite mixed-case [Quick-Fix] tag"
+        },
+        {
+          "name": "[PROPOSE] 被視為 propose",
+          "check": "transcript shows creating a fix-* folder with 01-flow.md, 02-gherkin.md, and 03-tasks.md for the cache invalidation bug despite uppercase [PROPOSE] tag"
+        },
+        {
+          "name": "未標記 bug 仍自動分流",
+          "check": "output classifies the untagged rounding bug as quick-fix or propose with a brief reason"
+        }
+      ]
     }
   ]
 }

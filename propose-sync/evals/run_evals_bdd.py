@@ -249,6 +249,12 @@ def grade_assertion(assertion: dict, spec_text: str, completed_block: str, outpu
         passed = marker_contains(completed_block, "settings-complete") or "設定頁 Widget" in completed_block
         evidence = "settings-complete listed as complete" if passed else "settings-complete not listed"
 
+    treated_match = re.search(r"treats\s+([a-z0-9-]+)\s+as complete", check)
+    if treated_match:
+        folder = treated_match.group(1)
+        passed = marker_contains(completed_block, folder)
+        evidence = f"{folder} listed as complete" if passed else f"{folder} not listed"
+
     return AssertionResult(name=name, passed=passed, evidence=evidence)
 
 
