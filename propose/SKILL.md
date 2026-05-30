@@ -49,6 +49,10 @@ backend/docs/propose/<feature-a>/
 
 讀取規格需求文檔，識別所有功能需求並判斷分組：
 
+**標記判斷規則：**
+- 所有方括號標記皆採大小寫不敏感比對，例如 `[manual]`、`[Manual]`、`[MANUAL]` 視為相同標記。
+- `> propose:` 標記路徑判斷同樣採大小寫不敏感比對。
+
 **跳過規則（依序檢查）：**
 - 出現在 `## 已完成` 表格中的功能 → 跳過，不重複提案
 - 已有 `> propose: \`docs/propose/<feature-name>/\`` 標記的功能 → 跳過
@@ -152,7 +156,7 @@ backend/docs/propose/<feature-a>/
 - [ ] [manual] T_test: 補上單元測試，使用 Skill tool 呼叫 `bdd-unit-test` skill 分析實作檔案產出測試（依賴所有前置任務）
 ```
 
-`[manual]` 標記表示此任務**不由 apply 自動執行**，須由使用者手動在新 session 中指定觸發。
+`[manual]` 標記表示此任務**不由 apply 自動執行**，須由使用者手動在新 session 中指定觸發；此標記大小寫不敏感。
 
 ---
 
