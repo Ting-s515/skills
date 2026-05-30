@@ -5,7 +5,7 @@
       "id": 1,
       "name": "fresh-all-tasks",
       "prompt": "apply apply/evals/files/workspace-fresh/docs/propose/feature-fresh",
-      "expected_output": "從全新狀態實作所有任務：建立 formatCurrency 函式（T1）和匯出模組（T2），呼叫 bdd-unit-test 撰寫 BDD 測試並執行，03-tasks.md 所有任務標記為 [x] 或 [x][bdd]。",
+      "expected_output": "從全新狀態依 TDD 流程處理所有任務：先依序為 T1、T2 呼叫 bdd-unit-test 撰寫 BDD 測試，將任務標記為 [BDD]，等所有一般任務測試都寫完後才開始實作，最後測試通過並將任務標記為 [x][BDD] 或 [x][BDD][cr]。",
       "files": [
         "evals/files/workspace-fresh/docs/propose/feature-fresh/01-flow.md",
         "evals/files/workspace-fresh/docs/propose/feature-fresh/02-gherkin.md",
@@ -13,24 +13,24 @@
       ],
       "assertions": [
         {
-          "name": "建立 T1 實作檔（currency.js）",
-          "check": "transcript shows creating or writing to currency.js implementing the formatCurrency function"
+          "name": "先為 T1 撰寫 BDD 測試",
+          "check": "transcript shows calling bdd-unit-test for T1 before implementing currency.js"
         },
         {
-          "name": "建立 T2 匯出檔（index.js）",
-          "check": "transcript shows creating or writing to index.js exporting formatCurrency"
+          "name": "先為 T2 撰寫 BDD 測試",
+          "check": "transcript shows calling bdd-unit-test for T2 before implementing index.js"
         },
         {
-          "name": "呼叫 bdd-unit-test skill",
-          "check": "transcript shows calling bdd-unit-test skill via Skill tool after all tasks are marked [x]"
+          "name": "所有測試完成後才開始實作",
+          "check": "transcript shows implementation starts only after all non-manual tasks have been marked [BDD]"
         },
         {
-          "name": "T1 更新為 [x] 或 [x][bdd]",
-          "check": "03-tasks.md T1 checkbox is changed from [ ] to [x] or [x][bdd] after the run"
+          "name": "T1 最終更新為 [x][BDD] 或 [x][BDD][cr]",
+          "check": "03-tasks.md T1 is changed from [ ] to [BDD] during test-writing and to [x][BDD] or [x][BDD][cr] after implementation"
         },
         {
-          "name": "T2 更新為 [x] 或 [x][bdd]",
-          "check": "03-tasks.md T2 checkbox is changed from [ ] to [x] or [x][bdd] after the run"
+          "name": "T2 最終更新為 [x][BDD] 或 [x][BDD][cr]",
+          "check": "03-tasks.md T2 is changed from [ ] to [BDD] during test-writing and to [x][BDD] or [x][BDD][cr] after implementation"
         }
       ]
     },
@@ -38,31 +38,31 @@
       "id": 2,
       "name": "resume-partial",
       "prompt": "apply apply/evals/files/workspace-partial/docs/propose/feature-partial",
-      "expected_output": "T1 已 [x] 直接跳過，從 T2 繼續實作（建立 index.js 匯出），呼叫 bdd-unit-test 並執行，03-tasks.md 所有任務最終為 [x] 或 [x][bdd]。",
+      "expected_output": "接續部分完成狀態時，先辨識已完成或舊版狀態的任務並補齊 BDD 狀態；若 T2 尚未有 [BDD]，必須先為 T2 呼叫 bdd-unit-test 撰寫測試並標記 [BDD]，等待所有一般任務測試都就緒後才實作 T2，最後更新為 [x][BDD] 或 [x][BDD][cr]。",
       "files": [
         "evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md",
         "evals/files/workspace-partial/src/utils/currency.js"
       ],
       "assertions": [
         {
-          "name": "T1 被跳過不重複實作",
-          "check": "transcript indicates T1 is already [x] and is skipped; no re-creation of currency.js from scratch"
+          "name": "T1 舊狀態被辨識並補齊 BDD 狀態",
+          "check": "transcript indicates T1 is already implemented or in legacy [x] state and verifies or updates its BDD status instead of re-creating currency.js from scratch"
         },
         {
-          "name": "從 T2 繼續實作",
-          "check": "transcript shows T2 as the first (or only) task to execute in this run"
+          "name": "先為 T2 撰寫測試",
+          "check": "transcript shows T2 test-writing via bdd-unit-test before T2 implementation"
         },
         {
-          "name": "建立 T2 匯出檔（index.js）",
-          "check": "transcript shows creating or writing index.js for the export"
+          "name": "測試標記完成後才建立 T2 匯出檔",
+          "check": "transcript shows index.js implementation starts after T2 is marked [BDD]"
         },
         {
           "name": "呼叫 bdd-unit-test skill",
-          "check": "transcript shows calling bdd-unit-test skill after T2 completion"
+          "check": "transcript shows calling bdd-unit-test skill during the test-writing phase, before implementation"
         },
         {
-          "name": "T2 最終為 [x] 或 [x][bdd]",
-          "check": "03-tasks.md T2 is updated to [x] or [x][bdd] after the run"
+          "name": "T2 最終為 [x][BDD] 或 [x][BDD][cr]",
+          "check": "03-tasks.md T2 is updated from [ ] to [BDD], then to [x][BDD] or [x][BDD][cr] after the run"
         }
       ]
     },
@@ -70,26 +70,26 @@
       "id": 3,
       "name": "skip-manual",
       "prompt": "apply apply/evals/files/workspace-manual/docs/propose/feature-manual",
-      "expected_output": "T1 和 T2 正常實作，[manual] T_test 被跳過，apply 自行執行 BDD 測試步驟，T1 和 T2 更新為 [x][bdd]，T_test [manual] 標記保持原狀不被修改。",
+      "expected_output": "T1 和 T2 依 TDD 流程先寫測試並標記 [BDD]，等待所有一般任務測試寫完後才實作；[manual] T_test 被跳過且保持原狀，T1 和 T2 最終更新為 [x][BDD] 或 [x][BDD][cr]。",
       "files": [
         "evals/files/workspace-manual/docs/propose/feature-manual/03-tasks.md"
       ],
       "assertions": [
         {
-          "name": "T1 和 T2 正常執行",
-          "check": "transcript shows T1 and T2 both being implemented (currency.js and index.js created)"
+          "name": "T1 和 T2 先完成測試階段",
+          "check": "transcript shows T1 and T2 both get bdd-unit-test coverage and [BDD] markers before implementation starts"
         },
         {
           "name": "[manual] T_test 被跳過",
           "check": "transcript explicitly shows T_test is skipped or passed over because it has [manual] tag"
         },
         {
-          "name": "呼叫 bdd-unit-test（apply 自身的 BDD 步驟）",
-          "check": "transcript shows apply calling bdd-unit-test skill as part of its own post-implementation BDD step"
+          "name": "呼叫 bdd-unit-test（TDD 測試先行步驟）",
+          "check": "transcript shows apply calling bdd-unit-test skill during the pre-implementation test-writing phase"
         },
         {
-          "name": "T1 和 T2 更新為 [x] 或 [x][bdd]",
-          "check": "03-tasks.md T1 and T2 are marked [x] or [x][bdd] after the run"
+          "name": "T1 和 T2 更新為 [x][BDD] 或 [x][BDD][cr]",
+          "check": "03-tasks.md T1 and T2 are marked [x][BDD] or [x][BDD][cr] after tests and implementation pass"
         },
         {
           "name": "T_test [manual] 標記保持不變",
