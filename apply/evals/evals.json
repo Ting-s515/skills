@@ -5,7 +5,7 @@
       "id": 1,
       "name": "fresh-all-tasks",
       "prompt": "apply apply/evals/files/workspace-fresh/docs/propose/feature-fresh",
-      "expected_output": "從全新狀態依 TDD 流程處理所有任務：先依序為 T1、T2 呼叫 bdd-unit-test 撰寫 BDD 測試，將任務標記為 [BDD]，等所有一般任務測試都寫完後才開始實作，最後測試通過並將任務標記為 [x][BDD] 或 [x][BDD][cr]。",
+      "expected_output": "從全新狀態依 TDD 流程處理所有任務：先依序為 T1、T2 呼叫 bdd-unit-test 撰寫 BDD 測試，將任務標記為 [BDD]，等所有一般任務測試都寫完後才開始實作，最後測試通過並將任務標記為 [x][BDD]。",
       "files": [
         "evals/files/workspace-fresh/docs/propose/feature-fresh/01-flow.md",
         "evals/files/workspace-fresh/docs/propose/feature-fresh/02-gherkin.md",
@@ -25,12 +25,12 @@
           "check": "transcript shows implementation starts only after all non-manual tasks have been marked [BDD]"
         },
         {
-          "name": "T1 最終更新為 [x][BDD] 或 [x][BDD][cr]",
-          "check": "03-tasks.md T1 is changed from [ ] to [BDD] during test-writing and to [x][BDD] or [x][BDD][cr] after implementation"
+          "name": "T1 最終更新為 [x][BDD]",
+          "check": "03-tasks.md T1 is changed from [ ] to [BDD] during test-writing and to [x][BDD] after implementation"
         },
         {
-          "name": "T2 最終更新為 [x][BDD] 或 [x][BDD][cr]",
-          "check": "03-tasks.md T2 is changed from [ ] to [BDD] during test-writing and to [x][BDD] or [x][BDD][cr] after implementation"
+          "name": "T2 最終更新為 [x][BDD]",
+          "check": "03-tasks.md T2 is changed from [ ] to [BDD] during test-writing and to [x][BDD] after implementation"
         }
       ]
     },
@@ -38,7 +38,7 @@
       "id": 2,
       "name": "resume-partial",
       "prompt": "apply apply/evals/files/workspace-partial/docs/propose/feature-partial",
-      "expected_output": "接續部分完成狀態時，先辨識已完成或舊版狀態的任務並補齊 BDD 狀態；若 T2 尚未有 [BDD]，必須先為 T2 呼叫 bdd-unit-test 撰寫測試並標記 [BDD]，等待所有一般任務測試都就緒後才實作 T2，最後更新為 [x][BDD] 或 [x][BDD][cr]。",
+      "expected_output": "接續部分完成狀態時，先辨識已完成或舊版狀態的任務並補齊 BDD 狀態；若 T2 尚未有 [BDD]，必須先為 T2 呼叫 bdd-unit-test 撰寫測試並標記 [BDD]，等待所有一般任務測試都就緒後才實作 T2，最後更新為 [x][BDD]。",
       "files": [
         "evals/files/workspace-partial/docs/propose/feature-partial/03-tasks.md",
         "evals/files/workspace-partial/src/utils/currency.js"
@@ -61,8 +61,8 @@
           "check": "transcript shows calling bdd-unit-test skill during the test-writing phase, before implementation"
         },
         {
-          "name": "T2 最終為 [x][BDD] 或 [x][BDD][cr]",
-          "check": "03-tasks.md T2 is updated from [ ] to [BDD], then to [x][BDD] or [x][BDD][cr] after the run"
+          "name": "T2 最終為 [x][BDD]",
+          "check": "03-tasks.md T2 is updated from [ ] to [BDD], then to [x][BDD] after the run"
         }
       ]
     },
@@ -70,7 +70,7 @@
       "id": 3,
       "name": "skip-manual",
       "prompt": "apply apply/evals/files/workspace-manual/docs/propose/feature-manual",
-      "expected_output": "T1 和 T2 依 TDD 流程先寫測試並標記 [BDD]，等待所有一般任務測試寫完後才實作；[manual] T_test 被跳過且保持原狀，T1 和 T2 最終更新為 [x][BDD] 或 [x][BDD][cr]。",
+      "expected_output": "T1 和 T2 依 TDD 流程先寫測試並標記 [BDD]，等待所有一般任務測試寫完後才實作；[manual] T_test 被跳過且保持原狀，T1 和 T2 最終更新為 [x][BDD]。",
       "files": [
         "evals/files/workspace-manual/docs/propose/feature-manual/03-tasks.md"
       ],
@@ -88,8 +88,8 @@
           "check": "transcript shows apply calling bdd-unit-test skill during the pre-implementation test-writing phase"
         },
         {
-          "name": "T1 和 T2 更新為 [x][BDD] 或 [x][BDD][cr]",
-          "check": "03-tasks.md T1 and T2 are marked [x][BDD] or [x][BDD][cr] after tests and implementation pass"
+          "name": "T1 和 T2 更新為 [x][BDD]",
+          "check": "03-tasks.md T1 and T2 are marked [x][BDD] after tests and implementation pass"
         },
         {
           "name": "T_test [manual] 標記保持不變",
