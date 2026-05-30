@@ -99,9 +99,9 @@
     },
     {
       "id": 4,
-      "name": "case-insensitive-tdd-tags-no-cr",
+      "name": "case-insensitive-tdd-tags",
       "prompt": "apply apply/evals/files/workspace-case-tags/docs/propose/feature-case-tags",
-      "expected_output": "大小寫不敏感辨識任務標記：既有 [bDd] T1 視為已完成測試、[MANUAL] T_manual 被跳過；先為 T2 撰寫 BDD 測試並標記 [BDD]，等一般任務測試都就緒後才實作；完成後只使用 [x][BDD]，不得產生 [CR]/[cr] 或 code-reviewer 流程。",
+      "expected_output": "大小寫不敏感辨識任務標記：既有 [bDd] T1 視為已完成測試、[MANUAL] T_manual 被跳過；先為 T2 撰寫 BDD 測試並標記 [BDD]，等一般任務測試都就緒後才實作；完成後只使用 [x][BDD]。",
       "files": [
         "evals/files/workspace-case-tags/docs/propose/feature-case-tags/01-flow.md",
         "evals/files/workspace-case-tags/docs/propose/feature-case-tags/02-gherkin.md",
@@ -121,8 +121,8 @@
           "check": "transcript shows bdd-unit-test is called for T2 before T2 implementation starts"
         },
         {
-          "name": "完成狀態不包含 CR tag",
-          "check": "03-tasks.md and output do not contain [CR], [cr], [x][BDD][CR], [x][BDD][cr], code-reviewer, or code review"
+          "name": "完成狀態只使用 BDD tag",
+          "check": "03-tasks.md uses [x][BDD] for completed non-manual tasks without appending extra completion tags"
         }
       ]
     }

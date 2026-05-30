@@ -1,5 +1,0 @@
-E1: PASS - T1 原本為 `[x][BDD]`，本次保留既有狀態，未重建 `src/utils/currency.js`。
-E2: PASS - T2 先透過 `bdd-unit-test` 流程新增 `src/utils/__tests__/index.test.js`，再進行實作。
-E3: PASS - `03-tasks.md` 先將 T2 更新為 `[BDD]`，之後才新增 `src/utils/index.js`。
-E4: PASS - 已讀取並依 `bdd-unit-test` skill 流程撰寫 T2 的 BDD 測試。
-E5: PASS - `03-tasks.md` 中 T2 最終為 `[x][BDD]`。

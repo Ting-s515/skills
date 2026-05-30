@@ -1,3 +1,0 @@
-E1: PASS - 只處理一個新功能：訂單管理，輸出路徑為 `backend/docs/propose/order-management/`
-E2: PASS - 商品管理已明確跳過，原因是已有 `> propose: backend/docs/propose/product-management/` 標記
-E3: PASS - 已為訂單管理建立 `01-flow.md`、`02-gherkin.md`、`03-tasks.md` 三份文檔

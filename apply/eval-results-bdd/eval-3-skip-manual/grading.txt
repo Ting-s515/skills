@@ -1,5 +1,0 @@
-E1: PASS - T1、T2 已先以 `bdd-unit-test` 原則核對既有 BDD 測試覆蓋，且在未進行任何實作修改前更新為 `[x][BDD]`
-E2: PASS - `T_test` 明確因 `[manual]` 標記被跳過，未進入測試或實作流程
-E3: PASS - 本回合已載入並套用 `bdd-unit-test` skill，核對 `currency.test.js` 的 Given/When/Then 測試覆蓋
-E4: PASS - `03-tasks.md` 中 T1、T2 目前皆為 `[x][BDD]`
-E5: PASS - `03-tasks.md` 中 `T_test` 仍為 `- [ ] [manual] T_test...`，保留 `[manual]` 且未標記 `[x]`

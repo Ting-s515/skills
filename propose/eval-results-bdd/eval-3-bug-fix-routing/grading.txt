@@ -1,4 +1,0 @@
-E1: PASS - 輸出將「商品列表每頁顯示筆數寫死 10」與「新增商品成功後 toast 訊息」列在【Bug Fix — quick-fix 直接實作】，且未建立對應 feature folder
-E2: PASS - 已建立 `backend/docs/propose/fix-order-batch-update-rollback/`，包含 `01-flow.md`、`02-gherkin.md`、`03-tasks.md` 三份文件
-E3: PASS - SQL 特殊字元 bug 無標記，已自動歸類為 propose，理由是涉及查詢 escape、參數化查詢與 API 錯誤行為
-E4: PASS - 輸出以【Bug Fix — quick-fix 直接實作】與【Bug Fix — 走 propose 流程】分段呈現分流結果

@@ -1,5 +1,0 @@
-E1: PASS - `## 已完成` 表格包含 `使用者認證` 與 `權限管理`，本次結果明確列為跳過。
-E2: PASS - `商品管理` 與 `訂單管理` 原規格已有 `> propose:` 標記，本次結果明確列為跳過。
-E3: PASS - 已建立 `backend/docs/propose/report-export/01-flow.md`、`02-gherkin.md`、`03-tasks.md`。
-E4: PASS - `登入頁面 Enter 鍵無法送出表單` 保留為 `[quick-fix]` 直接實作項目，未建立 folder。
-E5: PASS - 已建立 `backend/docs/propose/fix-concurrent-inventory-race-condition/`，包含三份 propose 文檔。
