@@ -16,7 +16,7 @@
     - evals.json 是否存在且每個 eval 含 expectations 欄位
     - 每個 eval 的 fixtures/eval-<id>/staged/ 是否存在
 
-  skill-creator 額外驗證（--patches 旗標或指定 skill-creator-patches）：
+  skill-creator-plus 額外驗證（指定 skill-creator-patches）：
     - SKILL.md 的 9 個本地 patch 是否仍有效套用
     - 本地擴充（local_extensions.md）是否正確注入 SKILL.md
 
@@ -29,13 +29,13 @@
 
 【使用方式】
   # 驗證全部 skill（eval 結構）
-  python skill-creator/eval-test/validate_structure.py
+  python skill-creator-plus/eval-test/validate_structure.py
 
   # 只驗證單一 skill
-  python skill-creator/eval-test/validate_structure.py code-reviewer
+  python skill-creator-plus/eval-test/validate_structure.py code-reviewer
 
   # 驗證 skill-creator 的 9 個 patch 是否有效
-  python skill-creator/eval-test/validate_structure.py skill-creator-patches
+  python skill-creator-plus/eval-test/validate_structure.py skill-creator-patches
 
 【退出碼】
   0 = 全部通過
@@ -62,17 +62,17 @@ SKILLS = [
     "llm-repo",
     "writing-training-doc",
     "fleet-review",
-    "skill-creator",
+    "skill-creator-plus",
 ]
 
 
 # ---------- validators ----------
 
 def validate_skill_creator_patches(errors: list[str]) -> None:
-    """驗證 skill-creator SKILL.md 的 9 個本地 patch 與本地擴充是否正確套用。"""
-    skill_md = SKILLS_DIR / "skill-creator" / "SKILL.md"
+    """驗證 skill-creator-plus SKILL.md 的 9 個本地 patch 與本地擴充是否正確套用。"""
+    skill_md = SKILLS_DIR / "skill-creator-plus" / "SKILL.md"
     if not skill_md.exists():
-        errors.append("skill-creator/SKILL.md not found")
+        errors.append("skill-creator-plus/SKILL.md not found")
         return
 
     content = skill_md.read_text(encoding="utf-8")
@@ -118,6 +118,10 @@ def validate_skill_creator_patches(errors: list[str]) -> None:
         (
             "do this proactively even if the user only asks for eval tests",
             "本地擴充失效：缺少 run_evals_bdd.py 自動產出的 proactive 指令",
+        ),
+        (
+            "預設不得指定或新增 `--jobs`",
+            "本地擴充失效：缺少 BDD runner 預設全並行執行規則",
         ),
     ]
 
@@ -200,8 +204,8 @@ def main() -> int:
 
     # skill-creator-patches 是獨立模式，只驗證 SKILL.md patch 套用結果
     if target == "skill-creator-patches":
-        print("=== skill-creator patch validator ===")
-        print("Checking 9 local patches + local extension in skill-creator/SKILL.md")
+        print("=== skill-creator-plus patch validator ===")
+        print("Checking 9 local patches + local extension in skill-creator-plus/SKILL.md")
         print()
         errors: list[str] = []
         validate_skill_creator_patches(errors)
@@ -214,7 +218,7 @@ def main() -> int:
             return 1
         print("  PASS    skill-creator-patches")
         print()
-        print("All patches conform to skill-creator/evals/MAINTENANCE.md.")
+        print("All patches conform to skill-creator-plus/evals/MAINTENANCE.md.")
         return 0
 
     skills = [target] if target else SKILLS

@@ -89,6 +89,7 @@ Fill in the actual skill name in the header comment:
 不要改成 sandbox / approval 模式。這個 runner 預期只在一次性工作區或外部隔離環境中執行。
 
 所有 eval 全部並行啟動（max_workers=eval 數量），總執行時間 ≈ 最慢的單一 eval，而非全部加總。
+執行 `run_evals_bdd.py` 時，預設不得指定或新增 `--jobs` 限流；必須使用 runner 預設的全案例並行，避免讓獨立 eval 排隊等待前一個 eval 完成。只有在使用者明確要求限流，或實際遇到資源限制、CLI 併發錯誤、timeout 問題時，才可引入或使用 `--jobs`，且必須在回覆中說明原因。
 
 Usage:
     python evals/run_evals_bdd.py           # 執行全部 eval

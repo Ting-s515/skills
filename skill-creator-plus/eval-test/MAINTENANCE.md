@@ -44,6 +44,8 @@ evals/fixtures/eval-1/
 1. **並行執行**
    - 所有 eval 以 `ThreadPoolExecutor(max_workers=len(evals))` 同時啟動
    - 總執行時間 ≈ 最慢的單一 eval，而非全部加總
+   - 執行 runner 時預設不得指定或新增 `--jobs` 限流，避免讓獨立 eval 排隊等待
+   - 只有在使用者明確要求限流，或實際遇到資源限制、CLI 併發錯誤、timeout 問題時，才可引入或使用 `--jobs`，且需說明原因
    - 不要改成序列 for 迴圈
 
 2. **自評分格式**
@@ -80,6 +82,7 @@ evals/fixtures/eval-1/
 後續修改 `run_evals_bdd.py` 時，應至少符合：
 
 - 可並行執行多個 eval（`ThreadPoolExecutor`）
+- 預設執行不需要也不應傳入 `--jobs`
 - 每個 eval 的輸出存至 `eval-results-bdd/eval-{id}/output.txt`
 - 通過率可從 Summary 行讀取（`X/Y expectations passed`）
 - Windows UTF-8 re-exec 機制完整（`sys.platform == "win32" and not sys.flags.utf8_mode`）

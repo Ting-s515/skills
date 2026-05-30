@@ -11,7 +11,8 @@
 每次執行都能得到具體的 X/Y expectations passed 結果，支援迭代改善 skill 品質。
 
 **修改原則：** 任何對 `run_evals_bdd.py` 模板的修改都必須同步更新 `skill-creator-plus/SKILL.md`
-與 `evals/local_extensions.md`（插入內容區塊），確保三者一致。
+與 `evals/local_extensions.md`（插入內容區塊），確保三者一致；若修改執行規則，也要同步更新
+`update-skill-creator.py` 的注入檢查與 `eval-test/validate_structure.py` 的 patch 驗證。
 
 ---
 
@@ -99,7 +100,11 @@ skill-creator 的流程分為兩類：
 3. **Windows UTF-8 re-exec**：`__main__` 的 re-exec 邏輯不可移除，
    這是在 Windows cp950 終端機正確輸出中文的唯一可靠方式。
 
-4. **`evals/` 目錄受保護**：`update-skill-creator` 更新時不會覆蓋 `evals/` 目錄，
+4. **eval runner 預設全並行執行**：執行 `run_evals_bdd.py` 時預設不得指定或新增 `--jobs` 限流，
+   需使用 runner 內建 `max_workers=len(evals)` 同時啟動全部 eval。只有在使用者明確要求限流，
+   或實際遇到資源限制、CLI 併發錯誤、timeout 問題時，才可引入或使用 `--jobs`，且需說明原因。
+
+5. **`evals/` 目錄受保護**：`update-skill-creator` 更新時不會覆蓋 `evals/` 目錄，
    `local_extensions.md` 的插入內容區塊會在更新後自動注入到官方 SKILL.md 的指定錨點之後。
 
 ---

@@ -79,6 +79,7 @@ def apply_local_extension() -> None:
         "evals/run_evals_bdd.py": "本地擴充未成功插入 SKILL.md。",
         "本地規則：Codex eval runner": "本地擴充缺少 Codex eval runner 本地規則。",
         "--dangerously-bypass-approvals-and-sandbox": "本地擴充缺少 Codex bypass sandbox 參數。",
+        "預設不得指定或新增 `--jobs`": "本地擴充缺少 BDD runner 預設全並行規則。",
     }
     for pattern, message in checks.items():
         if pattern not in updated:
@@ -260,6 +261,10 @@ Put each with_skill version before its baseline counterpart.
     if "python evals/run_evals_bdd.py" not in content:
         raise SystemExit(
             "Patch 驗證失敗：SKILL.md 缺少 BDD runner 執行指令，Step 2 patch 可能失敗。"
+        )
+    if "預設不得指定或新增 `--jobs`" not in content:
+        raise SystemExit(
+            "Patch 驗證失敗：SKILL.md 缺少 BDD runner 預設全並行規則，本地擴充可能失敗。"
         )
 
     print(">>> 已套用本地 patches (9 項)")
