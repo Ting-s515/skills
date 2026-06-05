@@ -18,19 +18,31 @@ description: Use only when the user's message explicitly contains the "pff" keyw
 9. 將資訊統整到目前執行者的 home 目錄下 `.claude/pff`，輸出為獨立 Markdown 檔案；路徑必須動態解析目前使用者，不可硬編碼特定帳號名稱。輸出檔名使用專案根目錄名稱並加上 `.md`，例如 Windows 使用 `%USERPROFILE%\.claude\pff\<project-root-name>.md` 或 `$env:USERPROFILE\.claude\pff\<project-root-name>.md`，macOS/Linux 使用 `$HOME/.claude/pff/<project-root-name>.md`。
 10. 若專案根目錄名稱包含檔名不合法字元，先轉成安全檔名再輸出；若目標目錄不存在，先建立目錄；若同專案摘要檔已存在，更新內容而不是分散產出多個重複檔案。
 11. 不要把缺少來源支撐的內容寫成既成事實；可推論內容需標示為推論或待確認。
+12. Git author、來源狀態、可追溯來源與專案貢獻素材是撰寫 PFF 的內部整理依據；除非使用者另外要求，最終輸出不要改成素材清單。
 
 ## 輸出格式
 
-輸出的 Markdown 必須包含：
+最終輸出的 Markdown 必須符合 `# PFF 評分表` 格式，並只使用以下七個評分區塊作為主體。每個區塊撰寫約 150 到 200 個中文字，使用完整段落，不要條列素材、來源狀態或 Git 指令輸出。
 
-- `git author: Theon`
-- 掃描來源範圍與產出時間
-- 來源狀態：tracked、modified、untracked、workspace-only 或 uncommitted
-- 專案貢獻素材
-- 對應 PFF 評分面向
-- 可追溯來源
-- 可直接用於績效回顧的敘述草稿
-- 待補資料或需要 Theon 確認的項目
+```markdown
+# PFF 評分表
+
+## 專業可信度 Profession
+
+## 組織能力 Organization
+
+## 發現、分析及解決問題的能力 Problem Solving
+
+## 溝通協調能力 Communication
+
+## 對專案的投入程度及承諾 Commitment
+
+## 清楚的邏輯表達能力 Presentation
+
+## 對專案工作氣氛的影響 Morale Influence
+```
+
+若某一區塊缺少足夠材料，仍保留該區塊標題，內容以保守敘述呈現，並在段落中標示待確認事項，不要編造未被文件、Git 歷史或工作區素材支撐的成果。
 
 ## 專業可信度 Profession
 
@@ -71,11 +83,3 @@ description: Use only when the user's message explicitly contains the "pff" keyw
 
 能夠以積極的態度面對工作難題與挑戰
 能夠正面影響專案士氣
-
-## 自評能力之強項以及需加強之部份
-1. 強項：
-```
-```
-2. 需加強之部份：
-```
-```
