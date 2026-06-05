@@ -12,8 +12,6 @@ This repository is the skill library. Each skill can be used on its own, but a s
 
 If you want a more complete and reliable Specification-Driven Development (SDD) workflow, see my [SDD Workflow](https://github.com/Ting-s515/SDD-workflow) repository. It documents how `propose`, `apply`, and `propose-sync` work together, including the direct dependency skills they call.
 
-That workflow is designed to turn natural-language requirements into structured flows, Gherkin specs, task lists, test-first implementation work, review support, and syncable completion status. It is a better starting point when you want specs, implementation, testing, and delivery status to stay connected instead of using the skills one by one.
-
 ## Repository Layout
 
 - `*/SKILL.md` - the entrypoint for each skill.
