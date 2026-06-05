@@ -13,7 +13,7 @@ description: Use only when the user's message explicitly contains the "pff" keyw
 4. 掃描 `docs` 內的 Markdown 與純文字文件，優先讀取與需求、規格、提案、任務、回顧、決策紀錄、測試策略、bug fix、review 結果相關的內容。
 5. 將作者 `author` 固定指定為 `Theon`；若文件內已有作者欄位，只整理作者為 `Theon` 的內容；若文件沒有作者欄位，仍以 `Theon` 作為本次 PFF 整理對象。
 6. 從文件內容回推並擷取可支撐 PFF 敘述的貢獻素材：完成事項、技術決策、問題分析、協作紀錄、風險處理、品質改善、測試或驗證結果、可量化影響。
-7. 將資訊統整到使用者目錄下的 `.claude/pff` 目錄，輸出為獨立 Markdown 檔案。Windows 預設路徑為 `%USERPROFILE%\.claude\pff\pff-summary.md`。
+7. 將資訊統整到目前執行者的 home 目錄下 `.claude/pff`，輸出為獨立 Markdown 檔案；路徑必須動態解析目前使用者，不可硬編碼特定帳號名稱。Windows 使用 `%USERPROFILE%\.claude\pff\pff-summary.md` 或 `$env:USERPROFILE\.claude\pff\pff-summary.md`，macOS/Linux 使用 `$HOME/.claude/pff/pff-summary.md`。
 8. 若目標目錄不存在，先建立目錄；若摘要檔已存在，更新內容而不是分散產出多個重複檔案。
 9. 不要把缺少來源支撐的內容寫成既成事實；可推論內容需標示為推論或待確認。
 
