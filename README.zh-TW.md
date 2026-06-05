@@ -8,7 +8,11 @@ Ting-s515 維護的個人 AI agent skills 與 workflow instructions。
 
 ## 相關 Workflow
 
-如果你想參考更穩定可靠、以這些 skills 串接而成的 Specification-Driven Development（SDD）workflow，可以查看我的 [SDD Workflow](https://github.com/Ting-s515/SDD-workflow) repository。
+這個 repository 是 skill library。每個 skill 都可以獨立使用，但穩定的 AI-assisted development process 通常不只是單一 prompt，而是需要一套可重複執行的流程。
+
+如果你想參考更完整、可靠的 Specification-Driven Development（SDD）workflow，可以查看我的 [SDD Workflow](https://github.com/Ting-s515/SDD-workflow) repository。該 repo 說明 `propose`、`apply`、`propose-sync` 如何串接，並整理它們會直接呼叫的 dependency skills。
+
+這套 workflow 目標是把自然語言需求轉成 structured flows、Gherkin specs、task lists、test-first implementation work、review support 與可同步的完成狀態。當你希望 specs、implementation、testing 與 delivery status 能保持連動，而不是只單獨使用某個 skill 時，建議優先參考這個 workflow。
 
 ## Repository 結構
 
