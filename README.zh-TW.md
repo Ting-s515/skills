@@ -6,6 +6,10 @@ Ting-s515 維護的個人 AI agent skills 與 workflow instructions。
 
 預設 GitHub 文件為英文版，請見 [README.md](README.md)。
 
+## 相關 Workflow
+
+如果你想參考更穩定可靠、以這些 skills 串接而成的 Specification-Driven Development（SDD）workflow，可以查看我的 [SDD Workflow](https://github.com/Ting-s515/SDD-workflow) repository。
+
 ## Repository 結構
 
 - `*/SKILL.md` - 每個 skill 的入口文件。

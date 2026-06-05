@@ -6,6 +6,10 @@ This repository is a public skill library for reusable agent behaviors such as r
 
 For Traditional Chinese documentation, see [README.zh-TW.md](README.zh-TW.md).
 
+## Related Workflow
+
+If you want a more stable and reliable Specification-Driven Development (SDD) workflow built around these skills, see my [SDD Workflow](https://github.com/Ting-s515/SDD-workflow) repository.
+
 ## Repository Layout
 
 - `*/SKILL.md` - the entrypoint for each skill.
