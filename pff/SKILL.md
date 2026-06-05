@@ -11,17 +11,18 @@ description: Use only when the user's message explicitly contains the "pff" keyw
 2. 從目前工作區判斷專案根目錄，掃描該專案底下的 `docs` 目錄。
 3. 掃描 `docs` 的目的，是統整 `Theon` 對此專案做過哪些事情，作為撰寫 PFF 的材料；不要把文件摘要本身當成最終目的。
 4. 掃描 `docs` 內的 Markdown 與純文字文件，優先讀取與需求、規格、提案、任務、回顧、決策紀錄、測試策略、bug fix、review 結果相關的內容。
-5. 將作者 `author` 固定指定為 `Theon`；若文件內已有作者欄位，只整理作者為 `Theon` 的內容；若文件沒有作者欄位，仍以 `Theon` 作為本次 PFF 整理對象。
-6. 從文件內容回推並擷取可支撐 PFF 敘述的貢獻素材：完成事項、技術決策、問題分析、協作紀錄、風險處理、品質改善、測試或驗證結果、可量化影響。
-7. 將資訊統整到目前執行者的 home 目錄下 `.claude/pff`，輸出為獨立 Markdown 檔案；路徑必須動態解析目前使用者，不可硬編碼特定帳號名稱。輸出檔名使用專案根目錄名稱並加上 `.md`，例如 Windows 使用 `%USERPROFILE%\.claude\pff\<project-root-name>.md` 或 `$env:USERPROFILE\.claude\pff\<project-root-name>.md`，macOS/Linux 使用 `$HOME/.claude/pff/<project-root-name>.md`。
-8. 若專案根目錄名稱包含檔名不合法字元，先轉成安全檔名再輸出；若目標目錄不存在，先建立目錄；若同專案摘要檔已存在，更新內容而不是分散產出多個重複檔案。
-9. 不要把缺少來源支撐的內容寫成既成事實；可推論內容需標示為推論或待確認。
+5. 將 Git commit author 固定指定為 `Theon`；這裡的 author 指「誰 commit 這個檔案或相關變更」，不是文件內容、Markdown frontmatter 或 metadata 內的 `author` 欄位。判斷歸因時以 Git 歷史為準，例如 `git log --follow --format=... -- <file>` 或 `git blame -- <file>` 顯示的 commit author。
+6. 若文件或部分內容沒有可追溯的 Git 歷史，或無法確認是否由 `Theon` commit，將該素材標示為待確認，不要直接歸因為 Theon。
+7. 從文件內容與 Git 歸因回推並擷取可支撐 PFF 敘述的貢獻素材：完成事項、技術決策、問題分析、協作紀錄、風險處理、品質改善、測試或驗證結果、可量化影響。
+8. 將資訊統整到目前執行者的 home 目錄下 `.claude/pff`，輸出為獨立 Markdown 檔案；路徑必須動態解析目前使用者，不可硬編碼特定帳號名稱。輸出檔名使用專案根目錄名稱並加上 `.md`，例如 Windows 使用 `%USERPROFILE%\.claude\pff\<project-root-name>.md` 或 `$env:USERPROFILE\.claude\pff\<project-root-name>.md`，macOS/Linux 使用 `$HOME/.claude/pff/<project-root-name>.md`。
+9. 若專案根目錄名稱包含檔名不合法字元，先轉成安全檔名再輸出；若目標目錄不存在，先建立目錄；若同專案摘要檔已存在，更新內容而不是分散產出多個重複檔案。
+10. 不要把缺少來源支撐的內容寫成既成事實；可推論內容需標示為推論或待確認。
 
 ## 輸出格式
 
 輸出的 Markdown 必須包含：
 
-- `author: Theon`
+- `git author: Theon`
 - 掃描來源範圍與產出時間
 - 專案貢獻素材
 - 對應 PFF 評分面向
