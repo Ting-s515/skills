@@ -1,9 +1,31 @@
 ---
 name: pff
-description: Use only when the user's message explicitly contains the "pff" keyword. Convert project experiences, achievements, challenges, and collaboration activities into performance review narratives aligned with PFF evaluation criteria. Highlight measurable impact, professional growth, ownership, teamwork, and problem-solving contributions.
+description: Use only when the user's message explicitly contains the "pff" keyword. Scan the current project's docs directory, use Theon as the target author, and consolidate project experiences, achievements, challenges, and collaboration activities into a standalone Markdown file under the user's .claude/pff directory. Convert the collected evidence into performance review narratives aligned with PFF evaluation criteria. Highlight measurable impact, professional growth, ownership, teamwork, and problem-solving contributions.
 ---
 
 # PFF 評分表
+
+## 使用流程
+
+1. 只在使用者訊息明確包含 `pff` 時使用此技能。
+2. 從目前工作區判斷專案根目錄，掃描該專案底下的 `docs` 目錄。
+3. 掃描 `docs` 內的 Markdown 與純文字文件，優先讀取與需求、規格、提案、任務、回顧、決策紀錄、測試策略、bug fix、review 結果相關的內容。
+4. 將作者 `author` 固定指定為 `Theon`；若文件內已有作者欄位，只整理作者為 `Theon` 的內容；若文件沒有作者欄位，仍以 `Theon` 作為本次 PFF 整理對象。
+5. 擷取可支撐 PFF 敘述的證據：完成事項、技術決策、問題分析、協作紀錄、風險處理、品質改善、測試或驗證結果、可量化影響。
+6. 將資訊統整到使用者目錄下的 `.claude/pff` 目錄，輸出為獨立 Markdown 檔案。Windows 預設路徑為 `%USERPROFILE%\.claude\pff\pff-summary.md`。
+7. 若目標目錄不存在，先建立目錄；若摘要檔已存在，更新內容而不是分散產出多個重複檔案。
+8. 不要把缺少來源支撐的內容寫成既成事實；可推論內容需標示為推論或待確認。
+
+## 輸出格式
+
+輸出的 Markdown 必須包含：
+
+- `author: Theon`
+- 掃描來源範圍與產出時間
+- PFF 各評分面向的證據摘要
+- 可直接用於績效回顧的敘述草稿
+- 待補資料或需要 Theon 確認的項目
+
 ## 專業可信度 Profession
 
 能夠展現相當深度與廣度的專業知識及技能
