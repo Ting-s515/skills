@@ -1,6 +1,6 @@
 ---
 name: pff
-description: 只有當使用者訊息明確包含「pff」關鍵字時，才使用此技能。將專案經驗、成就、挑戰與協作活動整理為符合 PFF 評分準則的績效回顧敘述。
+description: Use only when the user's message explicitly contains the "pff" keyword. Convert project experiences, achievements, challenges, and collaboration activities into performance review narratives aligned with PFF evaluation criteria. Highlight measurable impact, professional growth, ownership, teamwork, and problem-solving contributions.
 ---
 
 # PFF 評分表
