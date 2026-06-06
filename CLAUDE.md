@@ -4,11 +4,13 @@
 
 ## 步驟一：產生 Commit Message（無條件執行）
 
-- 常用 type：`feat`、`fix`、`refactor`、`docs`、`style`、`other`、`test`
-- 第一行必須符合 Conventional Commits 格式：`<type>: <description>`
+- `type` 為必要欄位，只允許：`feat`、`fix`、`docs`、`style`、`refactor`、`perf`、`test`、`chore`、`revert`
+- `scope` 為可選欄位；能明確定位變更範圍時建議使用，例如 `docs(agents):`
+- `subject` 為必要欄位，簡短描述本次變更，不超過 50 個字元，結尾不要加句號
+- 第一行必須符合 Conventional Commits Header 格式：`<type>[(scope)]: <subject>`
 - 第二行開始必須輸出詳細的中文內容，供 PR code review 使用
 - commit message 必須描述本次實際提交內容，不可使用空泛描述
-- 詳細中文內容必須說明本次調整的背景、原本問題或風險，以及本次調整項目
+- Body 必須說明本次調整的背景、原本問題或風險，以及本次調整項目；每行建議不超過 72 個字元
 - 詳細中文內容建議格式：
   1. 第一段描述原本問題、觸發情境或調整原因
   2. 第二段以「本次調整：」開頭
@@ -152,7 +154,7 @@ Build 驗證與 Code Review 完成後，**必須**使用步驟一產生的 commi
 
 ---
 **Commit Message：**
-`<type>: <description>`
+`<type>[(scope)]: <subject>`
 `<第二行開始為詳細中文變更說明>`
 **Build：** 已執行 / 跳過（原因：___）
 **Code Review：** 已執行 / 跳過（原因：___）
