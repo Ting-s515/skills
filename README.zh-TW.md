@@ -1,10 +1,13 @@
 # Ting-s515 Skills
 
+<p dir="auto">
+  <a href="./README.md"><img src="https://img.shields.io/badge/docs-English-blue" alt="English" /></a>
+  <a href="./README.zh-TW.md"><img src="https://img.shields.io/badge/docs-%E7%B9%81%E9%AB%94%E4%B8%AD%E6%96%87-yellow" alt="繁體中文" /></a>
+</p>
+
 Ting-s515 維護的個人 AI agent skills 與 workflow instructions。
 
 這個 repository 是公開的 skill library，收錄可重用的 agent 行為，例如需求規劃、BDD 測試產生、code review、文件流程、本地知識庫查詢與網路搜尋結果保存。
-
-預設 GitHub 文件為英文版，請見 [README.md](README.md)。
 
 ## 相關 Workflow
 
