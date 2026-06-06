@@ -23,8 +23,6 @@ If you want a more complete and reliable Specification-Driven Development (SDD) 
 
 ## Skill Index
 
-Private-only skills are intentionally omitted from this public index.
-
 | Skill | Purpose | Use When |
 | --- | --- | --- |
 | [`ac-to-test`](ac-to-test/) | Converts acceptance criteria into red-test skeletons. | You have an `AC.md` or Given/When/Then criteria and want test boundaries before implementation. |

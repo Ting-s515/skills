@@ -23,8 +23,6 @@ Ting-s515 維護的個人 AI agent skills 與 workflow instructions。
 
 ## Skill 索引
 
-個人用途限定的 skill 不列入這份公開索引。
-
 | Skill | 用途 | 使用時機 |
 | --- | --- | --- |
 | [`ac-to-test`](ac-to-test/) | 將驗收條件轉成預設紅燈的測試骨架。 | 已有 `AC.md` 或 Given/When/Then 驗收條件，且想先建立實作前的測試邊界。 |
