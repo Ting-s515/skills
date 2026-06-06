@@ -24,7 +24,7 @@
 每次透過工具新增、修改、刪除任何檔案後，最終回覆前必須完成：
 
 1. 檢查本次變更檔案類型。
-2. 產生完整多行 commit message。
+2. 產生符合 Conventional Commits 標準格式的完整多行 commit message。
 3. 判斷是否需要 code review。
 4. 除非符合下方 Code Review 跳過條件，否則必須執行 code review。
 5. 若未執行 code review，必須在最終回覆明確寫出跳過原因。
@@ -37,12 +37,14 @@
 ### Commit Message
 
 - 自動產生一筆完整的多行 commit message。
-- 第一行必須符合 Conventional Commits 格式：`<type>: <description>`
+- 第一行必須符合 Header 格式：`<type>[(scope)]: <subject>`
+- `type` 為必要欄位，只允許：`feat`、`fix`、`docs`、`style`、`refactor`、`perf`、`test`、`chore`、`revert`。
+- `scope` 為可選欄位；能明確定位變更範圍時建議使用，例如 `docs(agents):`。
+- `subject` 為必要欄位，簡短描述本次變更，不超過 50 個字元，結尾不要加句號。
 - 第二行開始必須輸出詳細的中文內容，供 PR code review 使用。
-- 常用 type：`feat`、`fix`、`refactor`、`docs`、`style`、`other`、`test`
 - 產生 message 後必須用於實際執行 `git commit`。
 - commit message 必須描述本次實際提交內容，不可使用空泛描述。
-- 詳細中文內容必須說明本次調整的背景、原本問題或風險，以及本次調整項目。
+- Body 必須說明本次調整的背景、原本問題或風險，以及本次調整項目；每行建議不超過 72 個字元。
 - 詳細中文內容建議格式：
   1. 第一段描述原本問題、觸發情境或調整原因。
   2. 第二段以「本次調整：」開頭。
