@@ -61,7 +61,7 @@ description: Use only when the user's message explicitly contains the "pff" keyw
 
 ## 輸出格式
 
-最終輸出的 Markdown 必須符合 `# PFF 評分表` 格式，並只使用以下七個評分區塊作為主體。每個區塊撰寫約 150 到 200 個中文字，使用完整段落，不要條列素材、來源狀態或 Git 指令輸出。
+最終輸出的 Markdown 必須符合 `# PFF 評分表` 格式，並只使用以下七個評分區塊作為主體。每個區塊撰寫約 400 到 500 個中文字，使用完整段落，不要條列素材、來源狀態或 Git 指令輸出。
 
 ```markdown
 # PFF 評分表
