@@ -28,9 +28,19 @@ description: >
 
 ### ❌ 不包含
 - **UI 畫面測試**：不測試 React/Vue 元件的渲染結果、DOM 結構
+- **純展示元件**：若元件只負責靜態文字、圖片或樣式呈現，沒有業務邏輯、條件分支、狀態轉換或使用者互動，不需要撰寫單元測試
+- **CSS class 驗證**：不使用 `querySelector`、`querySelectorAll`、`container.querySelector` 或其他 CSS selector 抓取 class、DOM 節點來驗證畫面
 - **視覺回歸測試**：不測試樣式、佈局、截圖比對
 - **E2E 測試**：不測試完整使用者流程、瀏覽器互動
 - **整合測試**：不測試多個模組的整合行為
+
+### UI 測試穩定性原則
+
+- 測試應驗證可觀察的功能行為，不要綁定容易因重構或樣式調整而變動的 CSS class、DOM 階層或 selector。
+- 禁止為了取得元素而使用 `querySelector`、`querySelectorAll`、`container.querySelector`，以及以 `.className`、`[class*=...]` 等 CSS selector 進行驗證。
+- 若元件確實包含互動或條件行為，優先使用可存取角色、名稱、標籤、文字或測試框架提供的語意查詢，例如 Testing Library 的 `getByRole`、`getByLabelText`、`getByText`。
+- 不驗證實作細節，例如 class 名稱、內部 DOM 包裝層數或純樣式切換；只驗證使用者可感知的結果與業務行為。
+- 分析目標檔案後若確認只是簡單畫面展示元件，場景分析應明確標示「不需要單元測試」並停止產生測試檔案。
 
 ## 語言判別規則
 
