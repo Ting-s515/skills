@@ -1,0 +1,7 @@
+.profile-form > .name-label + .name-input {
+  margin-left: 8px;
+}
+
+.profile-form > .name-input + .save-button {
+  margin-left: 12px;
+}
