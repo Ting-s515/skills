@@ -1,0 +1,4 @@
+interface:
+  display_name: "Reference UI Implementation"
+  short_description: "嚴格依照範例切版實作動態 UI，維持 DOM 與既有 CSS 契約"
+  default_prompt: "Use $reference-ui-implementation to implement this UI from the supplied reference layout without changing its rendered DOM structure."
