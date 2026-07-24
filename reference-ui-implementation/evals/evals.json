@@ -1,0 +1,43 @@
+{
+  "skill_name": "reference-ui-implementation",
+  "evals": [
+    {
+      "id": 1,
+      "name": "react-readonly-global-css-inline-style",
+      "prompt": "請依照 spec 中的 reference.html、global.css 與 requirement.md，輸出完整的 ProfileForm.tsx。這次沒有授權修改 global CSS；只在回覆中提供程式碼與簡短契約符合說明，不要建立檔案。",
+      "expectations": [
+        "輸出的 form 仍以 label、input、button 作為依序排列的直接子元素，沒有新增實體 wrapper 或其他元素",
+        "輸出保留 reference.html 的 profile-form、name-label、name-input、save-button class、既有 aria-label、id、type、autoComplete、文字，以及 input 的 width: 240px inline style",
+        "輸出將 for 正確轉為 React htmlFor，並使用 state、value、onChange 與 onSubmit 實作指定動態行為",
+        "button 的 disabled 狀態與去除空白後的名稱有效性一致，且 opacity 與 cursor 樣式使用 button 元素的 React style 屬性實作",
+        "輸出沒有修改 global.css、沒有新增 CSS 類別、style tag、CSS Module、styled-components 或其他 CSS-in-JS",
+        "輸出沒有自行新增驗證訊息、標題、提示、空狀態或需求未定義的 UI"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "vue-explicit-global-css-authorization",
+      "prompt": "請依照 spec 中的 reference.html、global.css、MenuItem.vue 與 requirement.md，輸出完整的 MenuList.vue，並另外輸出本次獲授權的最小 global.css diff。只在回覆中提供內容，不要建立檔案。",
+      "expectations": [
+        "輸出的 template 維持 ul > li > a 結構，li 是 ul 的直接子元素且 a 是 li 的直接子元素",
+        "輸出沒有使用會產生 menu-item-shell wrapper 的 MenuItem 元件，也沒有為了共用元件改寫參考 markup",
+        "輸出使用 Vue v-for 將 items 綁定到 li，並保留 menu、menu-item、menu-link class 與 href、label 動態資料",
+        "global.css diff 只把已明確授權 selector 的 margin-top 從 4px 改為 8px",
+        "輸出沒有因 CSS 修改授權而新增、刪除、合併、拆分或重新排序 DOM 元素",
+        "MenuList.vue 沒有新增 style block、scoped style、CSS-in-JS 或未授權的樣式規則"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "angular-css-authorization-does-not-authorize-dom",
+      "prompt": "請依照 spec 中的 reference.html、global.css、CountrySelectComponent.md 與 requirement.md 處理 Angular 實作要求。回覆應遵守 skill 的衝突處理流程。",
+      "expectations": [
+        "輸出明確指出 app-country-select 會新增 country-select-shell wrapper，破壞參考 DOM 的直接父子與相鄰 selector 契約",
+        "輸出明確區分 global CSS 修改已獲授權，但 DOM wrapper、元素層級與順序尚未獲授權",
+        "輸出在取得 DOM 決策前停止，沒有提供 Angular template、TypeScript 實作或 global.css patch",
+        "輸出提出保留原生 select 結構或另行授權 DOM 偏差等最小替代方案",
+        "輸出向使用者詢問 DOM 方案，不把 global CSS 授權擴張解讀為可以使用第三方 wrapper"
+      ]
+    }
+  ]
+}

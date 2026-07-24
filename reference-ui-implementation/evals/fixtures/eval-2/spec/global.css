@@ -1,0 +1,11 @@
+.menu > .menu-item:first-child {
+  font-weight: 600;
+}
+
+.menu > .menu-item + .menu-item {
+  margin-top: 4px;
+}
+
+.menu-item > .menu-link {
+  color: #2255aa;
+}

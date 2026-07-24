@@ -1,0 +1,7 @@
+.country-field > .country-label + .country-select {
+  border: 1px solid #777777;
+}
+
+.country-field > .country-select:focus {
+  outline: 2px solid #2255aa;
+}
