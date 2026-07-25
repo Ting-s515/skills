@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -12,14 +13,20 @@ import { unified } from "unified";
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const webDirectory = path.resolve(scriptDirectory, "..");
 const repositoryDirectory = path.resolve(webDirectory, "..");
-const docsDirectory = path.join(repositoryDirectory, "docs");
+const defaultDocsDirectory = path.join(repositoryDirectory, "docs");
 const sourceDirectory = path.join(webDirectory, "src");
 const defaultOutputDirectory = path.join(webDirectory, "dist");
+// Repository 名稱只作為中性 fallback，避免模板把來源專案品牌帶入新專案。
+const repositoryName = path.basename(repositoryDirectory).replace(/[-_]+/g, " ").trim();
+const defaultSiteName = repositoryName || "教材網站";
+const defaultSiteMetadata = {
+  name: defaultSiteName,
+  title: `${defaultSiteName} 教材`,
+  description: `${defaultSiteName} 全部教材的純靜態閱讀網站`,
+};
 
 const sectionDefinitions = [
-  { key: "core", title: "核心課程" },
-  { key: "reference", title: "速查資料" },
-  { key: "supplement", title: "選修補充" },
+  { key: "documents", title: "教材內容" },
 ];
 
 function visit(node, callback) {
@@ -48,24 +55,25 @@ function safeDecodeURIComponent(value) {
   }
 }
 
-function createDocumentId(fileName) {
-  return `doc-${fileName
+export function createDocumentId(fileName) {
+  const slug = fileName
     .replace(/\.md$/i, "")
+    .normalize("NFKC")
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")}`;
+    .replace(/[^\p{Letter}\p{Number}]+/gu, "-")
+    .replace(/^-|-$/g, "");
+  // 完整檔名 hash 讓相同 slug 仍保持唯一，同時保留可讀的前半段。
+  const suffix = createHash("sha256")
+    .update(fileName)
+    .digest("hex")
+    .slice(0, 8);
+
+  return `doc-${slug || "document"}-${suffix}`;
 }
 
-function getSection(fileName) {
-  if (fileName.startsWith("supplement-")) {
-    return "supplement";
-  }
-
-  if (fileName.startsWith("99-")) {
-    return "reference";
-  }
-
-  return "core";
+function getSection() {
+  // 中性模板不推測領域分類，避免把任一專案的命名慣例擴散到其他課程。
+  return "documents";
 }
 
 function getTitle(markdown, fileName) {
@@ -172,7 +180,7 @@ async function renderMarkdown(markdown, currentFile, documentIds) {
   return String(rendered);
 }
 
-async function readDocuments() {
+async function readDocuments(docsDirectory) {
   const fileNames = (await readdir(docsDirectory))
     .filter((fileName) => fileName.toLowerCase().endsWith(".md"))
     .sort((left, right) => left.localeCompare(right, "zh-Hant"));
@@ -196,14 +204,16 @@ async function readDocuments() {
 }
 
 function renderNavigation(documents) {
+  const firstDocumentId = documents[0]?.id;
+
   return sectionDefinitions
     .map(({ key, title }) => {
       const links = documents
         .filter((document) => document.section === key)
         .map(
-          (document, index) => `
+          (document) => `
             <li>
-              <a class="document-link${key === "core" && index === 0 ? " is-active" : ""}" href="#${document.id}"${key === "core" && index === 0 ? ' aria-current="page"' : ""}>
+              <a class="document-link${document.id === firstDocumentId ? " is-active" : ""}" href="#${document.id}"${document.id === firstDocumentId ? ' aria-current="page"' : ""}>
                 <span class="document-title">${escapeHtml(document.title)}</span>
                 <span class="document-file">${escapeHtml(document.fileName)}</span>
               </a>
@@ -238,10 +248,18 @@ ${document.html}
     .join("");
 }
 
-export async function buildSite({ outputDirectory = defaultOutputDirectory } = {}) {
-  const documents = await readDocuments();
+export async function buildSite({
+  docsDirectory = defaultDocsDirectory,
+  outputDirectory = defaultOutputDirectory,
+  siteMetadata = {},
+} = {}) {
+  const documents = await readDocuments(docsDirectory);
+  const resolvedSiteMetadata = { ...defaultSiteMetadata, ...siteMetadata };
   const template = await readFile(path.join(sourceDirectory, "index.html"), "utf8");
   const html = template
+    .replaceAll("{{SITE_NAME}}", escapeHtml(resolvedSiteMetadata.name))
+    .replaceAll("{{SITE_TITLE}}", escapeHtml(resolvedSiteMetadata.title))
+    .replaceAll("{{SITE_DESCRIPTION}}", escapeHtml(resolvedSiteMetadata.description))
     .replace("{{DOCUMENT_COUNT}}", String(documents.length))
     .replace("<!-- DOCUMENT_NAVIGATION -->", renderNavigation(documents))
     .replace("<!-- DOCUMENT_CONTENT -->", renderContent(documents));

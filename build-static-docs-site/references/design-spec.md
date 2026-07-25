@@ -11,7 +11,8 @@
 - Markdown 來源：repository 根目錄下的 `docs/*.md`。
 - 網站專案：`docs-web/`。
 - 靜態產物：`docs-web/dist/index.html`、`style.css`、`app.mjs`。
-- 網站名稱：`Kubernetes Training 教材`。
+- 網站名稱與說明：優先使用本次需求；未指定時依 repository 文件或目錄名稱決定，不得從模板或其他專案沿用。
+- 教材清單與數量：每次從目前 `docs/*.md` 動態取得，不設定固定名稱或份數。
 - 本機網址：`http://127.0.0.1:18100`。
 - Node.js：24 以上。
 - 所有文字檔一律使用 UTF-8。
@@ -91,11 +92,8 @@ docs-web/
 
 1. 只讀取 `docs/` 第一層的 `.md` 檔案，依 `zh-Hant` locale 由檔名排序。
 2. 以 Markdown 第一個 H1 作為導覽標題；沒有 H1 時才使用檔名。
-3. 為每份文件建立穩定 ID：移除 `.md`、轉小寫、非英數字轉 `-`，前綴為 `doc-`。
-4. 按檔名分成三個固定導覽群組：
-   - 一般檔案：`核心課程`
-   - `99-` 開頭：`速查資料`
-   - `supplement-` 開頭：`選修補充`
+3. 為每份文件建立穩定且唯一的 ID：保留 Unicode 字母與數字形成可讀 slug，並加入由原始完整檔名字串產生的短 hash，避免非 ASCII、相似檔名或 Unicode canonical-equivalent 檔名碰撞；前綴為 `doc-`。
+4. 依目標 repository 的課程結構建立導覽群組。優先採用使用者要求或既有文件慣例；若沒有可靠的分類依據，全部文件放入單一中性群組。不得把特定專案的檔名前綴或分類名稱當成通用規則。
 5. 將全部文件導覽寫入 `<!-- DOCUMENT_NAVIGATION -->`。
 6. 將每份 HTML 放入獨立的 `<article class="document-panel markdown-body">`，再寫入 `<!-- DOCUMENT_CONTENT -->`。
 7. 首份文件預設顯示，其餘 article 使用 `hidden`。
@@ -106,7 +104,7 @@ docs-web/
 12. GFM table、list、blockquote、inline code、code block、link 與 footnote 必須正常產生。
 13. 每次 build 重新建立 `dist/`，輸出單一 HTML、CSS 與 bundle 後的 MJS。
 
-文件切換一律使用 hash，例如 `#doc-00-kubernetes-concept`；禁止使用 `?doc=` 或為每份 Markdown 產生不同 HTML 頁面。
+文件切換一律使用 hash，例如 `#doc-00-course-introduction`；禁止使用 `?doc=` 或為每份 Markdown 產生不同 HTML 頁面。
 
 ## 固定頁面架構
 
@@ -121,7 +119,7 @@ Desktop 使用兩欄式閱讀頁面：
 └──────────────────────┴──────────────────────────────────────┘
 ```
 
-- 左欄使用 `<aside>` 與 `<nav>`，顯示品牌、文件總數、分類標題、教材標題及檔名。
+- 左欄使用 `<aside>` 與 `<nav>`，顯示目標專案名稱、動態文件總數、分類標題、教材標題及檔名。
 - 右欄使用 `<main>`，一次只顯示一份 `<article>`。
 - active 導覽項目同時具有 `.is-active` 與 `aria-current="page"`。
 - hash 指向文件內 heading 時，先顯示所屬 article，再捲動至該 heading。
@@ -273,18 +271,19 @@ Breakpoint 固定為 `820px`：
 
 ## 測試要求
 
-使用 Node.js 內建 `node:test`，build 到 `mkdtemp()` 建立的暫存目錄，測試後移除。至少驗證：
+使用 Node.js 內建 `node:test`，在 `mkdtemp()` 建立不綁定特定專案的 Markdown fixture 與 build 輸出，測試後移除。Fixture 應包含非 ASCII 檔名、正規化後相似的檔名、Unicode composed／decomposed 檔名，以及至少一個跨文件 fragment 連結。至少驗證：
 
-1. 產生的 article 數量等於 `docs/*.md` 數量。
-2. 全部教材已預先存在同一份 HTML。
-3. Markdown 文件連結已改成同頁 hash，不再指向 `.md`。
-4. `app.mjs` 與 `style.css` 均成功輸出且不是空檔。
-5. 靜態 HTML 不引用 `/src/`。
-6. 文件切換使用 `hashchange` 與 article `hidden`，client source 不得含 `fetch(`。
-7. HTML 包含 Mermaid dialog 與 zoom controls。
-8. client source 包含放大按鈕、`showModal()`、wheel 與 pointer drag 行為。
-9. CSS 包含 dialog backdrop。
-10. `.mermaid-frame` 為 `width: 100%`，且不存在讓圖表突破正文的 viewport 寬度計算。
+1. 產生的 article 數量等於 fixture 或目前 `docs/*.md` 的動態數量。
+2. 全部教材內容已預先存在同一份 HTML，測試不得固定目標專案的教材名稱或份數。
+3. 每份文件 ID 皆唯一，且只有第一個導覽項目具有 active 狀態。
+4. Markdown 文件連結已正向改成目標文件與 heading 的同頁 hash，不再指向 `.md`。
+5. `app.mjs` 與 `style.css` 均成功輸出且不是空檔。
+6. 靜態 HTML 不引用 `/src/`。
+7. 文件切換使用 `hashchange` 與 article `hidden`，client source 不得含 `fetch(`。
+8. HTML 包含 Mermaid dialog 與 zoom controls。
+9. client source 包含放大按鈕、`showModal()`、wheel 與 pointer drag 行為。
+10. CSS 包含 dialog backdrop。
+11. `.mermaid-frame` 為 `width: 100%`，且不存在讓圖表突破正文的 viewport 寬度計算。
 
 測試不可只檢查函式存在；也要驗證最終靜態 HTML 與輸出 assets 的契約。
 
