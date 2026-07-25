@@ -1,0 +1,44 @@
+{
+  "skill_name": "build-static-docs-site",
+  "evals": [
+    {
+      "id": 1,
+      "name": "greenfield-project-identity",
+      "prompt": "請根據 spec 中的 repository fixture，說明你會如何建立 docs-web 並列出關鍵輸出契約與驗證命令。網站名稱與說明請依 README 與專案內容決定，教材數量必須由目前文件動態計算；不要修改 docs 內的教材。這是回覆層情境測試，只在回覆中提供具體作法，不要建立檔案或宣稱命令已執行。",
+      "expectations": [
+        "回覆選用目標 repository 的「資料工程入門」名稱或等義專案名稱，並明確排除沿用 Kubernetes Training",
+        "回覆說明教材導覽與顯示數量會由目前 docs/*.md 動態產生，不把 fixture 的 3 份或其他專案份數寫成通用固定規則",
+        "回覆列出原生 HTML、CSS、MJS 的固定 docs-web 結構，並說明所有 Markdown 會在 build 階段預先寫入同一份 dist/index.html",
+        "回覆明確禁止 client 使用 fetch() 取得 Markdown，文件切換使用同頁 hash 與既有 article",
+        "輸出完整列出 npm test、npm run build 與 validate-static-docs-site.mjs 驗證步驟，且未把未執行的命令宣稱為成功",
+        "回覆明確承諾不修改 docs/*.md，並列出完成實作後可用來確認教材未變更的 Git diff 或內容比對方式"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "unicode-links-mermaid-contract",
+      "prompt": "請根據 spec 中的多語系教材 fixture，說明 docs-web 對非 ASCII、相似檔名、Unicode composed/decomposed、跨文件 heading 連結與 Mermaid 放大閱讀器的具體實作契約及測試案例。這是回覆層情境測試，只在回覆中提供作法，不要建立檔案或宣稱測試與 build 已執行。",
+      "expectations": [
+        "回覆提出穩定且唯一的 doc-* ID 策略，並具體說明相似檔名與 Unicode canonical-equivalent 名稱如何避免碰撞",
+        "回覆具體說明跨文件 Markdown fragment 會改寫成目標 document 與加前綴 heading 的同頁 hash，不保留 .md href",
+        "回覆說明所有教材會預先存在單一 HTML、只有第一份文件預設 active，且 client 不使用 runtime fetch()",
+        "回覆列出 Mermaid strict security level、正文 frame width: 100%，以及原生 dialog 的縮放、拖曳、重設與 focus restore 契約",
+        "回覆提供 Escape 與非 Escape 分支的可執行測試設計，Escape handler 明確 preventDefault 並關閉 dialog",
+        "輸出完整列出 npm test、npm run build 與 validate-static-docs-site.mjs 驗證步驟，且未把未執行的命令宣稱為成功"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "existing-site-generic-migration",
+      "prompt": "請根據 spec 中既有的 docs-web fixture，說明窄範圍維護作法：移除舊的 Kubernetes Training 名稱與固定 15 份教材測試，改為「前端可存取性工作坊」與動態文件數量，同時保留 data-eval-custom-banner 客製化。這是回覆層情境測試，只在回覆中提供具體變更與驗證計畫，不要建立檔案或宣稱命令已執行。",
+      "expectations": [
+        "回覆明確將網站名稱、標題與說明改為前端可存取性工作坊，並要求來源與測試移除 Kubernetes Training",
+        "回覆說明文件總數由目前 docs/*.md 動態計算，移除固定 15 份教材的 assertion 或顯示文字，且不把 2 寫成通用固定值",
+        "回覆明確要求保留 data-eval-custom-banner=keep-me，並將來源與 build 輸出的保留檢查列入測試設計",
+        "回覆先辨識既有 docs-web 並採窄範圍調整，不以模板整包覆蓋或修改 docs 教材",
+        "回覆明確保留 build-time 單頁 render、無 runtime fetch、暖色雙欄與 Mermaid dialog 契約",
+        "輸出完整列出 npm test、npm run build 與 validate-static-docs-site.mjs 驗證步驟，且未把未執行的命令宣稱為成功"
+      ]
+    }
+  ]
+}
