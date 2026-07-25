@@ -29,13 +29,22 @@ function rejectMatch(content, pattern, message) {
   }
 }
 
-const [packageSource, buildSource, serverSource, html, app, style, testSource] =
-  await Promise.all([
+const [
+  packageSource,
+  buildSource,
+  serverSource,
+  html,
+  app,
+  dialogKeydownSource,
+  style,
+  testSource,
+] = await Promise.all([
     read("package.json"),
     read("script/build-site.mjs"),
     read("script/server.mjs"),
     read("src/index.html"),
     read("src/app.mjs"),
+    read("src/dialog-keydown.mjs"),
     read("src/style.css"),
     read("test/build-site.test.mjs"),
   ]);
@@ -81,6 +90,16 @@ requireMatch(html, /id="diagram-dialog"/, "index.html: 缺少 Mermaid dialog");
 requireMatch(html, /data-diagram-action="zoom-in"/, "index.html: 缺少 Mermaid zoom controls");
 requireMatch(app, /securityLevel:\s*"strict"/, "app.mjs: Mermaid 必須使用 strict security level");
 requireMatch(app, /dialog\.showModal\(\)/, "app.mjs: 缺少 dialog 開啟行為");
+requireMatch(
+  app,
+  /dialog\.addEventListener\("keydown",[\s\S]*closeDialogOnEscape/,
+  "app.mjs: 未接上明確的 Esc 關閉 helper",
+);
+requireMatch(
+  dialogKeydownSource,
+  /export function closeDialogOnEscape/,
+  "dialog-keydown.mjs: 缺少可測試的 Esc 關閉 helper",
+);
 requireMatch(app, /addEventListener\(\s*"wheel"/, "app.mjs: 缺少滾輪縮放");
 requireMatch(app, /addEventListener\("pointermove"/, "app.mjs: 缺少拖曳行為");
 rejectMatch(app, /\bfetch\s*\(/, "app.mjs: 禁止 runtime fetch Markdown");
@@ -119,6 +138,16 @@ rejectMatch(
 requireMatch(style, /\.diagram-dialog::backdrop/, "style.css: 缺少 dialog backdrop");
 requireMatch(testSource, /doesNotMatch\(source,\s*\/\\bfetch/, "測試缺少 runtime fetch 防線");
 requireMatch(testSource, /mermaid-frame/, "測試缺少 Mermaid 正文寬度防線");
+requireMatch(
+  testSource,
+  /GivenMermaidDialogOpen_WhenPressEscape_ShouldPreventDefaultAndClose/,
+  "測試缺少 Escape 關閉行為防線",
+);
+requireMatch(
+  testSource,
+  /GivenMermaidDialogOpen_WhenPressNonEscape_ShouldRemainOpen/,
+  "測試缺少非 Escape 鍵的邊界防線",
+);
 
 if (failures.length > 0) {
   console.error("靜態教材網站驗證失敗：");

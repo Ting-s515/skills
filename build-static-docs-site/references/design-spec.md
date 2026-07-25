@@ -42,6 +42,7 @@ docs-web/
 ├─ src/
 │  ├─ index.html
 │  ├─ style.css
+│  ├─ dialog-keydown.mjs
 │  └─ app.mjs
 └─ test/
    └─ build-site.test.mjs
@@ -55,6 +56,7 @@ docs-web/
 | `script/server.mjs` | 在固定 host 與 port 提供 `dist/` 內的四個公開路徑 |
 | `src/index.html` | 頁面骨架、文件 placeholder 與 Mermaid 放大 dialog |
 | `src/style.css` | 完整視覺、兩欄排版、Markdown、Mermaid、響應式與列印樣式 |
+| `src/dialog-keydown.mjs` | 提供可獨立測試的 Mermaid dialog Escape 關閉行為 |
 | `src/app.mjs` | hash 導覽、作用中文件切換、Mermaid render 與放大閱讀器 |
 | `test/build-site.test.mjs` | 驗證靜態產物、連結、無 runtime fetch 與 Mermaid 閱讀器契約 |
 
@@ -237,7 +239,7 @@ Mermaid 初始化必須使用：
 4. 縮放範圍固定為 20%～500%，按鈕倍率為 1.2。
 5. 滑鼠滾輪可以縮放；pointer events 支援滑鼠與觸控拖曳。
 6. `重設` 回到自動 fit、置中且清除位移。
-7. 點擊 backdrop、關閉按鈕或按 `Esc` 均可關閉。
+7. 點擊 backdrop、關閉按鈕或按 `Esc` 均可關閉；`Esc` 必須由 dialog 的 `keydown` handler 明確處理，不可只依賴瀏覽器的原生預設行為。
 8. 關閉後 focus 回到原本的放大按鈕或圖表。
 9. 不要 clone Mermaid SVG。應暫時將原始 SVG 移入 dialog，使用 comment placeholder 記住位置，關閉時還原原本 style 與 DOM 位置，避免 duplicate SVG IDs。
 10. 視窗尺寸改變且 dialog 開啟時，重新執行 fit。
@@ -281,7 +283,7 @@ Breakpoint 固定為 `820px`：
 6. 靜態 HTML 不引用 `/src/`。
 7. 文件切換使用 `hashchange` 與 article `hidden`，client source 不得含 `fetch(`。
 8. HTML 包含 Mermaid dialog 與 zoom controls。
-9. client source 包含放大按鈕、`showModal()`、wheel 與 pointer drag 行為。
+9. client source 包含放大按鈕、`showModal()`、明確的 `Escape` keydown 關閉、wheel 與 pointer drag 行為；Escape helper 需以事件與 dialog test double 驗證關閉及非關閉分支。
 10. CSS 包含 dialog backdrop。
 11. `.mermaid-frame` 為 `width: 100%`，且不存在讓圖表突破正文的 viewport 寬度計算。
 

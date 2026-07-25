@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { after, before, test } from "node:test";
 import { buildSite, createDocumentId } from "../script/build-site.mjs";
+import { closeDialogOnEscape } from "../src/dialog-keydown.mjs";
 
 let fixtureDirectory;
 let outputDirectory;
@@ -125,4 +126,44 @@ test("提供 Mermaid 全螢幕縮放與拖曳閱讀器", async () => {
   assert.match(style, /\.diagram-dialog::backdrop/);
   assert.match(style, /\.mermaid-frame\s*{[^}]*width: 100%;/s);
   assert.doesNotMatch(style, /calc\(100vw - 320px/);
+});
+
+test("GivenMermaidDialogOpen_WhenPressEscape_ShouldPreventDefaultAndClose", () => {
+  let prevented = false;
+  let closeCount = 0;
+  const event = {
+    key: "Escape",
+    preventDefault() {
+      prevented = true;
+    },
+  };
+  const targetDialog = {
+    close() {
+      closeCount += 1;
+    },
+  };
+
+  const handled = closeDialogOnEscape(event, targetDialog);
+
+  assert.equal(handled, true);
+  assert.equal(prevented, true);
+  assert.equal(closeCount, 1);
+});
+
+test("GivenMermaidDialogOpen_WhenPressNonEscape_ShouldRemainOpen", () => {
+  const event = {
+    key: "Enter",
+    preventDefault() {
+      assert.fail("非 Escape 鍵不應取消預設行為");
+    },
+  };
+  const targetDialog = {
+    close() {
+      assert.fail("非 Escape 鍵不應關閉 dialog");
+    },
+  };
+
+  const handled = closeDialogOnEscape(event, targetDialog);
+
+  assert.equal(handled, false);
 });

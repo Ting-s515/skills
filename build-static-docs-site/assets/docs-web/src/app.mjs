@@ -1,4 +1,5 @@
 import mermaid from "mermaid";
+import { closeDialogOnEscape } from "./dialog-keydown.mjs";
 
 const panels = [...document.querySelectorAll(".document-panel")];
 const links = [...document.querySelectorAll(".document-link")];
@@ -245,6 +246,7 @@ zoomOutButton.addEventListener("click", () => changeZoom(1 / zoomFactor));
 resetButton.addEventListener("click", fitDiagram);
 closeButton.addEventListener("click", () => dialog.close());
 dialog.addEventListener("close", restoreDiagram);
+dialog.addEventListener("keydown", (event) => closeDialogOnEscape(event, dialog));
 dialog.addEventListener("click", (event) => {
   if (event.target === dialog) {
     dialog.close();
