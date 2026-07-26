@@ -62,6 +62,6 @@ node "$env:USERPROFILE\.codex\skills\build-static-docs-site\scripts\validate-sta
 
 - `references/design-spec.md`：完整設計、架構、互動與驗收規格。
 - `assets/docs-web/`：首次建立時使用的固定基準模板；不包含 `package-lock.json`、`node_modules/` 與 `dist/`。
-- `scripts/validate-static-docs-site.mjs`：檢查結構、scripts、暖色 tokens、無 runtime fetch、Mermaid 寬度與 dialog 互動契約。
+- `scripts/validate-static-docs-site.mjs`：檢查結構、scripts、暖色 tokens、無 runtime fetch、code block Copy icon 與 Clipboard 狀態，以及 Mermaid 寬度與 dialog 互動契約。
 
 修改基準設計時，需同步更新規格、asset template 與 validator，避免三者漂移。

@@ -1,4 +1,4 @@
 interface:
   display_name: "建立純靜態教材網站"
-  short_description: "從 Markdown 建立暖色版面與 Mermaid 閱讀器"
-  default_prompt: "使用 $build-static-docs-site 依固定設計規格建立或更新純靜態 Markdown 教材網站。"
+  short_description: "從 Markdown 建立具 Copy icon 與 Mermaid 閱讀器的暖色網站"
+  default_prompt: "使用 $build-static-docs-site 依固定設計規格建立或更新純靜態 Markdown 教材網站，保留 code block Copy icon 與 Mermaid 放大閱讀器。"
