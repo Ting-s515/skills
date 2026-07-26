@@ -147,12 +147,25 @@ test("為 code block 提供右上角複製按鈕與狀態樣式", async () => {
   assert.match(source, /button\.setAttribute\("aria-live", "polite"\)/);
   assert.doesNotMatch(source, /button\.textContent = "(?:複製|已複製|複製失敗)"/);
   assert.match(style, /\.code-block-frame\s*{[^}]*position:\s*relative/s);
+  assert.match(style, /\.code-block-frame pre\s*{[^}]*padding-right:\s*3\.5rem/s);
+  assert.doesNotMatch(style, /\.code-block-frame pre\s*{[^}]*padding-top:\s*3\.25rem/s);
   assert.match(style, /\.code-copy-button\s*{[^}]*position:\s*absolute/s);
-  assert.match(style, /\.code-copy-button\s*{[^}]*right:\s*0\.65rem/s);
-  assert.match(style, /\.code-copy-button\s*{[^}]*width:\s*2\.25rem/s);
+  assert.match(style, /\.code-copy-button\s*{[^}]*top:\s*0\.5rem/s);
+  assert.match(style, /\.code-copy-button\s*{[^}]*right:\s*0\.5rem/s);
+  assert.match(style, /\.code-copy-button\s*{[^}]*width:\s*2rem/s);
+  assert.match(style, /\.code-copy-button\s*{[^}]*height:\s*2rem/s);
   assert.match(style, /\.code-copy-button::before\s*{[^}]*content:\s*attr\(data-tooltip\)/s);
+  assert.match(
+    style,
+    /\.code-copy-button::before\s*{[^}]*right:\s*calc\(100% \+ 0\.55rem\)/s,
+  );
   assert.match(style, /\.code-copy-button:focus-visible::before/);
-  assert.match(style, /\.code-copy-icon\s*{[^}]*width:\s*1rem/s);
+  assert.match(style, /\.code-copy-icon\s*{[^}]*width:\s*0\.875rem/s);
+  assert.match(style, /\.code-copy-icon\s*{[^}]*height:\s*0\.875rem/s);
+  assert.match(
+    style,
+    /@media print[\s\S]*\.code-block-frame pre\s*{[^}]*padding-right:\s*1\.25rem/s,
+  );
 });
 
 test("GivenCodeText_WhenCopySucceeds_ShouldPreserveExactContent", async () => {
