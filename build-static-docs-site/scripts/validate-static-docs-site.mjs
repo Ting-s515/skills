@@ -35,6 +35,7 @@ const [
   serverSource,
   html,
   app,
+  codeCopySource,
   dialogKeydownSource,
   style,
   testSource,
@@ -44,6 +45,7 @@ const [
     read("script/server.mjs"),
     read("src/index.html"),
     read("src/app.mjs"),
+    read("src/code-copy.mjs"),
     read("src/dialog-keydown.mjs"),
     read("src/style.css"),
     read("test/build-site.test.mjs"),
@@ -92,6 +94,49 @@ requireMatch(app, /securityLevel:\s*"strict"/, "app.mjs: Mermaid 必須使用 st
 requireMatch(app, /dialog\.showModal\(\)/, "app.mjs: 缺少 dialog 開啟行為");
 requireMatch(
   app,
+  /button\.className = "code-copy-button"/,
+  "app.mjs: 缺少 code block 複製按鈕",
+);
+requireMatch(
+  app,
+  /copyCodeToClipboard\(code\.textContent \?\? "", navigator\.clipboard\)/,
+  "app.mjs: 複製內容必須取自 code textContent",
+);
+requireMatch(app, /createSvgElement\("rect"/, "app.mjs: 缺少 Copy SVG icon");
+requireMatch(app, /createSvgElement\("path"/, "app.mjs: 缺少 Check SVG icon");
+requireMatch(
+  app,
+  /setCodeCopyButtonState\(button, "success"\)/,
+  "app.mjs: 缺少複製成功 icon 狀態",
+);
+requireMatch(
+  app,
+  /setCodeCopyButtonState\(button, "error"\)/,
+  "app.mjs: 缺少複製失敗 icon 狀態",
+);
+requireMatch(
+  app,
+  /button\.dataset\.tooltip = presentation\.tooltip/,
+  "app.mjs: 缺少複製按鈕 tooltip 狀態",
+);
+requireMatch(
+  app,
+  /button\.setAttribute\("aria-label", presentation\.label\)/,
+  "app.mjs: 缺少複製按鈕動態 aria-label",
+);
+rejectMatch(
+  app,
+  /button\.textContent = "(?:複製|已複製|複製失敗)"/,
+  "app.mjs: 複製按鈕不得顯示可見文字",
+);
+requireMatch(
+  codeCopySource,
+  /export async function copyCodeToClipboard/,
+  "code-copy.mjs: 缺少可測試的 Clipboard helper",
+);
+requireMatch(codeCopySource, /clipboard\.writeText\(text\)/, "code-copy.mjs: 缺少文字寫入行為");
+requireMatch(
+  app,
   /dialog\.addEventListener\("keydown",[\s\S]*closeDialogOnEscape/,
   "app.mjs: 未接上明確的 Esc 關閉 helper",
 );
@@ -136,7 +181,52 @@ rejectMatch(
   "style.css: Mermaid 不得使用 viewport 計算突破正文",
 );
 requireMatch(style, /\.diagram-dialog::backdrop/, "style.css: 缺少 dialog backdrop");
+requireMatch(
+  style,
+  /\.code-block-frame\s*{[^}]*position:\s*relative/s,
+  "style.css: code block 缺少定位 frame",
+);
+requireMatch(
+  style,
+  /\.code-copy-button\s*{[^}]*position:\s*absolute[^}]*right:\s*0\.65rem/s,
+  "style.css: 複製按鈕未固定於右上角",
+);
+requireMatch(
+  style,
+  /\.code-copy-button\s*{[^}]*width:\s*2\.25rem/s,
+  "style.css: icon-only 複製按鈕寬度必須為 2.25rem",
+);
+requireMatch(
+  style,
+  /\.code-copy-button::before\s*{[^}]*content:\s*attr\(data-tooltip\)/s,
+  "style.css: 複製按鈕缺少 CSS tooltip",
+);
+requireMatch(
+  style,
+  /\.code-copy-button:focus-visible::before/,
+  "style.css: 鍵盤 focus 時必須顯示複製 tooltip",
+);
+requireMatch(
+  style,
+  /\.code-copy-icon\s*{[^}]*width:\s*1rem/s,
+  "style.css: 複製 icon 寬度必須為 1rem",
+);
 requireMatch(testSource, /doesNotMatch\(source,\s*\/\\bfetch/, "測試缺少 runtime fetch 防線");
+requireMatch(
+  testSource,
+  /GivenCodeText_WhenCopySucceeds_ShouldPreserveExactContent/,
+  "測試缺少完整複製 code text 行為",
+);
+requireMatch(
+  testSource,
+  /GivenClipboardUnavailable_WhenCopyCode_ShouldReject/,
+  "測試缺少 Clipboard API 不可用分支",
+);
+requireMatch(
+  testSource,
+  /doesNotMatch\(source,\s*\/button\\\.textContent/,
+  "測試缺少 icon-only 可見文字防線",
+);
 requireMatch(testSource, /mermaid-frame/, "測試缺少 Mermaid 正文寬度防線");
 requireMatch(
   testSource,
