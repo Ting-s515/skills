@@ -28,7 +28,7 @@ description: 建立或更新由 Markdown 教材產生的純靜態文件網站，
 6. 維持 build-time Markdown render。所有教材預先寫入單一 HTML；client 不得在頁面切換時 `fetch()` Markdown。
 7. 維持固定淺暖色 tokens、桌面雙欄導覽、行動版、同頁 hash、responsive 與 print styles。
 8. 維持 Mermaid 正文 `width: 100%`，不得突破內容卡片；細節只透過原生 dialog 放大閱讀器查看。
-9. 維持 code block 右上角緊湊的 icon-only 複製按鈕：不得增加上方預留列，只保留右側空間；預設為重疊方框 Copy SVG，hover 或 focus 時 tooltip 從左側展開，成功切換 Check SVG，失敗套警示色；Mermaid 不得套用此按鈕。
+9. 維持 code block 右上角緊湊的 icon-only 複製按鈕：使用雙欄 Grid，指令只在左欄捲動，按鈕位於固定 `3rem` 右欄且不得覆蓋指令或增加上方預留列；預設為重疊方框 Copy SVG，hover 或 focus 時 tooltip 從左側展開，成功切換 Check SVG，失敗套警示色；Mermaid 不得套用此按鈕。
 10. 不主動改寫 `docs/*.md` 教材內容，除非使用者同時要求修改教材。
 11. 依目標 repository 規則處理 tests、build、review、staging 與 commit，不得納入無關變更。
 

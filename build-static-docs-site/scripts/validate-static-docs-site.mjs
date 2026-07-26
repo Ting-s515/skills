@@ -183,13 +183,28 @@ rejectMatch(
 requireMatch(style, /\.diagram-dialog::backdrop/, "style.css: 缺少 dialog backdrop");
 requireMatch(
   style,
-  /\.code-block-frame\s*{[^}]*position:\s*relative/s,
-  "style.css: code block 缺少定位 frame",
+  /\.code-block-frame\s*{[^}]*display:\s*grid/s,
+  "style.css: code block frame 必須使用 Grid",
 );
 requireMatch(
   style,
+  /\.code-block-frame\s*{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) 3rem/s,
+  "style.css: code block 必須使用指令欄與 3rem 控制欄",
+);
+requireMatch(
+  style,
+  /\.code-block-frame pre\s*{[^}]*grid-column:\s*1/s,
+  "style.css: 指令必須位於 Grid 左欄",
+);
+requireMatch(
+  style,
+  /\.code-block-frame pre\s*{[^}]*min-width:\s*0/s,
+  "style.css: 指令欄必須允許縮小並獨立捲動",
+);
+rejectMatch(
+  style,
   /\.code-block-frame pre\s*{[^}]*padding-right:\s*3\.5rem/s,
-  "style.css: code block 必須只保留 3.5rem 右側按鈕空間",
+  "style.css: 指令欄不得以右側 padding 模擬控制欄",
 );
 rejectMatch(
   style,
@@ -198,8 +213,28 @@ rejectMatch(
 );
 requireMatch(
   style,
-  /\.code-copy-button\s*{[^}]*position:\s*absolute[^}]*top:\s*0\.5rem[^}]*right:\s*0\.5rem/s,
-  "style.css: 複製按鈕未固定於右上角",
+  /\.code-copy-button\s*{[^}]*position:\s*relative/s,
+  "style.css: 複製按鈕必須以 Grid item 定位 tooltip",
+);
+rejectMatch(
+  style,
+  /\.code-copy-button\s*{[^}]*position:\s*absolute/s,
+  "style.css: 複製按鈕不得覆蓋指令欄",
+);
+requireMatch(
+  style,
+  /\.code-copy-button\s*{[^}]*grid-column:\s*2/s,
+  "style.css: 複製按鈕必須位於 Grid 右欄",
+);
+requireMatch(
+  style,
+  /\.code-copy-button\s*{[^}]*align-self:\s*start/s,
+  "style.css: 複製按鈕必須位於控制欄頂端",
+);
+requireMatch(
+  style,
+  /\.code-copy-button\s*{[^}]*justify-self:\s*center/s,
+  "style.css: 複製按鈕必須在控制欄水平置中",
 );
 requireMatch(
   style,
@@ -238,8 +273,8 @@ requireMatch(
 );
 requireMatch(
   style,
-  /@media print[\s\S]*\.code-block-frame pre\s*{[^}]*padding-right:\s*1\.25rem/s,
-  "style.css: 列印時必須移除複製按鈕的右側預留空間",
+  /@media print[\s\S]*\.code-block-frame\s*{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/s,
+  "style.css: 列印時必須移除複製按鈕控制欄",
 );
 requireMatch(testSource, /doesNotMatch\(source,\s*\/\\bfetch/, "測試缺少 runtime fetch 防線");
 requireMatch(
