@@ -146,12 +146,21 @@ test("為 code block 提供右上角複製按鈕與狀態樣式", async () => {
   assert.match(source, /button\.setAttribute\("aria-label", presentation\.label\)/);
   assert.match(source, /button\.setAttribute\("aria-live", "polite"\)/);
   assert.doesNotMatch(source, /button\.textContent = "(?:複製|已複製|複製失敗)"/);
-  assert.match(style, /\.code-block-frame\s*{[^}]*position:\s*relative/s);
-  assert.match(style, /\.code-block-frame pre\s*{[^}]*padding-right:\s*3\.5rem/s);
+  assert.match(style, /\.code-block-frame\s*{[^}]*display:\s*grid/s);
+  assert.match(
+    style,
+    /\.code-block-frame\s*{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) 3rem/s,
+  );
+  assert.match(style, /\.code-block-frame pre\s*{[^}]*grid-column:\s*1/s);
+  assert.match(style, /\.code-block-frame pre\s*{[^}]*min-width:\s*0/s);
+  assert.match(style, /\.code-block-frame pre\s*{[^}]*border:\s*0/s);
+  assert.doesNotMatch(style, /\.code-block-frame pre\s*{[^}]*padding-right:\s*3\.5rem/s);
   assert.doesNotMatch(style, /\.code-block-frame pre\s*{[^}]*padding-top:\s*3\.25rem/s);
-  assert.match(style, /\.code-copy-button\s*{[^}]*position:\s*absolute/s);
-  assert.match(style, /\.code-copy-button\s*{[^}]*top:\s*0\.5rem/s);
-  assert.match(style, /\.code-copy-button\s*{[^}]*right:\s*0\.5rem/s);
+  assert.match(style, /\.code-copy-button\s*{[^}]*position:\s*relative/s);
+  assert.doesNotMatch(style, /\.code-copy-button\s*{[^}]*position:\s*absolute/s);
+  assert.match(style, /\.code-copy-button\s*{[^}]*grid-column:\s*2/s);
+  assert.match(style, /\.code-copy-button\s*{[^}]*align-self:\s*start/s);
+  assert.match(style, /\.code-copy-button\s*{[^}]*justify-self:\s*center/s);
   assert.match(style, /\.code-copy-button\s*{[^}]*width:\s*2rem/s);
   assert.match(style, /\.code-copy-button\s*{[^}]*height:\s*2rem/s);
   assert.match(style, /\.code-copy-button::before\s*{[^}]*content:\s*attr\(data-tooltip\)/s);
@@ -164,7 +173,7 @@ test("為 code block 提供右上角複製按鈕與狀態樣式", async () => {
   assert.match(style, /\.code-copy-icon\s*{[^}]*height:\s*0\.875rem/s);
   assert.match(
     style,
-    /@media print[\s\S]*\.code-block-frame pre\s*{[^}]*padding-right:\s*1\.25rem/s,
+    /@media print[\s\S]*\.code-block-frame\s*{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/s,
   );
 });
 
