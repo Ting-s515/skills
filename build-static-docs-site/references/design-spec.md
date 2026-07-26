@@ -196,11 +196,11 @@ Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
 互動規格：
 
 1. 使用 `.code-block-frame` 包住既有 `<pre><code>`，按鈕固定在 frame 右上角，不隨長指令的橫向捲動消失。
-2. 按鈕固定為 `2.25rem × 2.25rem`，只顯示 `1rem` 的內嵌 SVG；預設使用兩張重疊方框的 Copy icon，不顯示可見文字或 emoji。
-3. Hover 或 keyboard focus 時顯示 `複製` tooltip；成功後 icon 暫時切換為 Check，tooltip 改為 `已複製`；失敗時保留 Copy icon、套用警示色並顯示 `複製失敗`。
+2. 按鈕固定為 `2rem × 2rem`，只顯示 `0.875rem` 的內嵌 SVG；預設使用兩張重疊方框的 Copy icon，不顯示可見文字或 emoji。
+3. Code block 不得為按鈕預留額外上方列，只增加 `3.5rem` 右側 padding；Hover 或 keyboard focus 時，tooltip 從按鈕左側展開。成功後 icon 暫時切換為 Check，tooltip 改為 `已複製`；失敗時保留 Copy icon、套用警示色並顯示 `複製失敗`。
 4. 複製內容只取 `<code>` 的 `textContent`，不得包含按鈕內容，也不得改寫換行或空白；狀態約 1.8 秒後恢復。
 5. 按鈕使用動態 `aria-label` 與 `aria-live="polite"`，並具有與網站一致的 keyboard focus outline。
-6. 列印時隱藏複製按鈕，並移除為按鈕預留的 code block 上方空間。
+6. 列印時隱藏複製按鈕，並移除為按鈕預留的 code block 右側空間。
 
 ## Mermaid 固定呈現方式
 
@@ -298,7 +298,7 @@ Breakpoint 固定為 `820px`：
 5. `app.mjs` 與 `style.css` 均成功輸出且不是空檔。
 6. 靜態 HTML 不引用 `/src/`。
 7. 文件切換使用 `hashchange` 與 article `hidden`，client source 不得含 `fetch(`。
-8. fixture 至少包含一個 fenced code block，client source 與 CSS 包含右上角 Copy SVG、tooltip、Check 成功狀態與失敗警示色；不得退回可見文字按鈕。
+8. fixture 至少包含一個 fenced code block，client source 與 CSS 包含緊湊的右上角 Copy SVG、左側 tooltip、Check 成功狀態與失敗警示色；不得退回可見文字按鈕或額外上方預留列。
 9. Clipboard helper 以 test double 驗證完整文字寫入，並測試 Clipboard API 不可用的失敗分支。
 10. HTML 包含 Mermaid dialog 與 zoom controls。
 11. client source 包含放大按鈕、`showModal()`、明確的 `Escape` keydown 關閉、wheel 與 pointer drag 行為；Escape helper 需以事件與 dialog test double 驗證關閉及非關閉分支。
@@ -325,7 +325,7 @@ npm --prefix .\docs-web run dev
 - 點擊目錄不重新下載 Markdown，URL hash 正確更新。
 - heading deep link 可以開啟正確文件並捲動定位。
 - table、code block 與長內容不撐破頁面。
-- 每個 code block 右上角都有 Copy icon，hover tooltip、Check 成功狀態與失敗警示色正確，且複製文字不含按鈕內容。
+- 每個 code block 右上角都有緊湊的 Copy icon，單行內容未被額外上方列撐高；hover tooltip、Check 成功狀態與失敗警示色正確，且複製文字不含按鈕內容。
 - Mermaid 一般狀態不超出正文。
 - 每張 Mermaid 都能透過按鈕、點圖與鍵盤開啟。
 - 放大、縮小、重設、拖曳、滾輪、Esc 與 focus restore 正常。

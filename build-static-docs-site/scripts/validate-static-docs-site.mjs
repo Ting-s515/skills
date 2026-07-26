@@ -188,13 +188,28 @@ requireMatch(
 );
 requireMatch(
   style,
-  /\.code-copy-button\s*{[^}]*position:\s*absolute[^}]*right:\s*0\.65rem/s,
+  /\.code-block-frame pre\s*{[^}]*padding-right:\s*3\.5rem/s,
+  "style.css: code block 必須只保留 3.5rem 右側按鈕空間",
+);
+rejectMatch(
+  style,
+  /\.code-block-frame pre\s*{[^}]*padding-top:\s*3\.25rem/s,
+  "style.css: code block 不得為複製按鈕增加上方預留列",
+);
+requireMatch(
+  style,
+  /\.code-copy-button\s*{[^}]*position:\s*absolute[^}]*top:\s*0\.5rem[^}]*right:\s*0\.5rem/s,
   "style.css: 複製按鈕未固定於右上角",
 );
 requireMatch(
   style,
-  /\.code-copy-button\s*{[^}]*width:\s*2\.25rem/s,
-  "style.css: icon-only 複製按鈕寬度必須為 2.25rem",
+  /\.code-copy-button\s*{[^}]*width:\s*2rem/s,
+  "style.css: icon-only 複製按鈕寬度必須為 2rem",
+);
+requireMatch(
+  style,
+  /\.code-copy-button\s*{[^}]*height:\s*2rem/s,
+  "style.css: icon-only 複製按鈕高度必須為 2rem",
 );
 requireMatch(
   style,
@@ -203,13 +218,28 @@ requireMatch(
 );
 requireMatch(
   style,
+  /\.code-copy-button::before\s*{[^}]*right:\s*calc\(100% \+ 0\.55rem\)/s,
+  "style.css: 複製 tooltip 必須從按鈕左側展開",
+);
+requireMatch(
+  style,
   /\.code-copy-button:focus-visible::before/,
   "style.css: 鍵盤 focus 時必須顯示複製 tooltip",
 );
 requireMatch(
   style,
-  /\.code-copy-icon\s*{[^}]*width:\s*1rem/s,
-  "style.css: 複製 icon 寬度必須為 1rem",
+  /\.code-copy-icon\s*{[^}]*width:\s*0\.875rem/s,
+  "style.css: 複製 icon 寬度必須為 0.875rem",
+);
+requireMatch(
+  style,
+  /\.code-copy-icon\s*{[^}]*height:\s*0\.875rem/s,
+  "style.css: 複製 icon 高度必須為 0.875rem",
+);
+requireMatch(
+  style,
+  /@media print[\s\S]*\.code-block-frame pre\s*{[^}]*padding-right:\s*1\.25rem/s,
+  "style.css: 列印時必須移除複製按鈕的右側預留空間",
 );
 requireMatch(testSource, /doesNotMatch\(source,\s*\/\\bfetch/, "測試缺少 runtime fetch 防線");
 requireMatch(

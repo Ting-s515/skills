@@ -43,12 +43,12 @@
     {
       "id": 4,
       "name": "code-block-copy-contract",
-      "prompt": "請根據 spec 中的 Linux 指令教材 fixture，說明 docs-web 如何為每個 fenced code block 提供右上角 icon-only 複製按鈕，包含 Copy SVG、tooltip、Check 成功狀態、失敗警示色、複製內容、可存取性、Mermaid 排除條件、列印行為與測試。這是回覆層情境測試，只在回覆中提供具體實作契約，不要建立檔案或宣稱命令已執行。",
+      "prompt": "請根據 spec 中的 Linux 指令教材 fixture，說明 docs-web 如何為每個 fenced code block 提供不增加單行區塊高度的右上角 icon-only 複製按鈕，包含 Copy SVG、左側 tooltip、Check 成功狀態、失敗警示色、複製內容、可存取性、Mermaid 排除條件、列印行為與測試。這是回覆層情境測試，只在回覆中提供具體實作契約，不要建立檔案或宣稱命令已執行。",
       "expectations": [
-        "回覆明確使用 code block 外層定位 frame 與右上角複製按鈕，並說明長指令橫向捲動時按鈕仍固定可見",
+        "回覆明確使用 code block 外層定位 frame 與右上角複製按鈕，不增加上方預留列，只保留右側 padding，並說明長指令橫向捲動時按鈕仍固定可見",
         "回覆指定只複製 code 元素的完整 textContent，保留原始換行與空白且不包含按鈕文字",
         "回覆明確指定按鈕只顯示內嵌的重疊方框 Copy SVG、不顯示可見文字或 emoji，成功時切換為 Check SVG",
-        "回覆完整列出複製、已複製、複製失敗 tooltip、動態 aria-label、aria-live、keyboard focus、約 1.8 秒恢復及列印隱藏",
+        "回覆完整列出從按鈕左側展開的複製、已複製、複製失敗 tooltip、動態 aria-label、aria-live、keyboard focus、約 1.8 秒恢復及列印隱藏",
         "回覆說明失敗狀態使用警示色、明確排除已轉為 .mermaid 的圖表，並提供 Clipboard 成功與 API 不可用分支的 test double 測試",
         "輸出完整列出 npm test、npm run build 與 validate-static-docs-site.mjs 驗證步驟，且未把未執行的命令宣稱為成功"
       ]
