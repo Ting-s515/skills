@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { after, before, test } from "node:test";
 import { buildSite, createDocumentId } from "../script/build-site.mjs";
+import { copyCodeToClipboard } from "../src/code-copy.mjs";
 import { closeDialogOnEscape } from "../src/dialog-keydown.mjs";
 
 let fixtureDirectory;
@@ -12,7 +13,7 @@ let html;
 const fixtureDocuments = new Map([
   [
     "入門.md",
-    "# 入門指南\n\n入門內容唯一標記。\n\n請閱讀 [進階課程](進階.MD#操作流程)。\n",
+    "# 入門指南\n\n入門內容唯一標記。\n\n```bash\nkubectl get pods --all-namespaces\n```\n\n請閱讀 [進階課程](進階.MD#操作流程)。\n",
   ],
   ["進階.MD", "# 進階指南\n\n## 操作流程\n\n進階內容唯一標記。\n"],
   ["A+B.md", "# 加號課程\n\n加號檔名內容。\n"],
@@ -126,6 +127,53 @@ test("提供 Mermaid 全螢幕縮放與拖曳閱讀器", async () => {
   assert.match(style, /\.diagram-dialog::backdrop/);
   assert.match(style, /\.mermaid-frame\s*{[^}]*width: 100%;/s);
   assert.doesNotMatch(style, /calc\(100vw - 320px/);
+});
+
+test("為 code block 提供右上角複製按鈕與狀態樣式", async () => {
+  const source = await readFile(new URL("../src/app.mjs", import.meta.url), "utf8");
+  const style = await readFile(new URL("../src/style.css", import.meta.url), "utf8");
+
+  assert.match(html, /<pre><code class="language-bash">kubectl get pods/);
+  assert.match(source, /button\.className = "code-copy-button"/);
+  assert.match(source, /code\.textContent \?\? ""/);
+  assert.match(source, /navigator\.clipboard/);
+  assert.match(source, /createSvgElement\("rect"/);
+  assert.match(source, /createSvgElement\("path"/);
+  assert.match(source, /setCodeCopyButtonState\(button, "success"\)/);
+  assert.match(source, /setCodeCopyButtonState\(button, "error"\)/);
+  assert.match(source, /tooltip: "複製"/);
+  assert.match(source, /button\.dataset\.tooltip = presentation\.tooltip/);
+  assert.match(source, /button\.setAttribute\("aria-label", presentation\.label\)/);
+  assert.match(source, /button\.setAttribute\("aria-live", "polite"\)/);
+  assert.doesNotMatch(source, /button\.textContent = "(?:複製|已複製|複製失敗)"/);
+  assert.match(style, /\.code-block-frame\s*{[^}]*position:\s*relative/s);
+  assert.match(style, /\.code-copy-button\s*{[^}]*position:\s*absolute/s);
+  assert.match(style, /\.code-copy-button\s*{[^}]*right:\s*0\.65rem/s);
+  assert.match(style, /\.code-copy-button\s*{[^}]*width:\s*2\.25rem/s);
+  assert.match(style, /\.code-copy-button::before\s*{[^}]*content:\s*attr\(data-tooltip\)/s);
+  assert.match(style, /\.code-copy-button:focus-visible::before/);
+  assert.match(style, /\.code-copy-icon\s*{[^}]*width:\s*1rem/s);
+});
+
+test("GivenCodeText_WhenCopySucceeds_ShouldPreserveExactContent", async () => {
+  const writes = [];
+  const clipboard = {
+    async writeText(value) {
+      writes.push(value);
+    },
+  };
+  const command = "kubectl get pods\nkubectl get services\n";
+
+  await copyCodeToClipboard(command, clipboard);
+
+  assert.deepEqual(writes, [command]);
+});
+
+test("GivenClipboardUnavailable_WhenCopyCode_ShouldReject", async () => {
+  await assert.rejects(
+    copyCodeToClipboard("kubectl get pods", undefined),
+    /Clipboard API 不可用/,
+  );
 });
 
 test("GivenMermaidDialogOpen_WhenPressEscape_ShouldPreventDefaultAndClose", () => {

@@ -27,7 +27,7 @@
 6. `server.mjs` 只負責提供 build 完成的靜態檔案。
 7. 不提交產生的 `dist/`，但必須以 `npm run build` 驗證它可以重新產生。
 
-純靜態的定義是：網站可由任何 static file server 提供；client-side JavaScript 只負責文件切換、Mermaid SVG 渲染及圖表互動，不負責取得或轉換教材內容。
+純靜態的定義是：網站可由任何 static file server 提供；client-side JavaScript 只負責文件切換、code block 複製、Mermaid SVG 渲染及圖表互動，不負責取得或轉換教材內容。
 
 ## 固定目錄結構
 
@@ -42,6 +42,7 @@ docs-web/
 ├─ src/
 │  ├─ index.html
 │  ├─ style.css
+│  ├─ code-copy.mjs
 │  ├─ dialog-keydown.mjs
 │  └─ app.mjs
 └─ test/
@@ -56,8 +57,9 @@ docs-web/
 | `script/server.mjs` | 在固定 host 與 port 提供 `dist/` 內的四個公開路徑 |
 | `src/index.html` | 頁面骨架、文件 placeholder 與 Mermaid 放大 dialog |
 | `src/style.css` | 完整視覺、兩欄排版、Markdown、Mermaid、響應式與列印樣式 |
+| `src/code-copy.mjs` | 提供可獨立測試的 Clipboard API 寫入行為 |
 | `src/dialog-keydown.mjs` | 提供可獨立測試的 Mermaid dialog Escape 關閉行為 |
-| `src/app.mjs` | hash 導覽、作用中文件切換、Mermaid render 與放大閱讀器 |
+| `src/app.mjs` | hash 導覽、文件切換、code block 複製 UI、Mermaid render 與放大閱讀器 |
 | `test/build-site.test.mjs` | 驗證靜態產物、連結、無 runtime fetch 與 Mermaid 閱讀器契約 |
 
 ## 套件與 scripts
@@ -187,6 +189,19 @@ Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
 | Blockquote | `#f8f1e3` 背景與 `4px solid #b8924d` 左邊框 |
 | Table cell | padding `0.65rem 0.8rem`，`1px solid #ddd0b8` |
 
+## Code block 複製
+
+每個 Markdown fenced code block 都要在右上角提供 icon-only 複製按鈕，讓教材中的 CLI 指令與程式碼可以直接貼到終端機或編輯器。Mermaid code fence 已轉為圖表，不得出現複製按鈕。
+
+互動規格：
+
+1. 使用 `.code-block-frame` 包住既有 `<pre><code>`，按鈕固定在 frame 右上角，不隨長指令的橫向捲動消失。
+2. 按鈕固定為 `2.25rem × 2.25rem`，只顯示 `1rem` 的內嵌 SVG；預設使用兩張重疊方框的 Copy icon，不顯示可見文字或 emoji。
+3. Hover 或 keyboard focus 時顯示 `複製` tooltip；成功後 icon 暫時切換為 Check，tooltip 改為 `已複製`；失敗時保留 Copy icon、套用警示色並顯示 `複製失敗`。
+4. 複製內容只取 `<code>` 的 `textContent`，不得包含按鈕內容，也不得改寫換行或空白；狀態約 1.8 秒後恢復。
+5. 按鈕使用動態 `aria-label` 與 `aria-live="polite"`，並具有與網站一致的 keyboard focus outline。
+6. 列印時隱藏複製按鈕，並移除為按鈕預留的 code block 上方空間。
+
 ## Mermaid 固定呈現方式
 
 Mermaid 初始化必須使用：
@@ -257,6 +272,7 @@ Breakpoint 固定為 `820px`：
 列印時：
 
 - 隱藏 sidebar、Mermaid 放大按鈕與 dialog。
+- 隱藏 code block 複製按鈕。
 - 移除 main 與 Markdown 卡片的 padding、背景、邊框及陰影。
 - 不應因互動 UI 破壞紙本內容。
 
@@ -282,10 +298,12 @@ Breakpoint 固定為 `820px`：
 5. `app.mjs` 與 `style.css` 均成功輸出且不是空檔。
 6. 靜態 HTML 不引用 `/src/`。
 7. 文件切換使用 `hashchange` 與 article `hidden`，client source 不得含 `fetch(`。
-8. HTML 包含 Mermaid dialog 與 zoom controls。
-9. client source 包含放大按鈕、`showModal()`、明確的 `Escape` keydown 關閉、wheel 與 pointer drag 行為；Escape helper 需以事件與 dialog test double 驗證關閉及非關閉分支。
-10. CSS 包含 dialog backdrop。
-11. `.mermaid-frame` 為 `width: 100%`，且不存在讓圖表突破正文的 viewport 寬度計算。
+8. fixture 至少包含一個 fenced code block，client source 與 CSS 包含右上角 Copy SVG、tooltip、Check 成功狀態與失敗警示色；不得退回可見文字按鈕。
+9. Clipboard helper 以 test double 驗證完整文字寫入，並測試 Clipboard API 不可用的失敗分支。
+10. HTML 包含 Mermaid dialog 與 zoom controls。
+11. client source 包含放大按鈕、`showModal()`、明確的 `Escape` keydown 關閉、wheel 與 pointer drag 行為；Escape helper 需以事件與 dialog test double 驗證關閉及非關閉分支。
+12. CSS 包含 dialog backdrop。
+13. `.mermaid-frame` 為 `width: 100%`，且不存在讓圖表突破正文的 viewport 寬度計算。
 
 測試不可只檢查函式存在；也要驗證最終靜態 HTML 與輸出 assets 的契約。
 
@@ -307,6 +325,7 @@ npm --prefix .\docs-web run dev
 - 點擊目錄不重新下載 Markdown，URL hash 正確更新。
 - heading deep link 可以開啟正確文件並捲動定位。
 - table、code block 與長內容不撐破頁面。
+- 每個 code block 右上角都有 Copy icon，hover tooltip、Check 成功狀態與失敗警示色正確，且複製文字不含按鈕內容。
 - Mermaid 一般狀態不超出正文。
 - 每張 Mermaid 都能透過按鈕、點圖與鍵盤開啟。
 - 放大、縮小、重設、拖曳、滾輪、Esc 與 focus restore 正常。

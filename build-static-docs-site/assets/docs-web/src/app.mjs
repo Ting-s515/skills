@@ -1,4 +1,5 @@
 import mermaid from "mermaid";
+import { copyCodeToClipboard } from "./code-copy.mjs";
 import { closeDialogOnEscape } from "./dialog-keydown.mjs";
 
 const panels = [...document.querySelectorAll(".document-panel")];
@@ -15,6 +16,22 @@ const closeButton = dialog.querySelector('[data-diagram-action="close"]');
 const minimumScale = 0.2;
 const maximumScale = 5;
 const zoomFactor = 1.2;
+const copyFeedbackDuration = 1800;
+const svgNamespace = "http://www.w3.org/2000/svg";
+const copyButtonPresentations = {
+  idle: {
+    label: "複製此指令或程式碼",
+    tooltip: "複製",
+  },
+  success: {
+    label: "已複製",
+    tooltip: "已複製",
+  },
+  error: {
+    label: "複製失敗",
+    tooltip: "複製失敗",
+  },
+};
 const diagramState = {
   canvasHeight: 0,
   canvasWidth: 0,
@@ -196,6 +213,106 @@ function enhanceMermaid(panel) {
   }
 }
 
+// SVG 由 DOM API 建立，避免互動程式引入需要解析的 HTML 字串。
+function createSvgElement(name, attributes) {
+  const element = document.createElementNS(svgNamespace, name);
+
+  for (const [attribute, value] of Object.entries(attributes)) {
+    element.setAttribute(attribute, value);
+  }
+
+  return element;
+}
+
+// 成功狀態改用 Check icon，讓學員不需閱讀文字也能確認複製結果。
+function createCodeCopyIcon(state) {
+  const icon = createSvgElement("svg", {
+    "aria-hidden": "true",
+    class: "code-copy-icon",
+    focusable: "false",
+    viewBox: "0 0 24 24",
+  });
+
+  if (state === "success") {
+    icon.append(
+      createSvgElement("path", {
+        d: "M5 12.5l4 4L19 7",
+      }),
+    );
+    return icon;
+  }
+
+  icon.append(
+    createSvgElement("rect", {
+      height: "11",
+      rx: "2",
+      width: "11",
+      x: "4",
+      y: "4",
+    }),
+    createSvgElement("rect", {
+      height: "11",
+      rx: "2",
+      width: "11",
+      x: "9",
+      y: "9",
+    }),
+  );
+  return icon;
+}
+
+// Tooltip 與 aria-label 同步狀態，讓滑鼠和輔助科技取得一致回饋。
+function setCodeCopyButtonState(button, state) {
+  const presentation = copyButtonPresentations[state];
+
+  button.replaceChildren(createCodeCopyIcon(state));
+  button.dataset.copyState = state;
+  button.dataset.tooltip = presentation.tooltip;
+  button.setAttribute("aria-label", presentation.label);
+}
+
+function enhanceCodeBlocks(panel) {
+  const blocks = panel.querySelectorAll("pre:not([data-copy-ready])");
+
+  for (const block of blocks) {
+    const code = block.querySelector(":scope > code");
+
+    if (!code) {
+      continue;
+    }
+
+    const frame = document.createElement("div");
+    const button = document.createElement("button");
+    let resetTimer;
+
+    frame.className = "code-block-frame";
+    button.className = "code-copy-button";
+    button.type = "button";
+    button.setAttribute("aria-live", "polite");
+    setCodeCopyButtonState(button, "idle");
+    block.before(frame);
+    frame.append(block, button);
+    block.dataset.copyReady = "true";
+
+    button.addEventListener("click", async () => {
+      window.clearTimeout(resetTimer);
+      button.disabled = true;
+
+      try {
+        await copyCodeToClipboard(code.textContent ?? "", navigator.clipboard);
+        setCodeCopyButtonState(button, "success");
+      } catch {
+        setCodeCopyButtonState(button, "error");
+      } finally {
+        button.disabled = false;
+        resetTimer = window.setTimeout(() => {
+          setCodeCopyButtonState(button, "idle");
+        }, copyFeedbackDuration);
+      }
+    });
+  }
+}
+
 async function renderMermaid(panel) {
   const nodes = panel.querySelectorAll(".mermaid:not([data-processed])");
 
@@ -231,6 +348,7 @@ async function showDocument() {
     }
   }
 
+  enhanceCodeBlocks(activePanel);
   await renderMermaid(activePanel);
 
   if (target && target !== activePanel) {

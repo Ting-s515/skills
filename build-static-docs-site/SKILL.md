@@ -1,6 +1,6 @@
 ---
 name: build-static-docs-site
-description: 建立或更新由 Markdown 教材產生的純靜態文件網站，固定使用 HTML、CSS、MJS、build-time Markdown render、淺暖色雙欄版面與可縮放 Mermaid 閱讀器。當使用者要求建立 docs-web、將 docs 轉成網站、重製相同教材閱讀介面、維護靜態文件網站架構，或修正 Mermaid 閱讀體驗時使用；只修改教材文字或建立一般動態 Web 應用時不要使用。
+description: 建立或更新由 Markdown 教材產生的純靜態文件網站，固定使用 HTML、CSS、MJS、build-time Markdown render、淺暖色雙欄版面、可複製 code block 與可縮放 Mermaid 閱讀器。當使用者要求建立 docs-web、將 docs 轉成網站、重製相同教材閱讀介面、維護靜態文件網站架構、增加指令複製功能，或修正 Mermaid 閱讀體驗時使用；只修改教材文字或建立一般動態 Web 應用時不要使用。
 ---
 
 # 建立純靜態教材網站
@@ -28,8 +28,9 @@ description: 建立或更新由 Markdown 教材產生的純靜態文件網站，
 6. 維持 build-time Markdown render。所有教材預先寫入單一 HTML；client 不得在頁面切換時 `fetch()` Markdown。
 7. 維持固定淺暖色 tokens、桌面雙欄導覽、行動版、同頁 hash、responsive 與 print styles。
 8. 維持 Mermaid 正文 `width: 100%`，不得突破內容卡片；細節只透過原生 dialog 放大閱讀器查看。
-9. 不主動改寫 `docs/*.md` 教材內容，除非使用者同時要求修改教材。
-10. 依目標 repository 規則處理 tests、build、review、staging 與 commit，不得納入無關變更。
+9. 維持 code block 右上角 icon-only 複製按鈕：預設為重疊方框 Copy SVG，hover 或 focus 顯示 tooltip，成功切換 Check SVG，失敗套警示色；Mermaid 不得套用此按鈕。
+10. 不主動改寫 `docs/*.md` 教材內容，除非使用者同時要求修改教材。
+11. 依目標 repository 規則處理 tests、build、review、staging 與 commit，不得納入無關變更。
 
 ## 固定技術邊界
 
@@ -37,6 +38,7 @@ description: 建立或更新由 Markdown 教材產生的純靜態文件網站，
 - Markdown 於 build-time 以 Unified/Remark/Rehype 轉換，並支援 GFM。
 - Mermaid 由 npm 套件隨 `app.mjs` bundle，不使用 CDN。
 - `dist/` 是完整靜態輸出；不得加入 runtime framework、SSR 或 API server。
+- code block 使用 Clipboard API 複製完整文字；按鈕只顯示內嵌 SVG，不以可見文字或 emoji 取代 icon，並以獨立 helper 測試成功與不可用分支。
 - 本機預覽只綁定 `127.0.0.1:18100`，避免占用常見的 8080/8100。
 - Mermaid 使用 `securityLevel: "strict"`，dialog 支援按鈕、滾輪縮放、拖曳、重設、Esc 關閉與 focus restore。
 - 網站名稱、導覽分類、課程標題與教材數量屬於目標專案內容，不是 skill 的固定設計契約。
@@ -54,7 +56,7 @@ node "$env:USERPROFILE\.codex\skills\build-static-docs-site\scripts\validate-sta
 
 若 `node_modules/` 已符合 lockfile，可省略 `npm install`。測試或 build 失敗時先修正並重跑，直到通過或確認為不可自行排除的環境阻塞。
 
-若環境允許控制瀏覽器，再驗證導覽切換、heading deep link、Mermaid 開啟、縮放、拖曳、重設、Esc 關閉與 focus restore。若瀏覽器受政策或環境限制，不得繞過限制，也不得宣稱互動已實測通過。
+若環境允許控制瀏覽器，再驗證導覽切換、heading deep link、code block Copy icon、tooltip、Check 成功狀態、失敗警示色、Mermaid 開啟、縮放、拖曳、重設、Esc 關閉與 focus restore。若瀏覽器受政策或環境限制，不得繞過限制，也不得宣稱互動已實測通過。
 
 ## 資源
 
