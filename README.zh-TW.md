@@ -36,8 +36,6 @@ Ting-s515 維護的個人 AI agent skills 與 workflow instructions。
 | [`export-feature-file`](export-feature-file/) | 將行為規格轉成可執行的 `.feature` 檔。 | 需要給 Cucumber、Behave、Reqnroll 等測試框架使用的 Gherkin。 |
 | [`export-gherkin`](export-gherkin/) | 將需求或邏輯轉成可讀的 Gherkin 規格。 | 需要用 Given/When/Then 與 PM、QA 或客戶對齊，而不是直接產生測試檔。 |
 | [`fleet-review`](fleet-review/) | 啟動多代理審查並交叉驗證結果。 | 明確以 `fleet-review` 搭配規格路徑要求審查。 |
-| [`llm-repo`](llm-repo/) | 從本地 LLM 知識庫載入相關 wiki 頁面。 | 需要根據本地 `wiki/` 內容回答問題。 |
-| [`llm-repo-raw-capture`](llm-repo-raw-capture/) | 將深度搜尋結果保存為本地 raw knowledge snapshot。 | 完成網路搜尋後，需要留下可追蹤來源筆記供後續 ingest。 |
 | [`plan-doc`](plan-doc/) | 從程式碼與需求產出實作規格文檔。 | 需要建立可交給下一個 agent 實作的 `*.plan.md`。 |
 | [`propose`](propose/) | 將需求整理成澄清流程、Gherkin 與任務清單。 | 需要在實作前規劃功能，或先分流 bug fix。 |
 | [`propose-sync`](propose-sync/) | 將已完成 proposal 狀態同步回需求文件。 | 需要把 `docs/propose/` 的完成狀態回寫到原始規格。 |

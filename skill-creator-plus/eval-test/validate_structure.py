@@ -60,7 +60,6 @@ SKILLS = [
     "code-reviewer",
     "propose",
     "propose-sync",
-    "llm-repo",
     "writing-training-doc",
     "fleet-review",
     "skill-creator-plus",
