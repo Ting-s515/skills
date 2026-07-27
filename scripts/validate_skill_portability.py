@@ -46,6 +46,10 @@ ESCAPE_ONLY_RELATIVE_MATCHES = {
 INTENTIONAL_PLATFORM_MATCHES = {
     # 這個完整 match 必須展示 Windows 保留裝置路徑，否則無法說明故障原因。
     ("remove-nul/SKILL.md", "Windows drive-letter 絕對路徑"): (r"C:\...\nul",),
+    # main branch 的搜尋技能刻意只列舉 Claude skills，實際 home 仍依 OS 動態解析。
+    ("search-local-skill/SKILL.md", "假設 skill 固定安裝在 ~/.claude/skills"): (
+        "~/.claude/skills/",
+    ),
 }
 
 

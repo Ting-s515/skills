@@ -168,6 +168,49 @@ class ValidateSkillPortabilityTest(unittest.TestCase):
             self.assertEqual(1, len(findings))
             self.assertEqual("Windows drive-letter 絕對路徑", findings[0].message)
 
+    def test_search_local_skill_claude_root_is_allowed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            skill_root = root / "search-local-skill"
+            skill_root.mkdir()
+            (skill_root / "SKILL.md").write_text(
+                "搜尋 `~/.claude/skills/`，並依作業系統動態解析 home。\n",
+                encoding="utf-8",
+            )
+
+            findings = path_findings(root, discover_skill_entries(root))
+
+            self.assertEqual([], findings)
+
+    def test_search_local_skill_matches_main_branch_contract(self) -> None:
+        repository_root = Path(__file__).resolve().parents[1]
+        content = (repository_root / "search-local-skill" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("~/.claude/skills/", content)
+        self.assertNotIn("~/.codex/skills/", content)
+        self.assertIn("環境明確就直接使用；不明確才偵測", content)
+        self.assertIn("**macOS/Linux**", content)
+        self.assertIn("**Windows PowerShell**", content)
+        self.assertIn("**Windows bash**", content)
+        self.assertIn("若環境資訊不明確，先以唯讀方式偵測作業系統", content)
+
+    def test_search_local_skill_exception_does_not_hide_windows_path(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            skill_root = root / "search-local-skill"
+            skill_root.mkdir()
+            (skill_root / "SKILL.md").write_text(
+                "搜尋 `~/.claude/skills/`，不可使用 `C:\\Users\\someone\\skills`。\n",
+                encoding="utf-8",
+            )
+
+            findings = path_findings(root, discover_skill_entries(root))
+
+            self.assertEqual(1, len(findings))
+            self.assertEqual("Windows drive-letter 絕對路徑", findings[0].message)
+
 
 if __name__ == "__main__":
     unittest.main()
