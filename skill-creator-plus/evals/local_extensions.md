@@ -6,7 +6,7 @@
 ## 運作流程
 
 1. 先確認 Python 可用：`python --version`（Windows 若不可用，改用 `py --version`）
-2. 執行 `python .\update-skill-creator.py`（Windows 可改用 `py .\update-skill-creator.py`）→ 官方最新 SKILL.md 覆蓋進來
+2. 執行 `python ./update-skill-creator.py`（Windows 可改用 `py ./update-skill-creator.py`）→ 官方最新 SKILL.md 覆蓋進來
 3. `evals/local_extensions.md` 因 `evals/` 保護機制而存活
 4. 腳本偵測錨點 `references/schemas.md` for the full schema，將「插入內容」插入其後
 5. 腳本套用本地 metadata，將官方 `name: skill-creator` 還原為 `name: skill-creator-plus`
