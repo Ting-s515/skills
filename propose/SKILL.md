@@ -63,7 +63,7 @@ backend/docs/propose/<feature-a>/
 
 **Bug Fix 處理（`## bug fix list` 區塊）：**
 
-讀取 `~/.claude/skills/propose/references/issue-doc-spec.md`，對每個 bug item 套用標記判斷：
+從目前 `propose/SKILL.md` 所在目錄讀取 `references/issue-doc-spec.md`，對每個 bug item 套用標記判斷。必須以已解析的 skill 目錄組合路徑，不可假設 skills 安裝在特定 home 子目錄：
 
 | 標記 | 判斷方式 | propose 行為 |
 |---|---|---|

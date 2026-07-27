@@ -46,7 +46,7 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 EVALS_JSON = SCRIPT_DIR / "evals.json"
-SKILL_MD = SCRIPT_DIR.parent / "SKILL.MD"
+SKILL_MD = SCRIPT_DIR.parent / "SKILL.md"
 FIXTURES_DIR = SCRIPT_DIR / "fixtures"
 OUTPUT_DIR = SCRIPT_DIR.parent / "eval-results-bdd"
 
@@ -117,7 +117,7 @@ def load_evals() -> dict:
 
 def read_skill_instructions() -> str:
     if not SKILL_MD.is_file():
-        fail(f"SKILL.MD not found at {SKILL_MD}")
+        fail(f"SKILL.md not found at {SKILL_MD}")
     return SKILL_MD.read_text(encoding="utf-8")
 
 

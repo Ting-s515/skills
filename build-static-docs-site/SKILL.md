@@ -45,14 +45,21 @@ description: 建立或更新由 Markdown 教材產生的純靜態文件網站，
 
 ## 驗證
 
-在目標 repository 依序執行：
+在目標 repository 依序執行下列跨平台指令：
 
-```powershell
-npm --prefix .\docs-web install
-npm --prefix .\docs-web test
-npm --prefix .\docs-web run build
-node "$env:USERPROFILE\.codex\skills\build-static-docs-site\scripts\validate-static-docs-site.mjs" .
+```shell
+npm --prefix ./docs-web install
+npm --prefix ./docs-web test
+npm --prefix ./docs-web run build
 ```
+
+validator 必須從 agent 已載入的 `build-static-docs-site/SKILL.md` 所在目錄定位，不可硬編碼使用者名稱或假設固定安裝根目錄。下列寫法的正斜線可同時用於 PowerShell 與 macOS/Linux shell：
+
+```shell
+node "<skill-directory>/scripts/validate-static-docs-site.mjs" .
+```
+
+`<skill-directory>` 必須替換成目前已解析的 skill 絕對目錄。
 
 若 `node_modules/` 已符合 lockfile，可省略 `npm install`。測試或 build 失敗時先修正並重跑，直到通過或確認為不可自行排除的環境阻塞。
 

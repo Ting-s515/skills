@@ -63,6 +63,18 @@ When using these skills in another agent environment:
 3. Preserve the `SKILL.md` frontmatter.
 4. Review any scripts before running them in your environment.
 
+## Cross-platform validation
+
+After changing skill paths, entrypoint names, or bundled scripts, run the portability validator. It checks every skill for exact entrypoint casing, user-specific absolute paths, and fixed installation-directory assumptions:
+
+```powershell
+python -X utf8 scripts/validate_skill_portability.py
+```
+
+```bash
+python3 scripts/validate_skill_portability.py
+```
+
 ## License
 
 This repository is licensed under the [MIT License](LICENSE).

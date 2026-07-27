@@ -63,6 +63,18 @@ Ting-s515 維護的個人 AI agent skills 與 workflow instructions。
 3. 保留 `SKILL.md` frontmatter。
 4. 執行任何 script 前，先在你的環境中檢查內容。
 
+## 跨平台驗證
+
+變更 skill 路徑、入口檔名或輔助腳本後，執行 portability validator。它會逐一檢查所有 skill 的入口檔名大小寫、使用者絕對路徑與固定安裝位置假設：
+
+```powershell
+python -X utf8 scripts/validate_skill_portability.py
+```
+
+```bash
+python3 scripts/validate_skill_portability.py
+```
+
 ## License
 
 本 repository 使用 [MIT License](LICENSE) 授權。

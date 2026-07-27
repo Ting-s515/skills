@@ -311,11 +311,11 @@ Breakpoint 固定為 `820px`：
 
 完成實作後依序執行：
 
-```powershell
-npm --prefix .\docs-web install
-npm --prefix .\docs-web test
-npm --prefix .\docs-web run build
-npm --prefix .\docs-web run dev
+```shell
+npm --prefix ./docs-web install
+npm --prefix ./docs-web test
+npm --prefix ./docs-web run build
+npm --prefix ./docs-web run dev
 ```
 
 開啟 <http://localhost:18100>，確認：
