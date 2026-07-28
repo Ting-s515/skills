@@ -25,14 +25,12 @@
 
 1. 檢查本次變更檔案類型。
 2. 產生符合 Conventional Commits 標準格式的完整多行 commit message。
-3. 判斷是否需要 code review。
-4. 除非符合下方 Code Review 跳過條件，否則必須執行 code review。
-5. 若未執行 code review，必須在最終回覆明確寫出跳過原因。
-6. 若本次變更包含測試檔案，測試完成後必須執行測試驗證；若未通過，需自動修正並重跑，直到測試通過為止。
-7. 若本次變更包含應用程式實作、設定、建置流程或相依套件變更，必須執行對應 build 驗證；若建置失敗，需自動修正並重跑，直到建置成功為止。
-8. 驗證與 review 完成後，必須自動 staging 本次對話由 AI agent 產生或修改的檔案。
-9. 必須使用產生的完整多行 commit message 自動執行 `git commit`。
-10. 若因 git hook、測試、build、review findings 或環境錯誤導致 commit 失敗，必須先自動修正可修正問題並重試；只有在無法自行修正時，才在最終回覆說明阻塞原因。
+3. 此專案不執行 Code Review，不得啟動 reviewer sub-agent 或 `code-reviewer` skill。
+4. 若本次變更包含測試檔案，測試完成後必須執行測試驗證；若未通過，需自動修正並重跑，直到測試通過為止。
+5. 若本次變更包含應用程式實作、設定、建置流程或相依套件變更，必須執行對應 build 驗證；若建置失敗，需自動修正並重跑，直到建置成功為止。
+6. 必要驗證完成後，必須自動 staging 本次對話由 AI agent 產生或修改的檔案。
+7. 必須使用產生的完整多行 commit message 自動執行 `git commit`。
+8. 若因 git hook、測試、build 或環境錯誤導致 commit 失敗，必須先自動修正可修正問題並重試；只有在無法自行修正時，才在最終回覆說明阻塞原因。
 
 ### Commit Message
 
@@ -41,7 +39,7 @@
 - `type` 為必要欄位，只允許：`feat`、`fix`、`docs`、`style`、`refactor`、`perf`、`test`、`chore`、`revert`。
 - `scope` 為可選欄位；能明確定位變更範圍時建議使用，例如 `docs(agents):`。
 - `subject` 為必要欄位，簡短描述本次變更，不超過 50 個字元，結尾不要加句號。
-- 第二行開始必須輸出詳細的中文內容，供 PR code review 使用。
+- 第二行開始必須輸出詳細的中文內容，完整說明本次變更。
 - 產生 message 後必須用於實際執行 `git commit`。
 - commit message 必須描述本次實際提交內容，不可使用空泛描述。
 - Body 必須說明本次調整的背景、原本問題或風險，以及本次調整項目；每行建議不超過 72 個字元。
@@ -59,33 +57,9 @@
 - build 修正流程需持續到建置成功；只有在缺少外部服務、缺少憑證、環境限制或相依工具不可用等無法自行排除的情況，才可停止並說明阻塞原因。
 - 若本次只變更文檔、註解或不影響建置的純文字內容，可跳過 build，但需保留跳過原因。
 
-### Code Review
-
-- Code Review 預設只用於可能影響程式邏輯、資料流、權限、安全性、建置流程、相依套件、測試正確性或對外行為的變更。
-- 若本次變更包含多種檔案，需先依檔案類型與變更內容判斷風險；只要任一變更符合必須 review 條件，就必須執行 Code Review。
-
-- **以下情況跳過 Code Review：**
-- 本次對話變更**僅有文檔檔案**（如 `.md`、`.txt` 等），不含程式碼變更
-- 本次操作為**純 git 操作**（如 `git rebase`、`git merge`、`git cherry-pick`、`git reset`、`git stash` 等），不涉及程式碼撰寫或修改
-- 本次變更**僅有樣式檔案**，且不包含前端邏輯、CSS-in-JS 條件判斷或互動狀態邏輯，例如 `.css`、`.scss`、`.sass`、`.less`
-- 本次變更**僅有靜態視覺資產**，且未修改載入流程或程式引用邏輯，例如 `.png`、`.jpg`、`.jpeg`、`.gif`、`.webp`、`.ico`、`.svg`
-- 本次變更**僅有格式化、排版或註解調整**，且未改變任何程式分支、條件、回傳值、例外處理、型別契約或公開 API
-- 本次變更**僅有非執行性設定或工具文件**，且不影響建置、測試、部署、相依套件或執行環境
-
-- **以下情況必須執行 Code Review：**
-- 變更包含應用程式實作、後端業務邏輯、前端互動邏輯、hook、service、工具函式、資料轉換或狀態管理
-- 變更包含測試檔案，測試檔案本身的正確性與覆蓋率亦須由 Code Review 驗證
-- 變更包含相依套件、lockfile、build 設定、CI/CD、部署設定、環境變數範本、資料庫 migration、schema、權限、安全性或認證相關內容
-- 變更雖以樣式或靜態資產為主，但會影響可用性、可存取性、重要互動狀態、響應式行為或品牌/產品關鍵畫面
-- 變更範圍很大且無法可靠判定皆為低風險內容
-
-- **若變更包含測試檔案：**
-- 仍須照正常流程執行 Code Review，不可跳過
-- 測試檔案本身的正確性與覆蓋率亦須由 Code Review 驗證
-
 ### 自動執行 Git Commit（無條件執行）
 
-Build 驗證與 Code Review 完成後，必須使用 Commit Message 章節產生的完整多行 commit message 自動執行 `git commit`，不需要人工介入。
+必要驗證完成後，必須使用 Commit Message 章節產生的完整多行 commit message 自動執行 `git commit`，不需要人工介入。
 
 - AI agent 必須主動完成 `git status`、`git diff`、必要驗證、`git add` 與 `git commit`。
 - 不得要求人類手動執行 staging、commit 或確認 commit message。
@@ -94,19 +68,7 @@ Build 驗證與 Code Review 完成後，必須使用 Commit Message 章節產生
 - 不得使用 `git add .` 或 `git add -A`，除非已確認工作區沒有任何非本次對話產生的變更。
 - 不得使用 `git reset --hard`、`git checkout --` 等會丟失變更的指令來處理非本次變更。
 - 若 commit 前發現沒有實際檔案變更，應跳過 commit，並在最終回覆說明原因。
-- 若因 git hook、測試、build、review findings 或環境錯誤導致 commit 失敗，必須先自動修正可修正問題並重試；只有在無法自行修正時，才可停止並說明阻塞原因。
-
-## Review 執行原則
-
-- 優先使用使用者在對話中明確提供的規格文件路徑。
-- 若需要做規格對照審查，但對話中沒有明確規格路徑，直接以本次 `git diff` 內容作為依據執行 review，不得因此延遲或跳過。
-- 若已知規格文件路徑，review prompt 必須填入實際路徑，不可使用佔位符。
-- 若環境支援 sub-agent，優先使用 reviewer role 執行 review。
-- review 前應優先查找名稱為 `code-reviewer` 的 skill，查找時必須對 skill 名稱與 `SKILL.md` 檔名使用大小寫不敏感比對，讀取其 `SKILL.md` 後依流程執行；不可只因本回合注入的 Available skills 清單未列出該 skill，就直接判定不可用。
-- 查找 `code-reviewer` skill 時，不得因 `SKILL.md`、`SKILL.MD` 等檔名大小寫差異判定 skill 不存在；若使用 `rg` 比對路徑字串，必須使用大小寫不敏感搜尋。
-- 若本回合技能清單未列出 `code-reviewer`，但本機可取得同名 skill 定義，仍應讀取並依其流程執行。
-- 不可將 `code-reviewer` 寫成硬編碼的本機絕對路徑；應以 skill 名稱查找與載入。
-- 只有在確認 `code-reviewer` skill 不存在、無法讀取，或 sub-agent 能力不可用時，才退回當前 agent 執行一般 code review 流程。
+- 若因 git hook、測試、build 或環境錯誤導致 commit 失敗，必須先自動修正可修正問題並重試；只有在無法自行修正時，才可停止並說明阻塞原因。
 
 ## 查證原則
 
