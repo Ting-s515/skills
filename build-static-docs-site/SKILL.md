@@ -24,7 +24,7 @@ description: 建立或更新由 Markdown 教材產生的純靜態文件網站，
    - `docs-web/` 已存在：先讀現況，只修改需求涉及的檔案，不以模板覆蓋既有變更。
 3. 首次建立時，依序從使用者要求、repository 文件與目錄名稱決定網站名稱及說明；不得沿用模板或其他專案的名稱。
 4. 依目標 `docs/*.md` 的實際課程結構決定導覽分類；沒有明確分類時使用單一中性群組，不套用特定領域的檔名前綴規則。
-5. 內容相依測試必須從目前 `docs/*.md` 或測試 fixture 動態取得教材清單與數量，不得固定目標專案的教材名稱或份數；fixture 應涵蓋非 ASCII、相似檔名與跨文件連結，設計契約測試則保留。
+5. 內容相依測試必須從目前 `docs/*.md` 或測試 fixture 動態取得教材清單與數量，不得固定目標專案的教材名稱或份數；檔案系統 fixture 應涵蓋非 ASCII、相似檔名與跨文件連結，Unicode canonical-equivalent 檔名則以原始檔名字串直接驗證 ID，不得建立會在 normalization-insensitive 檔案系統 checkout 碰撞的實體路徑；設計契約測試則保留。
 6. 維持 build-time Markdown render。所有教材預先寫入單一 HTML；client 不得在頁面切換時 `fetch()` Markdown。
 7. 維持固定淺暖色 tokens、桌面雙欄導覽、行動版、同頁 hash、responsive 與 print styles。
 8. 維持 Mermaid 正文 `width: 100%`，不得突破內容卡片；細節只透過原生 dialog 放大閱讀器查看。

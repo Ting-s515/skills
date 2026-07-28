@@ -96,7 +96,7 @@ docs-web/
 
 1. 只讀取 `docs/` 第一層的 `.md` 檔案，依 `zh-Hant` locale 由檔名排序。
 2. 以 Markdown 第一個 H1 作為導覽標題；沒有 H1 時才使用檔名。
-3. 為每份文件建立穩定且唯一的 ID：保留 Unicode 字母與數字形成可讀 slug，並加入由原始完整檔名字串產生的短 hash，避免非 ASCII、相似檔名或 Unicode canonical-equivalent 檔名碰撞；前綴為 `doc-`。
+3. 為每份文件建立穩定且唯一的 ID：保留 Unicode 字母與數字形成可讀 slug，並加入由原始完整檔名字串產生的短 hash，避免非 ASCII、相似檔名或 Unicode canonical-equivalent 檔名碰撞；前綴為 `doc-`。測試 canonical-equivalent 名稱時直接傳入 NFC 與 NFD 原始檔名字串，不得在 repository 或暫存目錄建立兩個等價實體路徑。
 4. 依目標 repository 的課程結構建立導覽群組。優先採用使用者要求或既有文件慣例；若沒有可靠的分類依據，全部文件放入單一中性群組。不得把特定專案的檔名前綴或分類名稱當成通用規則。
 5. 將全部文件導覽寫入 `<!-- DOCUMENT_NAVIGATION -->`。
 6. 將每份 HTML 放入獨立的 `<article class="document-panel markdown-body">`，再寫入 `<!-- DOCUMENT_CONTENT -->`。
@@ -289,7 +289,7 @@ Breakpoint 固定為 `820px`：
 
 ## 測試要求
 
-使用 Node.js 內建 `node:test`，在 `mkdtemp()` 建立不綁定特定專案的 Markdown fixture 與 build 輸出，測試後移除。Fixture 應包含非 ASCII 檔名、正規化後相似的檔名、Unicode composed／decomposed 檔名，以及至少一個跨文件 fragment 連結。至少驗證：
+使用 Node.js 內建 `node:test`，在 `mkdtemp()` 建立不綁定特定專案的 Markdown fixture 與 build 輸出，測試後移除。檔案系統 fixture 應包含非 ASCII 檔名、正規化後相似的可攜式檔名，以及至少一個跨文件 fragment 連結。Unicode composed／decomposed 必須直接以 NFC 與 NFD 原始檔名字串測試，不得建立 canonical-equivalent 實體檔案，以免在 normalization-insensitive 檔案系統發生覆寫。至少驗證：
 
 1. 產生的 article 數量等於 fixture 或目前 `docs/*.md` 的動態數量。
 2. 全部教材內容已預先存在同一份 HTML，測試不得固定目標專案的教材名稱或份數。
