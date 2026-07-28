@@ -2,13 +2,15 @@
 
 > 這是最高優先級規則，任何任務完成後不得省略。
 
+- 此專案不執行 Code Review，不得啟動 subagent 進行審查或呼叫 `code-reviewer` skill。
+
 ## 步驟一：產生 Commit Message（無條件執行）
 
 - `type` 為必要欄位，只允許：`feat`、`fix`、`docs`、`style`、`refactor`、`perf`、`test`、`chore`、`revert`
 - `scope` 為可選欄位；能明確定位變更範圍時建議使用，例如 `docs(agents):`
 - `subject` 為必要欄位，簡短描述本次變更，不超過 50 個字元，結尾不要加句號
 - 第一行必須符合 Conventional Commits Header 格式：`<type>[(scope)]: <subject>`
-- 第二行開始必須輸出詳細的中文內容，供 PR code review 使用
+- 第二行開始必須輸出詳細的中文內容，完整說明本次變更
 - commit message 必須描述本次實際提交內容，不可使用空泛描述
 - Body 必須說明本次調整的背景、原本問題或風險，以及本次調整項目；每行建議不超過 72 個字元
 - 詳細中文內容建議格式：
@@ -32,47 +34,9 @@
 - 若 build 失敗，必須自動分析錯誤、修正可修正問題，並重新執行 build
 - build 修正流程需持續到建置成功；只有在缺少外部服務、缺少憑證、環境限制或相依工具不可用等無法自行排除的情況，才可停止並說明阻塞原因
 
-## 步驟三：執行 Code Review（符合條件才跳過）
+## 步驟三：自動執行 Git Commit（無條件執行）
 
-Code Review 預設只用於可能影響程式邏輯、資料流、權限、安全性、建置流程、相依套件、測試正確性或對外行為的變更。
-
-若本次變更包含多種檔案，需先依檔案類型與變更內容判斷風險；只要任一變更符合必須 review 條件，就必須使用 Agent tool 開啟 subagent 執行 code review。
-
-**以下情況跳過 Code Review：**
-
-- 本次對話變更**僅有文檔檔案**（如 `.md`、`.txt` 等），不含程式碼變更
-- 本次操作為**純 git 操作**（如 `git rebase`、`git merge`、`git cherry-pick`、`git reset`、`git stash` 等），不涉及程式碼撰寫或修改
-- 本次變更**僅有樣式檔案**，且不包含前端邏輯、CSS-in-JS 條件判斷或互動狀態邏輯，例如 `.css`、`.scss`、`.sass`、`.less`
-- 本次變更**僅有靜態視覺資產**，且未修改載入流程或程式引用邏輯，例如 `.png`、`.jpg`、`.jpeg`、`.gif`、`.webp`、`.ico`、`.svg`
-- 本次變更**僅有格式化、排版或註解調整**，且未改變任何程式分支、條件、回傳值、例外處理、型別契約或公開 API
-- 本次變更**僅有非執行性設定或工具文件**，且不影響建置、測試、部署、相依套件或執行環境
-
-**以下情況必須執行 Code Review：**
-
-- 變更包含應用程式實作、後端業務邏輯、前端互動邏輯、hook、service、工具函式、資料轉換或狀態管理
-- 變更包含測試檔案，測試檔案本身的正確性與覆蓋率亦須由 Code Review 驗證
-- 變更包含相依套件、lockfile、build 設定、CI/CD、部署設定、環境變數範本、資料庫 migration、schema、權限、安全性或認證相關內容
-- 變更雖以樣式或靜態資產為主，但會影響可用性、可存取性、重要互動狀態、響應式行為或品牌/產品關鍵畫面
-- 變更範圍很大且無法可靠判定皆為低風險內容
-
-**若變更包含測試檔案：**
-- 仍須照正常流程執行 Code Review，不可跳過
-- 測試檔案本身的正確性與覆蓋率亦須由 Code Review 驗證
-
-**subagent prompt 組裝規則：**
-
-- 優先從對話中找使用者明確提供的需求規格文檔路徑
-- 若對話中無明確路徑，**直接以 git diff 內容作為依據**開啟 subagent，不得以「找不到路徑」為由延遲或跳過
-- 將實際路徑填入 prompt，**不可使用佔位符**
-
-**subagent prompt 須包含：**
-
-1. 本次實作對應的需求規格文檔路徑（從對話中識別）
-2. 呼叫 Skill tool，參數 skill: "code-reviewer"
-
-## 步驟四：自動執行 Git Commit（無條件執行）
-
-Build 驗證與 Code Review 完成後，**必須**使用步驟一產生的 commit message 自動執行 `git commit`。
+必要驗證完成後，**必須**使用步驟一產生的 commit message 自動執行 `git commit`。
 
 - 必須主動完成 `git status`、`git diff`、必要驗證、`git add` 與 `git commit`
 - 不依靠人類手動確認或手動提交
@@ -81,7 +45,7 @@ Build 驗證與 Code Review 完成後，**必須**使用步驟一產生的 commi
 - 不得使用 `git add .` 或 `git add -A`，除非已確認工作區沒有任何非本次對話產生的變更
 - 不得使用 `git reset --hard`、`git checkout --` 等會丟失變更的指令來處理非本次變更
 - 若 commit 前發現沒有實際檔案變更，應跳過 commit，並說明原因
-- 若因 git hook、測試、build、review findings 或環境錯誤導致 commit 失敗，必須先自動修正可修正問題並重試；只有在無法自行修正時，才可停止並說明阻塞原因
+- 若因 git hook、測試、build 或環境錯誤導致 commit 失敗，必須先自動修正可修正問題並重試；只有在無法自行修正時，才可停止並說明阻塞原因
 
 ---
 
@@ -141,8 +105,6 @@ Build 驗證與 Code Review 完成後，**必須**使用步驟一產生的 commi
 - [ ] 本次回覆是否有透過 Write / Edit / Bash 新增、修改或刪除任何檔案？
 - [ ] 若有 → 已產生完整多行 Commit Message？
 - [ ] 若有 → 已判斷是否需要 Build，且必要時已執行並通過？
-- [ ] 若有 → 本次變更是否全部為文檔類檔案（.md、.txt），且不含任何程式碼變更？
-- [ ] 若不符合跳過條件 → 已開啟 subagent 執行 Code Review？
 - [ ] 若有實際檔案變更 → 已自動執行 git commit，或已確認無變更可提交？
 
 ---
@@ -150,7 +112,6 @@ Build 驗證與 Code Review 完成後，**必須**使用步驟一產生的 commi
 `<type>[(scope)]: <subject>`
 `<第二行開始為詳細中文變更說明>`
 **Build：** 已執行 / 跳過（原因：___）
-**Code Review：** 已執行 / 跳過（原因：___）
 **Git Commit：** 已執行 / 跳過（原因：___）
 ---
 
