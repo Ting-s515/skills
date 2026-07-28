@@ -18,9 +18,11 @@ const fixtureDocuments = new Map([
   ["進階.MD", "# 進階指南\n\n## 操作流程\n\n進階內容唯一標記。\n"],
   ["A+B.md", "# 加號課程\n\n加號檔名內容。\n"],
   ["A B.md", "# 空白課程\n\n空白檔名內容。\n"],
-  ["é.md", "# Composed Unicode\n\nComposed 內容。\n"],
-  ["é.md", "# Decomposed Unicode\n\nDecomposed 內容。\n"],
+  ["unicode-composed.md", "# Composed Unicode\n\nComposed 內容。\n"],
+  ["unicode-decomposed.md", "# Decomposed Unicode\n\nDecomposed 內容。\n"],
 ]);
+const composedFileName = "é.md";
+const decomposedFileName = "e\u0301.md";
 
 function escapeHtmlAttribute(value) {
   // 測試依實際檔名驗證輸出，因此需套用與 HTML attribute 相同的 escaping。
@@ -92,7 +94,14 @@ test("為相似與非 ASCII 檔名建立唯一文件 ID", () => {
   assert.equal(new Set(articleIds).size, fixtureDocuments.size);
   assert.notEqual(createDocumentId("A+B.md"), createDocumentId("A B.md"));
   assert.notEqual(createDocumentId("入門.md"), createDocumentId("進階.MD"));
-  assert.notEqual(createDocumentId("é.md"), createDocumentId("é.md"));
+  assert.equal(
+    composedFileName.normalize("NFC"),
+    decomposedFileName.normalize("NFC"),
+  );
+  assert.notEqual(
+    createDocumentId(composedFileName),
+    createDocumentId(decomposedFileName),
+  );
   assert.equal(activeLinks.length, 1);
   assert.equal(currentPages.length, 1);
 });

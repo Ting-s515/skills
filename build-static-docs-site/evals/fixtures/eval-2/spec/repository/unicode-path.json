@@ -1,0 +1,14 @@
+{
+  "cases": [
+    {
+      "normalization": "NFC",
+      "logicalPath": "é.md",
+      "source": "docs/unicode-composed.md"
+    },
+    {
+      "normalization": "NFD",
+      "logicalPath": "e\u0301.md",
+      "source": "docs/unicode-decomposed.md"
+    }
+  ]
+}
