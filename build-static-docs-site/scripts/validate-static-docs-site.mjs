@@ -1,11 +1,21 @@
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 const inputPath = path.resolve(process.argv[2] ?? process.cwd());
-const webDirectory =
-  path.basename(inputPath).toLowerCase() === "docs-web"
-    ? inputPath
-    : path.join(inputPath, "docs-web");
+const siteMarkers = [
+  "package.json",
+  path.join("script", "build-site.mjs"),
+  path.join("src", "index.html"),
+  path.join("src", "app.mjs"),
+  path.join("src", "style.css"),
+];
+const isSiteDirectory = siteMarkers.every((marker) =>
+  existsSync(path.join(inputPath, marker)),
+);
+const webDirectory = isSiteDirectory
+  ? inputPath
+  : path.join(inputPath, "docs-web");
 const failures = [];
 
 async function read(relativePath) {
@@ -305,11 +315,11 @@ requireMatch(
 );
 
 if (failures.length > 0) {
-  console.error("靜態教材網站驗證失敗：");
+  console.error("純靜態 Markdown 文件網站驗證失敗：");
   for (const failure of failures) {
     console.error(`- ${failure}`);
   }
   process.exitCode = 1;
 } else {
-  console.log(`靜態教材網站驗證通過：${webDirectory}`);
+  console.log(`純靜態 Markdown 文件網站驗證通過：${webDirectory}`);
 }

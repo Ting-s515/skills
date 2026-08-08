@@ -1,9 +1,9 @@
 ---
 name: build-static-docs-site
-description: 建立或更新由 Markdown 教材產生的純靜態文件網站，固定使用 HTML、CSS、MJS、build-time Markdown render、淺暖色雙欄版面、可複製 code block 與可縮放 Mermaid 閱讀器。當使用者要求建立 docs-web、將 docs 轉成網站、重製相同教材閱讀介面、維護靜態文件網站架構、增加指令複製功能，或修正 Mermaid 閱讀體驗時使用；只修改教材文字或建立一般動態 Web 應用時不要使用。
+description: 建立或更新由 Markdown 文件產生的純靜態文件網站，固定使用 HTML、CSS、MJS、build-time Markdown render、淺暖色雙欄版面、可複製 code block 與可縮放 Mermaid 閱讀器。只要使用者想把 Markdown 文件、API/reference docs、手冊、知識庫、專案文件、筆記或其他內容集合轉成可部署的 static site，或要求建立 docs-web、維護靜態文件網站架構、增加指令複製功能，或修正 Mermaid 閱讀體驗，就使用此 skill；只修改 Markdown 內容或建立一般動態 Web 應用時不要使用。
 ---
 
-# 建立純靜態教材網站
+# 建立純靜態 Markdown 文件網站
 
 ## 真相來源
 
@@ -11,25 +11,25 @@ description: 建立或更新由 Markdown 教材產生的純靜態文件網站，
 
 1. 使用者本次明確要求。
 2. 目標 repository 的 `AGENTS.md` 與既有實作。
-3. `references/design-spec.md` 的完整架構、視覺與驗收規格。
+3. `references/design-spec.md` 的完整架構、視覺與驗收規格；未指定其他視覺契約時，這是基準設計。
 4. `assets/docs-web/` 的可執行基準模板。
 
 主 agent 必須完整讀取 `references/design-spec.md` 後才可修改網站。不要把詳細規格重新摘要成另一份標準，以免多份規格漂移。
 
 ## 工作流程
 
-1. 解析目標 repository root，讀取 `AGENTS.md`、Git status、README、`docs/` 與既有 `docs-web/`。
+1. 解析目標 repository root，讀取 `AGENTS.md`、Git status、README、Markdown 來源目錄與既有純靜態網站目錄。使用者未指定路徑時，才將根目錄 `docs/*.md` 與 `docs-web/` 作為基準預設值。
 2. 判斷任務類型：
-   - `docs-web/` 不存在：複製 `assets/docs-web/` 建立基準結構。
-   - `docs-web/` 已存在：先讀現況，只修改需求涉及的檔案，不以模板覆蓋既有變更。
+   - 目標網站不存在：若使用者未指定其他結構，複製 `assets/docs-web/` 建立基準結構。
+   - 目標網站已存在：先讀現況，只修改需求涉及的檔案，不以模板覆蓋既有變更。
 3. 首次建立時，依序從使用者要求、repository 文件與目錄名稱決定網站名稱及說明；不得沿用模板或其他專案的名稱。
-4. 依目標 `docs/*.md` 的實際課程結構決定導覽分類；沒有明確分類時使用單一中性群組，不套用特定領域的檔名前綴規則。
-5. 內容相依測試必須從目前 `docs/*.md` 或測試 fixture 動態取得教材清單與數量，不得固定目標專案的教材名稱或份數；檔案系統 fixture 應涵蓋非 ASCII、相似檔名與跨文件連結，Unicode canonical-equivalent 檔名則以原始檔名字串直接驗證 ID，不得建立會在 normalization-insensitive 檔案系統 checkout 碰撞的實體路徑；設計契約測試則保留。
-6. 維持 build-time Markdown render。所有教材預先寫入單一 HTML；client 不得在頁面切換時 `fetch()` Markdown。
+4. 依目標 Markdown 來源的實際內容結構決定導覽分類；沒有明確分類時使用單一中性群組，不套用特定領域的檔名前綴規則。
+5. 內容相依測試必須從目前 Markdown 來源或測試 fixture 動態取得文件清單與數量，不得固定目標專案的文件名稱或份數；檔案系統 fixture 應涵蓋非 ASCII、相似檔名與跨文件連結，Unicode canonical-equivalent 檔名則以原始檔名字串直接驗證 ID，不得建立會在 normalization-insensitive 檔案系統 checkout 碰撞的實體路徑；設計契約測試則保留。
+6. 維持 build-time Markdown render。所有文件預先寫入單一 HTML；client 不得在頁面切換時 `fetch()` Markdown。
 7. 維持固定淺暖色 tokens、桌面雙欄導覽、行動版、同頁 hash、responsive 與 print styles。
 8. 維持 Mermaid 正文 `width: 100%`，不得突破內容卡片；細節只透過原生 dialog 放大閱讀器查看。
 9. 維持 code block 右上角緊湊的 icon-only 複製按鈕：使用雙欄 Grid，指令只在左欄捲動，按鈕位於固定 `3rem` 右欄且不得覆蓋指令或增加上方預留列；預設為重疊方框 Copy SVG，hover 或 focus 時 tooltip 從左側展開，成功切換 Check SVG，失敗套警示色；Mermaid 不得套用此按鈕。
-10. 不主動改寫 `docs/*.md` 教材內容，除非使用者同時要求修改教材。
+10. 不主動改寫 Markdown 來源內容，除非使用者同時要求修改文件。
 11. 依目標 repository 規則處理 tests、build、review、staging 與 commit，不得納入無關變更。
 
 ## 固定技術邊界
@@ -41,11 +41,11 @@ description: 建立或更新由 Markdown 教材產生的純靜態文件網站，
 - code block 使用 Clipboard API 複製完整文字；按鈕只顯示內嵌 SVG，不以可見文字或 emoji 取代 icon，並以獨立 helper 測試成功與不可用分支。
 - 本機預覽只綁定 `127.0.0.1:18100`，避免占用常見的 8080/8100。
 - Mermaid 使用 `securityLevel: "strict"`，dialog 支援按鈕、滾輪縮放、拖曳、重設、Esc 關閉與 focus restore。
-- 網站名稱、導覽分類、課程標題與教材數量屬於目標專案內容，不是 skill 的固定設計契約。
+- 網站名稱、導覽分類、文件標題與文件數量屬於目標專案內容，不是 skill 的固定設計契約。
 
 ## 驗證
 
-在目標 repository 依序執行下列跨平台指令：
+在目標 repository 的實際網站目錄依序執行下列跨平台指令；若網站不是 `docs-web/`，將路徑替換成實際目錄：
 
 ```shell
 npm --prefix ./docs-web install
@@ -53,10 +53,10 @@ npm --prefix ./docs-web test
 npm --prefix ./docs-web run build
 ```
 
-validator 必須從 agent 已載入的 `build-static-docs-site/SKILL.md` 所在目錄定位，不可硬編碼使用者名稱或假設固定安裝根目錄。下列寫法的正斜線可同時用於 PowerShell 與 macOS/Linux shell：
+validator 必須從 agent 已載入的 `build-static-docs-site/SKILL.md` 所在目錄定位，不可硬編碼使用者名稱或假設固定安裝根目錄。將目標 repository 或實際網站目錄作為第二個參數；validator 會辨識完整網站目錄，否則回退到 repository 下的 `docs-web/`。下列寫法的正斜線可同時用於 PowerShell 與 macOS/Linux shell：
 
 ```shell
-node "<skill-directory>/scripts/validate-static-docs-site.mjs" .
+node "<skill-directory>/scripts/validate-static-docs-site.mjs" "<repository-or-site-directory>"
 ```
 
 `<skill-directory>` 必須替換成目前已解析的 skill 絕對目錄。

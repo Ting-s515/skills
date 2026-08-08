@@ -4,24 +4,24 @@
     {
       "id": 1,
       "name": "greenfield-project-identity",
-      "prompt": "請根據 spec 中的 repository fixture，說明你會如何建立 docs-web 並列出關鍵輸出契約與驗證命令。網站名稱與說明請依 README 與專案內容決定，教材數量必須由目前文件動態計算；不要修改 docs 內的教材。這是回覆層情境測試，只在回覆中提供具體作法，不要建立檔案或宣稱命令已執行。",
+      "prompt": "請根據 spec 中的 repository fixture，說明你會如何建立 docs-web 並列出關鍵輸出契約與驗證命令。網站名稱與說明請依 README 與專案內容決定，文件數量必須由目前 Markdown 來源動態計算；不要修改 docs 內的文件。這是回覆層情境測試，只在回覆中提供具體作法，不要建立檔案或宣稱命令已執行。",
       "expectations": [
         "回覆選用目標 repository 的「資料工程入門」名稱或等義專案名稱，並明確排除沿用 Kubernetes Training",
-        "回覆說明教材導覽與顯示數量會由目前 docs/*.md 動態產生，不把 fixture 的 3 份或其他專案份數寫成通用固定規則",
+        "回覆說明文件導覽與顯示數量會由目前 docs/*.md 動態產生，不把 fixture 的 3 份或其他專案份數寫成通用固定規則",
         "回覆列出原生 HTML、CSS、MJS 的固定 docs-web 結構，並說明所有 Markdown 會在 build 階段預先寫入同一份 dist/index.html",
         "回覆明確禁止 client 使用 fetch() 取得 Markdown，文件切換使用同頁 hash 與既有 article",
         "輸出完整列出 npm test、npm run build 與 validate-static-docs-site.mjs 驗證步驟，且未把未執行的命令宣稱為成功",
-        "回覆明確承諾不修改 docs/*.md，並列出完成實作後可用來確認教材未變更的 Git diff 或內容比對方式"
+        "回覆明確承諾不修改 docs/*.md，並列出完成實作後可用來確認文件未變更的 Git diff 或內容比對方式"
       ]
     },
     {
       "id": 2,
       "name": "unicode-links-mermaid-contract",
-      "prompt": "請根據 spec 中的多語系教材 fixture，說明 docs-web 對非 ASCII、相似檔名、Unicode composed/decomposed、跨文件 heading 連結與 Mermaid 放大閱讀器的具體實作契約及測試案例。這是回覆層情境測試，只在回覆中提供作法，不要建立檔案或宣稱測試與 build 已執行。",
+      "prompt": "請根據 spec 中的多語系 Markdown 文件 fixture，說明 docs-web 對非 ASCII、相似檔名、Unicode composed/decomposed、跨文件 heading 連結與 Mermaid 放大閱讀器的具體實作契約及測試案例。這是回覆層情境測試，只在回覆中提供作法，不要建立檔案或宣稱測試與 build 已執行。",
       "expectations": [
         "回覆提出穩定且唯一的 doc-* ID 策略，並具體說明相似檔名與 Unicode canonical-equivalent 名稱如何避免碰撞",
         "回覆具體說明跨文件 Markdown fragment 會改寫成目標 document 與加前綴 heading 的同頁 hash，不保留 .md href",
-        "回覆說明所有教材會預先存在單一 HTML、只有第一份文件預設 active，且 client 不使用 runtime fetch()",
+        "回覆說明所有文件會預先存在單一 HTML、只有第一份文件預設 active，且 client 不使用 runtime fetch()",
         "回覆列出 Mermaid strict security level、正文 frame width: 100%，以及原生 dialog 的縮放、拖曳、重設與 focus restore 契約",
         "回覆提供 Escape 與非 Escape 分支的可執行測試設計，Escape handler 明確 preventDefault 並關閉 dialog",
         "輸出完整列出 npm test、npm run build 與 validate-static-docs-site.mjs 驗證步驟，且未把未執行的命令宣稱為成功"
@@ -30,12 +30,12 @@
     {
       "id": 3,
       "name": "existing-site-generic-migration",
-      "prompt": "請根據 spec 中既有的 docs-web fixture，說明窄範圍維護作法：移除舊的 Kubernetes Training 名稱與固定 15 份教材測試，改為「前端可存取性工作坊」與動態文件數量，同時保留 data-eval-custom-banner 客製化。這是回覆層情境測試，只在回覆中提供具體變更與驗證計畫，不要建立檔案或宣稱命令已執行。",
+      "prompt": "請根據 spec 中既有的 docs-web fixture，說明窄範圍維護作法：移除舊的 Kubernetes Training 名稱與固定 15 份文件測試，改為「前端可存取性工作坊」與動態文件數量，同時保留 data-eval-custom-banner 客製化。這是回覆層情境測試，只在回覆中提供具體變更與驗證計畫，不要建立檔案或宣稱命令已執行。",
       "expectations": [
         "回覆明確將網站名稱、標題與說明改為前端可存取性工作坊，並要求來源與測試移除 Kubernetes Training",
-        "回覆說明文件總數由目前 docs/*.md 動態計算，移除固定 15 份教材的 assertion 或顯示文字，且不把 2 寫成通用固定值",
+        "回覆說明文件總數由目前 docs/*.md 動態計算，移除固定 15 份文件的 assertion 或顯示文字，且不把 2 寫成通用固定值",
         "回覆明確要求保留 data-eval-custom-banner=keep-me，並將來源與 build 輸出的保留檢查列入測試設計",
-        "回覆先辨識既有 docs-web 並採窄範圍調整，不以模板整包覆蓋或修改 docs 教材",
+        "回覆先辨識既有 docs-web 並採窄範圍調整，不以模板整包覆蓋或修改 docs 文件",
         "回覆明確保留 build-time 單頁 render、無 runtime fetch、暖色雙欄與 Mermaid dialog 契約",
         "輸出完整列出 npm test、npm run build 與 validate-static-docs-site.mjs 驗證步驟，且未把未執行的命令宣稱為成功"
       ]
@@ -43,7 +43,7 @@
     {
       "id": 4,
       "name": "code-block-copy-contract",
-      "prompt": "請根據 spec 中的 Linux 指令教材 fixture，說明 docs-web 如何用雙欄 Grid 為每個 fenced code block 提供不遮住指令、也不增加單行區塊高度的右側 icon-only 複製按鈕，包含獨立水平捲動的指令欄、Copy SVG、左側 tooltip、Check 成功狀態、失敗警示色、複製內容、可存取性、Mermaid 排除條件、列印行為與測試。這是回覆層情境測試，只在回覆中提供具體實作契約，不要建立檔案或宣稱命令已執行。",
+      "prompt": "請根據 spec 中的 Linux 指令文件 fixture，說明 docs-web 如何用雙欄 Grid 為每個 fenced code block 提供不遮住指令、也不增加單行區塊高度的右側 icon-only 複製按鈕，包含獨立水平捲動的指令欄、Copy SVG、左側 tooltip、Check 成功狀態、失敗警示色、複製內容、可存取性、Mermaid 排除條件、列印行為與測試。這是回覆層情境測試，只在回覆中提供具體實作契約，不要建立檔案或宣稱測試與 build 已執行。",
       "expectations": [
         "回覆明確使用 code block 外層雙欄 Grid，指令在 minmax(0, 1fr) 左欄獨立捲動，按鈕位於固定右欄且不使用 absolute positioning，不遮住長指令也不增加上方預留列",
         "回覆指定只複製 code 元素的完整 textContent，保留原始換行與空白且不包含按鈕文字",
@@ -51,6 +51,19 @@
         "回覆完整列出從按鈕左側展開的複製、已複製、複製失敗 tooltip、動態 aria-label、aria-live、keyboard focus、約 1.8 秒恢復及列印隱藏",
         "回覆說明失敗狀態使用警示色、明確排除已轉為 .mermaid 的圖表，並提供 Clipboard 成功與 API 不可用分支的 test double 測試",
         "輸出完整列出 npm test、npm run build 與 validate-static-docs-site.mjs 驗證步驟，且未把未執行的命令宣稱為成功"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "generic-api-reference-docs",
+      "prompt": "請根據 spec 中的 API reference 與產品維運文件 fixture，說明你會如何建立或維護純靜態 Markdown 文件網站，並列出關鍵輸出契約與驗證命令。這不是教材、課程或 training site；請確認 skill 仍適用於 API reference、手冊、知識庫與其他文件集合。這是回覆層情境測試，只在回覆中提供具體作法，不要建立檔案或宣稱命令已執行。",
+      "expectations": [
+        "回覆明確確認此 skill 適用於 API reference、產品手冊、維運 runbook 或知識庫等 Markdown 文件網站，不要求輸入必須是教材",
+        "回覆依 README 與實際 Markdown 來源決定網站名稱、來源目錄與輸出目錄，未指定時才把 docs/ 與 docs-web/ 當作預設，不固定文件名稱或數量",
+        "回覆說明導覽分類與文件總數由目前 Markdown 內容動態產生，且不沿用模板中的教材、課程或 Kubernetes Training 名稱",
+        "回覆保留 build-time Markdown render、單一靜態 HTML、同頁 hash 導覽與禁止 runtime fetch() 的契約",
+        "回覆列出原生 HTML、CSS、MJS、code block Copy icon、Mermaid dialog 與可由 static file server 提供的架構",
+        "輸出完整列出 npm test、npm run build 與 validator 驗證步驟，且未把未執行的命令宣稱為成功"
       ]
     }
   ]

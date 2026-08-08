@@ -1,18 +1,18 @@
-# 純靜態 Markdown 教材網站實作 Prompt
+# 純靜態 Markdown 文件網站實作 Prompt
 
 ## 任務角色
 
-你是一名負責教材閱讀體驗的資深前端工程師。請直接在目前 repository 中建立或維護 `docs-web/`，將 `docs/` 內全部 Markdown 教材產生為可在瀏覽器閱讀的純靜態網站。
+你是一名負責文件閱讀體驗的資深前端工程師。請直接在目前 repository 中建立或維護純靜態文件網站，將指定 Markdown 來源產生為可在瀏覽器閱讀的網站。若需求沒有指定來源與網站目錄，才使用 `docs/` 與 `docs-web/` 作為預設值。
 
 這是一項實作任務，不要只提供範例、設計稿或操作說明。開始前先讀取 repository 內的 `AGENTS.md`、現有檔案與 Git 狀態；保留非本次任務的既有變更。
 
 ## 固定輸入與輸出
 
-- Markdown 來源：repository 根目錄下的 `docs/*.md`。
-- 網站專案：`docs-web/`。
-- 靜態產物：`docs-web/dist/index.html`、`style.css`、`app.mjs`。
+- Markdown 來源：使用者或 repository 約定的 Markdown 來源目錄；未指定時為根目錄下的 `docs/*.md`。
+- 網站專案：使用者或既有實作指定的純靜態網站目錄；未指定時為 `docs-web/`。
+- 靜態產物：`<網站目錄>/dist/index.html`、`style.css`、`app.mjs`。
 - 網站名稱與說明：優先使用本次需求；未指定時依 repository 文件或目錄名稱決定，不得從模板或其他專案沿用。
-- 教材清單與數量：每次從目前 `docs/*.md` 動態取得，不設定固定名稱或份數。
+- 文件清單與數量：每次從目前 Markdown 來源動態取得，不設定固定名稱或份數。
 - 本機網址：`http://127.0.0.1:18100`。
 - Node.js：24 以上。
 - 所有文字檔一律使用 UTF-8。
@@ -22,17 +22,19 @@
 1. 使用原生 HTML、CSS 與 JavaScript ES Modules（`.mjs`）。
 2. 不使用 React、Vue、Angular、Svelte、MDX、Next.js、Nuxt、Astro 或其他 UI framework。
 3. 所有 Markdown 必須在 build 階段轉成 HTML，預先寫入同一份 `dist/index.html`。
-4. 瀏覽器不得使用 `fetch()` 讀取 Markdown，也不得在切換文件時重新請求教材。
+4. 瀏覽器不得使用 `fetch()` 讀取 Markdown，也不得在切換文件時重新請求文件內容。
 5. 不建立後端 API、SSR、database 或 runtime Markdown renderer。
 6. `server.mjs` 只負責提供 build 完成的靜態檔案。
 7. 不提交產生的 `dist/`，但必須以 `npm run build` 驗證它可以重新產生。
 
-純靜態的定義是：網站可由任何 static file server 提供；client-side JavaScript 只負責文件切換、code block 複製、Mermaid SVG 渲染及圖表互動，不負責取得或轉換教材內容。
+純靜態的定義是：網站可由任何 static file server 提供；client-side JavaScript 只負責文件切換、code block 複製、Mermaid SVG 渲染及圖表互動，不負責取得或轉換 Markdown 內容。
 
-## 固定目錄結構
+## 基準模板目錄結構
+
+若使用者或 repository 沒有指定網站目錄，使用下列 `docs-web/` 基準模板；若已有其他網站目錄，保留其路徑並套用相同責任分層，不要為了符合模板而搬移既有檔案。
 
 ```text
-docs-web/
+<site-directory>/
 ├─ package.json
 ├─ package-lock.json
 ├─ prompt.md
@@ -94,10 +96,10 @@ docs-web/
 
 `build-site.mjs` 必須完成以下流程：
 
-1. 只讀取 `docs/` 第一層的 `.md` 檔案，依 `zh-Hant` locale 由檔名排序。
+1. 只讀取指定 Markdown 來源目錄第一層的 `.md` 檔案；未指定時讀取 `docs/`，依 `zh-Hant` locale 由檔名排序。
 2. 以 Markdown 第一個 H1 作為導覽標題；沒有 H1 時才使用檔名。
 3. 為每份文件建立穩定且唯一的 ID：保留 Unicode 字母與數字形成可讀 slug，並加入由原始完整檔名字串產生的短 hash，避免非 ASCII、相似檔名或 Unicode canonical-equivalent 檔名碰撞；前綴為 `doc-`。測試 canonical-equivalent 名稱時直接傳入 NFC 與 NFD 原始檔名字串，不得在 repository 或暫存目錄建立兩個等價實體路徑。
-4. 依目標 repository 的課程結構建立導覽群組。優先採用使用者要求或既有文件慣例；若沒有可靠的分類依據，全部文件放入單一中性群組。不得把特定專案的檔名前綴或分類名稱當成通用規則。
+4. 依目標 repository 的文件結構建立導覽群組。優先採用使用者要求或既有文件慣例；若沒有可靠的分類依據，全部文件放入單一中性群組。不得把特定專案的檔名前綴或分類名稱當成通用規則。
 5. 將全部文件導覽寫入 `<!-- DOCUMENT_NAVIGATION -->`。
 6. 將每份 HTML 放入獨立的 `<article class="document-panel markdown-body">`，再寫入 `<!-- DOCUMENT_CONTENT -->`。
 7. 首份文件預設顯示，其餘 article 使用 `hidden`。
@@ -108,7 +110,7 @@ docs-web/
 12. GFM table、list、blockquote、inline code、code block、link 與 footnote 必須正常產生。
 13. 每次 build 重新建立 `dist/`，輸出單一 HTML、CSS 與 bundle 後的 MJS。
 
-文件切換一律使用 hash，例如 `#doc-00-course-introduction`；禁止使用 `?doc=` 或為每份 Markdown 產生不同 HTML 頁面。
+文件切換一律使用 hash，例如 `#doc-00-document-introduction`；禁止使用 `?doc=` 或為每份 Markdown 產生不同 HTML 頁面。
 
 ## 固定頁面架構
 
@@ -123,7 +125,7 @@ Desktop 使用兩欄式閱讀頁面：
 └──────────────────────┴──────────────────────────────────────┘
 ```
 
-- 左欄使用 `<aside>` 與 `<nav>`，顯示目標專案名稱、動態文件總數、分類標題、教材標題及檔名。
+- 左欄使用 `<aside>` 與 `<nav>`，顯示目標專案名稱、動態文件總數、分類標題、文件標題及檔名。
 - 右欄使用 `<main>`，一次只顯示一份 `<article>`。
 - active 導覽項目同時具有 `.is-active` 與 `aria-current="page"`。
 - hash 指向文件內 heading 時，先顯示所屬 article，再捲動至該 heading。
@@ -191,7 +193,7 @@ Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
 
 ## Code block 複製
 
-每個 Markdown fenced code block 都要在右上角提供 icon-only 複製按鈕，讓教材中的 CLI 指令與程式碼可以直接貼到終端機或編輯器。Mermaid code fence 已轉為圖表，不得出現複製按鈕。
+每個 Markdown fenced code block 都要在右上角提供 icon-only 複製按鈕，讓文件中的 CLI 指令與程式碼可以直接貼到終端機或編輯器。Mermaid code fence 已轉為圖表，不得出現複製按鈕。
 
 互動規格：
 
@@ -291,8 +293,8 @@ Breakpoint 固定為 `820px`：
 
 使用 Node.js 內建 `node:test`，在 `mkdtemp()` 建立不綁定特定專案的 Markdown fixture 與 build 輸出，測試後移除。檔案系統 fixture 應包含非 ASCII 檔名、正規化後相似的可攜式檔名，以及至少一個跨文件 fragment 連結。Unicode composed／decomposed 必須直接以 NFC 與 NFD 原始檔名字串測試，不得建立 canonical-equivalent 實體檔案，以免在 normalization-insensitive 檔案系統發生覆寫。至少驗證：
 
-1. 產生的 article 數量等於 fixture 或目前 `docs/*.md` 的動態數量。
-2. 全部教材內容已預先存在同一份 HTML，測試不得固定目標專案的教材名稱或份數。
+1. 產生的 article 數量等於 fixture 或目前指定 Markdown 來源的動態數量。
+2. 全部文件內容已預先存在同一份 HTML，測試不得固定目標專案的文件名稱或份數。
 3. 每份文件 ID 皆唯一，且只有第一個導覽項目具有 active 狀態。
 4. Markdown 文件連結已正向改成目標文件與 heading 的同頁 hash，不再指向 `.md`。
 5. `app.mjs` 與 `style.css` 均成功輸出且不是空檔。
@@ -309,7 +311,7 @@ Breakpoint 固定為 `820px`：
 
 ## 執行與驗收
 
-完成實作後依序執行：
+完成實作後，在實際網站目錄依序執行下列命令；若目錄不是 `docs-web/`，將 prefix 路徑替換成實際目錄：
 
 ```shell
 npm --prefix ./docs-web install
