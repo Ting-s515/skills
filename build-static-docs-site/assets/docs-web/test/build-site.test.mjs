@@ -13,11 +13,11 @@ let html;
 const fixtureDocuments = new Map([
   [
     "入門.md",
-    "# 入門指南\n\n入門內容唯一標記。\n\n```bash\nkubectl get pods --all-namespaces\n```\n\n請閱讀 [進階課程](進階.MD#操作流程)。\n",
+    "# 入門指南\n\n入門文件內容唯一標記。\n\n```bash\nkubectl get pods --all-namespaces\n```\n\n請閱讀 [進階參考](進階.MD#操作流程)。\n",
   ],
-  ["進階.MD", "# 進階指南\n\n## 操作流程\n\n進階內容唯一標記。\n"],
-  ["A+B.md", "# 加號課程\n\n加號檔名內容。\n"],
-  ["A B.md", "# 空白課程\n\n空白檔名內容。\n"],
+  ["進階.MD", "# 進階參考\n\n## 操作流程\n\n進階文件內容唯一標記。\n"],
+  ["A+B.md", "# 加號文件\n\n加號檔名內容。\n"],
+  ["A B.md", "# 空白文件\n\n空白檔名內容。\n"],
   ["unicode-composed.md", "# Composed Unicode\n\nComposed 內容。\n"],
   ["unicode-decomposed.md", "# Decomposed Unicode\n\nDecomposed 內容。\n"],
 ]);
@@ -49,8 +49,8 @@ before(async () => {
     outputDirectory,
     siteMetadata: {
       name: "示例專案",
-      title: "示例專案教材",
-      description: "示例專案的測試教材網站",
+      title: "示例專案文件",
+      description: "示例專案的測試文件網站",
     },
   });
   html = await readFile(path.join(outputDirectory, "index.html"), "utf8");
@@ -62,7 +62,7 @@ after(async () => {
   await rm(fixtureDirectory, { recursive: true, force: true });
 });
 
-test("將全部教材預先寫入單一靜態 HTML", () => {
+test("將全部文件預先寫入單一靜態 HTML", () => {
   const panels = html.match(/class="document-panel markdown-body"/g) ?? [];
 
   assert.equal(panels.length, fixtureDocuments.size);
@@ -71,12 +71,12 @@ test("將全部教材預先寫入單一靜態 HTML", () => {
     const contentMarker = markdown.match(/[^#\s][^\n]*內容[^\n]*/)?.[0];
     assert.ok(contentMarker && html.includes(contentMarker));
   }
-  assert.match(html, /<title>示例專案教材<\/title>/);
+  assert.match(html, /<title>示例專案文件<\/title>/);
   assert.doesNotMatch(html, /{{SITE_(?:NAME|TITLE|DESCRIPTION)}}/);
   assert.doesNotMatch(html, /\?doc=/);
 });
 
-test("將教材間的 Markdown 連結改為同頁 hash", () => {
+test("將文件間的 Markdown 連結改為同頁 hash", () => {
   const targetId = createDocumentId("進階.MD");
 
   assert.ok(html.includes(`href="#${targetId}--操作流程"`));

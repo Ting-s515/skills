@@ -18,15 +18,15 @@ const sourceDirectory = path.join(webDirectory, "src");
 const defaultOutputDirectory = path.join(webDirectory, "dist");
 // Repository 名稱只作為中性 fallback，避免模板把來源專案品牌帶入新專案。
 const repositoryName = path.basename(repositoryDirectory).replace(/[-_]+/g, " ").trim();
-const defaultSiteName = repositoryName || "教材網站";
+const defaultSiteName = repositoryName || "Markdown 文件網站";
 const defaultSiteMetadata = {
   name: defaultSiteName,
-  title: `${defaultSiteName} 教材`,
-  description: `${defaultSiteName} 全部教材的純靜態閱讀網站`,
+  title: `${defaultSiteName} 文件`,
+  description: `${defaultSiteName} 的純靜態 Markdown 文件網站`,
 };
 
 const sectionDefinitions = [
-  { key: "documents", title: "教材內容" },
+  { key: "documents", title: "文件內容" },
 ];
 
 function visit(node, callback) {
@@ -72,7 +72,7 @@ export function createDocumentId(fileName) {
 }
 
 function getSection() {
-  // 中性模板不推測領域分類，避免把任一專案的命名慣例擴散到其他課程。
+  // 中性模板不推測領域分類，避免把任一專案的命名慣例擴散到其他內容集合。
   return "documents";
 }
 
@@ -290,6 +290,6 @@ const invokedFile = process.argv[1] ? pathToFileURL(path.resolve(process.argv[1]
 if (import.meta.url === invokedFile) {
   const result = await buildSite();
   console.log(
-    `已產生 ${result.documentCount} 份教材：${path.join(result.outputDirectory, "index.html")}`,
+    `已產生 ${result.documentCount} 份文件：${path.join(result.outputDirectory, "index.html")}`,
   );
 }
