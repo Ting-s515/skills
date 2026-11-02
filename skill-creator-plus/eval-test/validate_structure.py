@@ -61,7 +61,6 @@ SKILLS = [
     "propose",
     "propose-sync",
     "writing-training-doc",
-    "fleet-review",
     "skill-creator-plus",
 ]
 

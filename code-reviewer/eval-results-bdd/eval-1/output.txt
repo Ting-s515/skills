@@ -383,7 +383,7 @@ reator_eval_runners_to_python_and_updater_fix.md (cwd=[7mC:\Users\tenns\.claude
 [7m[0madda94e763.jsonl, updated_at=2026-05-14T13:44:36+00:00, thread_id=019e2697-823d-71b3-8b18-5eadda9[0m
 [7m[0m4e763, `.sh` -> `.py` 遷移與 updater spacing)[0m
 C:\Users\tenns\.codex\memories\MEMORY.md:275:- skill-creator, [7mrun_evals.py[0m, update-skill-creator.[0m
-[7m[0mpy, update-skill-creator.ps1, fleet-review/test/run-test.py, jq, chmod +x, py_compile, rg --files[0m
+[7m[0mpy, update-skill-creator.ps1, retired-skill/test/run-test.py, jq, chmod +x, py_compile, rg --files[0m
 [7m[0m -g "*.sh"[0m
 C:\Users\tenns\.codex\memories\MEMORY.md:277:## Task 2: 建立共用 eval-test 維護風格並讓 `apply/ev
 als/[7mrun_evals.py[0m` 支援平行執行[0m
