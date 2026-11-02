@@ -1,17 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(mkdir -p \"C:/Users/tenns/.claude/skills/fleet-review/test/fixtures\")",
       "Bash(git add *)",
       "Bash(git diff *)",
       "Bash(git restore *)",
-      "Bash(cp C:/Users/tenns/.claude/skills/fleet-review/test/spec.md C:/Users/tenns/.claude/skills/fleet-review/test/fixtures/spec.md)",
-      "Bash(mkdir -p \"C:/Users/tenns/.claude/skills/fleet-review/evals\")",
-      "Bash(mkdir -p \"C:/Users/tenns/.claude/skills/fleet-review-workspace/iteration-1/eval-calculator-bugs/with_skill/outputs\")",
-      "Bash(mkdir -p \"C:/Users/tenns/.claude/skills/fleet-review-workspace/iteration-1/eval-calculator-bugs/without_skill/outputs\")",
-      "Bash(mkdir -p \"C:/Users/tenns/.claude/skills/fleet-review-workspace/iteration-1/eval-calculator-clean/with_skill/outputs\")",
-      "Bash(mkdir -p \"C:/Users/tenns/.claude/skills/fleet-review-workspace/iteration-1/eval-calculator-clean/without_skill/outputs\")",
-      "PowerShell(Start-Process \"C:\\\\Users\\\\tenns\\\\.claude\\\\skills\\\\fleet-review-workspace\\\\iteration-1\\\\review.html\")",
       "Bash(mkdir -p \"/mnt/c/Users/theon.lin/.claude/skills/writing-training-doc/evals\")",
       "Bash(mkdir -p \"/mnt/c/Users/theon.lin/.claude/skills/writing-training-doc-workspace/iteration-1/eval-kafka-lab/with_skill/outputs\")",
       "Bash(mkdir -p \"/mnt/c/Users/theon.lin/.claude/skills/writing-training-doc-workspace/iteration-1/eval-kafka-lab/without_skill/outputs\")",

@@ -361,7 +361,7 @@ exec
 57:- 症狀：completion criteria 提到 tests/review，但沒有把順序寫死。原因：apply 流程缺少明確編排。修正：把步驟固定成 `tasks -> bdd-unit-test -> run tests -> code-reviewer`，避免 review 先於 test skeleton 補齊 [Task 2]
 262:# Task Group: Skills repo eval tooling standardization, code-reviewer eval comparison, and runner review
 264:scope: 適用於 `C:\Users\tenns\.claude\skills` 的 eval runner 標準化、`code-reviewer` eval 設計與 with_skill/without_skill 比較、repo-wide `run_evals.py` review、以及 artifact/CLI 合約維護；遇到 skill eval 腳本、benchmark 解讀或 Windows prompt 安全性時先查這塊
-275:- skill-creator, run_evals.py, update-skill-creator.py, update-skill-creator.ps1, fleet-review/test/run-test.py, jq, chmod +x, py_compile, rg --files -g "*.sh"
+275:- skill-creator, run_evals.py, update-skill-creator.py, update-skill-creator.ps1, retired-skill/test/run-test.py, jq, chmod +x, py_compile, rg --files -g "*.sh"
 277:## Task 2: 建立共用 eval-test 維護風格並讓 `apply/evals/run_evals.py` 支援平行執行
 285:- eval-test/MAINTENANCE.md, apply/evals/run_evals.py, --jobs, --timeout, summary.json, benchmark.json, last-message.md, taskkill /T /F, os.killpg, PYTHONUTF8=1, PyYAML
 287:## Task 3: 為 `code-reviewer` 新增 eval fixtures 與 Python runner，並驗證 with_skill / without_skill 比較

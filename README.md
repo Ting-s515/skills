@@ -35,7 +35,6 @@ If you want a more complete and reliable Specification-Driven Development (SDD) 
 | [`export-conversation`](export-conversation/) | Exports the current conversation into Markdown. | You need to preserve context for another model or session. |
 | [`export-feature-file`](export-feature-file/) | Converts behavior specs into executable `.feature` files. | You need framework-ready Gherkin for Cucumber, Behave, Reqnroll, or similar tools. |
 | [`export-gherkin`](export-gherkin/) | Converts requirements or logic into human-readable Gherkin. | You need Given/When/Then specs for stakeholder alignment, not executable test files. |
-| [`fleet-review`](fleet-review/) | Runs multi-agent review for cross-model validation. | You explicitly request `fleet-review` with a spec path. |
 | [`plan-doc`](plan-doc/) | Creates implementation plan documents from code and requirements. | You need a `*.plan.md` spec that another agent can implement. |
 | [`propose`](propose/) | Turns requirements into clarified specs, Gherkin, and tasks. | You want to plan a feature or route bug fixes before implementation. |
 | [`propose-sync`](propose-sync/) | Syncs completed proposal status back to requirement documents. | You need completed `docs/propose/` work reflected in the source spec. |

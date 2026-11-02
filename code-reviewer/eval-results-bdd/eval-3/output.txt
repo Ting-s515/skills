@@ -349,7 +349,7 @@ _rule=可重用於同 [7mskills repo[0m 的 eval tooling 維護與 runner revi
 [7m[0mr + Codex/Claude evals，可重用 runner 結構、比較思路與 failure shield，但需重新確認 CLI flags、ar[0m
 [7m[0mtifact 合約與目錄布局[0m
 C:\Users\tenns\.codex\memories\MEMORY.md:275:- skill-creator, [7mrun_evals.py[0m, update-skill-creator.[0m
-[7m[0mpy, update-skill-creator.ps1, fleet-review/test/run-test.py, jq, chmod +x, py_compile, rg --files[0m
+[7m[0mpy, update-skill-creator.ps1, retired-skill/test/run-test.py, jq, chmod +x, py_compile, rg --files[0m
 [7m[0m -g "*.sh"[0m
 C:\Users\tenns\.codex\memories\MEMORY.md:277:## Task 2: 建立共用 eval-test 維護風格並讓 `apply/ev
 als/[7mrun_evals.py[0m` 支援平行執行[0m
