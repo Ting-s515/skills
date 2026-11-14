@@ -161,8 +161,6 @@ rejectMatch(app, /\bfetch\s*\(/, "app.mjs: 禁止 runtime fetch Markdown");
 
 for (const token of [
   "--page-background: #faf7ef",
-  "--sidebar-background: #f4eddf",
-  "--content-background: #fffdf8",
   "--code-background: #403b33",
 ]) {
   if (!style.includes(token)) {
@@ -177,18 +175,43 @@ requireMatch(
 );
 requireMatch(
   style,
-  /\.markdown-body\s*{[^}]*max-width:\s*980px/s,
-  "style.css: Markdown 卡片最大寬度必須為 980px",
+  /\.document-sidebar\s*{[^}]*background:\s*var\(--page-background\)/s,
+  "style.css: 側欄必須與內容共用頁面底色",
+);
+rejectMatch(
+  style,
+  /\.document-sidebar\s*{[^}]*border-right\s*:/s,
+  "style.css: 側欄不得與內容區加上分隔線",
+);
+requireMatch(
+  style,
+  /\.document-main\s*{[^}]*padding:\s*0\s*;/s,
+  "style.css: 主內容欄必須延展至可用版面邊界",
+);
+requireMatch(
+  style,
+  /\.markdown-body\s*{[^}]*width:\s*100%\s*;[^}]*max-width:\s*none\s*;/s,
+  "style.css: Markdown 閱讀區必須填滿主欄且不設最大寬度",
+);
+requireMatch(
+  style,
+  /\.markdown-body\s*{[^}]*background:\s*transparent\s*;[^}]*border:\s*0\s*;[^}]*border-radius:\s*0\s*;[^}]*box-shadow:\s*none\s*;/s,
+  "style.css: Markdown 閱讀區不得使用卡片底色、邊框、圓角或陰影",
+);
+rejectMatch(
+  style,
+  /@media\s*\(max-width:\s*820px\)[\s\S]*?\.document-sidebar\s*{[^}]*border-bottom\s*:/s,
+  "style.css: 行動版側欄不得與內容區加上分隔線",
 );
 requireMatch(
   style,
   /\.mermaid-frame\s*{[^}]*width:\s*100%/s,
-  "style.css: Mermaid 必須限制於正文寬度",
+  "style.css: Mermaid 必須限制於滿版主欄寬度",
 );
 rejectMatch(
   style,
   /calc\(100vw\s*-\s*320px/,
-  "style.css: Mermaid 不得使用 viewport 計算突破正文",
+  "style.css: Mermaid 不得使用 viewport 計算突破主欄",
 );
 requireMatch(style, /\.diagram-dialog::backdrop/, "style.css: 缺少 dialog backdrop");
 requireMatch(

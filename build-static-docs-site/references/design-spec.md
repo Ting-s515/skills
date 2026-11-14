@@ -118,15 +118,17 @@ Desktop 使用兩欄式閱讀頁面：
 
 ```text
 ┌──────────────────────┬──────────────────────────────────────┐
-│ Sticky 文件目錄      │                                      │
-│ 270px～320px         │      置中的 Markdown 內容卡片        │
-│ 高度 100vh           │      最大寬度 980px                  │
+│ Sticky 文件目錄      │ 滿版 Markdown 閱讀區                │
+│ 270px～320px         │ 填滿剩餘主欄，與側欄共用頁面底色    │
+│ 高度 100vh           │ 正文段落限制行長，避免長文難讀      │
 │ 可獨立捲動           │                                      │
 └──────────────────────┴──────────────────────────────────────┘
 ```
 
 - 左欄使用 `<aside>` 與 `<nav>`，顯示目標專案名稱、動態文件總數、分類標題、文件標題及檔名。
 - 右欄使用 `<main>`，一次只顯示一份 `<article>`。
+- 側欄與內容區使用相同的頁面底色，不以底色、邊線或外框分隔兩欄。
+- `<article>` 填滿主欄寬度，不限制整篇文件的最大寬度，不使用置中卡片、外框、圓角或陰影；以 article 內距和正文行長控制閱讀舒適度。
 - active 導覽項目同時具有 `.is-active` 與 `aria-current="page"`。
 - hash 指向文件內 heading 時，先顯示所屬 article，再捲動至該 heading。
 - 切換文件只操作現有 DOM，不重新載入頁面、不取得 Markdown。
@@ -142,8 +144,6 @@ Desktop 使用兩欄式閱讀頁面：
   color: #332a1f;
   background: #faf7ef;
   --page-background: #faf7ef;
-  --sidebar-background: #f4eddf;
-  --content-background: #fffdf8;
   --code-background: #403b33;
   --border-color: #ded4c2;
   --muted-color: #6f675b;
@@ -162,9 +162,9 @@ Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
 主要視覺規格：
 
 - `.document-shell`：CSS Grid，`grid-template-columns: minmax(270px, 320px) minmax(0, 1fr)`。
-- `.document-sidebar`：sticky、`height: 100vh`、可垂直捲動、底色 `#f4eddf`。
-- `.document-main`：暖白背景，desktop padding 使用 `3rem clamp(1.5rem, 5vw, 5rem) 6rem`。
-- `.markdown-body`：`max-width: 980px`、置中、暖白卡片、1rem 圓角、淡邊框與低透明陰影。
+- `.document-sidebar`：sticky、`height: 100vh`、可垂直捲動，與主欄使用相同頁面底色，不畫右側分隔線。
+- `.document-main`：填滿 Grid 剩餘寬度，背景使用 `var(--page-background)`，外層 padding 為 `0`。
+- `.markdown-body`：`width: 100%`、`max-width: none`、`margin: 0`；使用透明背景、無邊框、無圓角、無陰影，並以內距保留閱讀空間。
 - 正文：`line-height: 1.8`；paragraph 與 list item 最大 `78ch`。
 - H1 使用響應式字級與較粗底線；H2、H3 保持清楚層級但不要過度裝飾。
 - inline code 使用淺暖棕底；code block 使用 `#403b33` 深底及橫向捲動。
@@ -175,7 +175,7 @@ Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
 
 | 元件 | 固定樣式 |
 | --- | --- |
-| Sidebar | `padding: 2rem 1.25rem`，右側 `1px solid #ded4c2` |
+| Sidebar | `padding: 2rem 1.25rem`；與 page 同底色，不加側欄分隔線 |
 | Sidebar header | `padding: 0 0.5rem 1.5rem`，底部淡色分隔線 |
 | Sidebar H1 | `font-size: 1.75rem`，margin `0.25rem 0` |
 | 分類區塊 | `margin-top: 1.5rem` |
@@ -184,7 +184,7 @@ Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
 | Active 連結 | `#fff7df` 背景、`#d2bd8e` 邊框、極淡陰影 |
 | 文件標題 | `0.9rem`、weight `700`、line-height `1.4` |
 | 檔名 | `0.68rem` 等寬字、單行 ellipsis、muted color |
-| Markdown 卡片 | `#e5dbc8` 邊框、`1rem` 圓角、`0 18px 45px rgb(84 70 45 / 8%)` 陰影 |
+| Markdown 閱讀區 | 填滿主欄、透明背景、無邊框／圓角／陰影；桌面內距 `2rem clamp(1.25rem, 4vw, 3rem) 4rem` |
 | H1 | `clamp(1.85rem, 4vw, 2.75rem)`，下方 `2px` 分隔線 |
 | H2 | 上距 `2.75rem`、`1.55rem`，下方 `1px #e4d9c5` 分隔線 |
 | H3 | 上距 `2rem`、`1.2rem` |
@@ -229,8 +229,8 @@ Mermaid 初始化必須使用：
 
 一般閱讀狀態必須遵守：
 
-- `.mermaid-frame` 固定 `width: 100%`，只能位於 Markdown 卡片的正文寬度內。
-- 絕對禁止使用 viewport 計算、負 margin、translate 或其他方式讓圖表突破內容卡片。
+- `.mermaid-frame` 固定 `width: 100%`，只能位於滿版 Markdown 主欄內。
+- 絕對禁止使用 viewport 計算、負 margin、translate 或其他方式讓圖表突破主欄。
 - `.mermaid` 可橫向捲動，使用 `#faf4e7` 背景、淡棕邊框、圓角及內距。
 - 每張圖右上角提供 `🔍 放大` 按鈕；直接點擊圖表也可以開啟。
 - 圖表本身可取得 focus，按 `Enter` 或空白鍵也能開啟。
@@ -267,7 +267,7 @@ Breakpoint 固定為 `820px`：
 
 - 兩欄改成單欄。
 - sidebar 改為一般區塊，寬度 100%，最大高度 `42vh`。
-- main 與 Markdown 卡片縮小 padding。
+- sidebar 不加底部分隔線；main padding 維持 `0`，Markdown 閱讀區改用較小內距且維持滿版。
 - dialog 改成 `100vw × 100dvh`、無邊框、無圓角。
 - dialog header 改為垂直排列，controls 可以換行。
 
@@ -275,7 +275,7 @@ Breakpoint 固定為 `820px`：
 
 - 隱藏 sidebar、Mermaid 放大按鈕與 dialog。
 - 隱藏 code block 複製按鈕。
-- 移除 main 與 Markdown 卡片的 padding、背景、邊框及陰影。
+- 移除 main 與 Markdown 閱讀區的 padding、背景、邊框及陰影。
 - 不應因互動 UI 破壞紙本內容。
 
 ## Static server

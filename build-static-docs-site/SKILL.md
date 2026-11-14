@@ -1,6 +1,6 @@
 ---
 name: build-static-docs-site
-description: 建立或更新由 Markdown 文件產生的純靜態文件網站，固定使用 HTML、CSS、MJS、build-time Markdown render、淺暖色雙欄版面、可複製 code block 與可縮放 Mermaid 閱讀器。只要使用者想把 Markdown 文件、API/reference docs、手冊、知識庫、專案文件、筆記或其他內容集合轉成可部署的 static site，或要求建立 docs-web、維護靜態文件網站架構、增加指令複製功能，或修正 Mermaid 閱讀體驗，就使用此 skill；只修改 Markdown 內容或建立一般動態 Web 應用時不要使用。
+description: 建立或更新由 Markdown 文件產生的純靜態文件網站，固定使用 HTML、CSS、MJS、build-time Markdown render、淺暖色雙欄導覽與滿版閱讀區、可複製 code block 與可縮放 Mermaid 閱讀器。內容與側欄使用一致頁面底色，不加卡片或分隔線。只要使用者想把 Markdown 文件、API/reference docs、手冊、知識庫、專案文件、筆記或其他內容集合轉成可部署的 static site，或要求建立 docs-web、維護靜態文件網站架構、增加指令複製功能，或修正 Mermaid 閱讀體驗，就使用此 skill；只修改 Markdown 內容或建立一般動態 Web 應用時不要使用。
 ---
 
 # 建立純靜態 Markdown 文件網站
@@ -27,10 +27,11 @@ description: 建立或更新由 Markdown 文件產生的純靜態文件網站，
 5. 內容相依測試必須從目前 Markdown 來源或測試 fixture 動態取得文件清單與數量，不得固定目標專案的文件名稱或份數；檔案系統 fixture 應涵蓋非 ASCII、相似檔名與跨文件連結，Unicode canonical-equivalent 檔名則以原始檔名字串直接驗證 ID，不得建立會在 normalization-insensitive 檔案系統 checkout 碰撞的實體路徑；設計契約測試則保留。
 6. 維持 build-time Markdown render。所有文件預先寫入單一 HTML；client 不得在頁面切換時 `fetch()` Markdown。
 7. 維持固定淺暖色 tokens、桌面雙欄導覽、行動版、同頁 hash、responsive 與 print styles。
-8. 維持 Mermaid 正文 `width: 100%`，不得突破內容卡片；細節只透過原生 dialog 放大閱讀器查看。
-9. 維持 code block 右上角緊湊的 icon-only 複製按鈕：使用雙欄 Grid，指令只在左欄捲動，按鈕位於固定 `3rem` 右欄且不得覆蓋指令或增加上方預留列；預設為重疊方框 Copy SVG，hover 或 focus 時 tooltip 從左側展開，成功切換 Check SVG，失敗套警示色；Mermaid 不得套用此按鈕。
-10. 不主動改寫 Markdown 來源內容，除非使用者同時要求修改文件。
-11. 依目標 repository 規則處理 tests、build、review、staging 與 commit，不得納入無關變更。
+8. 文件內容區填滿側欄以外的主欄，與側欄共用頁面底色；不使用置中卡片、額外內容底色、外框、圓角、陰影或側欄分隔線。正文段落仍限制行長以利閱讀。
+9. Mermaid 正文 `width: 100%`，限制在滿版主欄內，不得溢出；細節只透過原生 dialog 放大閱讀器查看。
+10. 維持 code block 右上角緊湊的 icon-only 複製按鈕：使用雙欄 Grid，指令只在左欄捲動，按鈕位於固定 `3rem` 右欄且不得覆蓋指令或增加上方預留列；預設為重疊方框 Copy SVG，hover 或 focus 時 tooltip 從左側展開，成功切換 Check SVG，失敗套警示色；Mermaid 不得套用此按鈕。
+11. 不主動改寫 Markdown 來源內容，除非使用者同時要求修改文件。
+12. 依目標 repository 規則處理 tests、build、review、staging 與 commit，不得納入無關變更。
 
 ## 固定技術邊界
 
@@ -69,6 +70,6 @@ node "<skill-directory>/scripts/validate-static-docs-site.mjs" "<repository-or-s
 
 - `references/design-spec.md`：完整設計、架構、互動與驗收規格。
 - `assets/docs-web/`：首次建立時使用的固定基準模板；不包含 `package-lock.json`、`node_modules/` 與 `dist/`。
-- `scripts/validate-static-docs-site.mjs`：檢查結構、scripts、暖色 tokens、無 runtime fetch、code block Copy icon 與 Clipboard 狀態，以及 Mermaid 寬度與 dialog 互動契約。
+- `scripts/validate-static-docs-site.mjs`：檢查結構、scripts、滿版內容與側欄共用底色、無 runtime fetch、code block Copy icon 與 Clipboard 狀態，以及 Mermaid 寬度與 dialog 互動契約。
 
 修改基準設計時，需同步更新規格、asset template 與 validator，避免三者漂移。
