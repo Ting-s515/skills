@@ -46,9 +46,20 @@ ESCAPE_ONLY_RELATIVE_MATCHES = {
 INTENTIONAL_PLATFORM_MATCHES = {
     # 這個完整 match 必須展示 Windows 保留裝置路徑，否則無法說明故障原因。
     ("remove-nul/SKILL.md", "Windows drive-letter 絕對路徑"): (r"C:\...\nul",),
-    # main branch 的搜尋技能刻意只列舉 Claude skills，實際 home 仍依 OS 動態解析。
+    # 搜尋技能需要列出兩種工具的預設目錄，才能依目前工具選擇正確來源。
     ("search-local-skill/SKILL.md", "假設 skill 固定安裝在 ~/.claude/skills"): (
         "~/.claude/skills/",
+    ),
+    ("search-local-skill/SKILL.md", "假設 skill 固定安裝在 ~/.codex/skills"): (
+        "~/.codex/skills/",
+    ),
+    # 多工具安裝指南需列出 Claude Code 的預設目錄，避免將工具範例視為安裝假設。
+    ("diagram-design/references/onboarding.md", "假設 skill 固定安裝在 ~/.claude/skills"): (
+        "~/.claude/skills/",
+    ),
+    # Mermaid parser 的 regex capture group 會含有 `\.s]`，不是檔案路徑。
+    ("diagram-design/scripts/mermaid_extract.py", "Windows 相對路徑分隔符"): (
+        r".\s])(?P",
     ),
 }
 
@@ -141,6 +152,11 @@ def path_findings(root: Path, entries: list[Path]) -> list[Finding]:
         (
             re.compile(r"~[\\/]\.claude[\\/]skills[\\/]"),
             "假設 skill 固定安裝在 ~/.claude/skills",
+            False,
+        ),
+        (
+            re.compile(r"~[\\/]\.codex[\\/]skills[\\/]"),
+            "假設 skill 固定安裝在 ~/.codex/skills",
             False,
         ),
         (

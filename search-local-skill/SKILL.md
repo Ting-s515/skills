@@ -1,83 +1,62 @@
 ---
 name: search-local-skill
-description: Search or find local Claude skills in the user's Claude skills directory (~/.claude/skills/), list all available skills with their descriptions, and optionally filter by skill name. Use this skill whenever the user wants to find, list, search, or browse available Claude skills.
+description: Search local Claude Code or Codex skills, list their names and descriptions, and optionally filter by skill name. Use the active tool's skills directory; search both directories when the user requests both or the active tool is unclear.
 ---
 
-# 搜尋 Local Claude Skills
+# 搜尋本機 Agent Skills
 
-## 路徑解析策略
+## 技能目錄
 
-此 skill 專門搜尋 `~/.claude/skills/`，不改為其他工具的 skills 目錄。採用「環境明確就直接使用；不明確才偵測」的策略解析實際絕對路徑：
+依目前使用的工具選擇對應目錄：
 
-1. 若目前 agent context 已明確提供作業系統與使用者 home，直接依下方平台分支組合 Claude skills 目錄。
-2. 若環境資訊不明確，先以唯讀方式偵測作業系統，再取得目前使用者的 home；不得猜測使用者名稱或磁碟代號。
-3. 若仍無法解析 home，說明缺少的資訊並請使用者提供，不可改掃其他工具或任意目錄。
+| 工具 | macOS/Linux | Windows PowerShell | Windows bash |
+| --- | --- | --- | --- |
+| Claude Code | `$HOME/.claude/skills/` | 使用 UserProfile 組合 `.claude/skills/` | `$USERPROFILE/.claude/skills/`，否則使用 `$HOME/.claude/skills/` |
+| Codex | `$HOME/.codex/skills/` | 使用 UserProfile 組合 `.codex/skills/` | `$USERPROFILE/.codex/skills/`，否則使用 `$HOME/.codex/skills/` |
 
-平台分支：
+若目前 agent context 明確指出使用 Claude Code 或 Codex，只掃描該工具的目錄。使用者明確要求比較兩種工具，或目前環境無法判斷時，掃描兩個可存取的目錄，並在輸出中標示來源工具。不要因目錄不存在而改掃其他位置。
 
-- **macOS/Linux**：`$HOME/.claude/skills/`
-- **Windows PowerShell**：以 `[Environment]::GetFolderPath('UserProfile')` 取得 home，再組合 `.claude/skills/`
-- **Windows bash**：`$USERPROFILE/.claude/skills/`；若 `$USERPROFILE` 不可用，再使用 `$HOME/.claude/skills/`
-
-所有顯示與文件中的相對路徑統一使用正斜線。實際目錄列舉則交由目前 agent 的檔案工具，或已確認作業系統適用的唯讀 shell 指令處理。
+若作業系統或 home 不明確，先以唯讀方式偵測；不得猜測使用者名稱或磁碟代號。Windows PowerShell 使用 `[Environment]::GetFolderPath('UserProfile')` 取得 home。顯示路徑時統一使用正斜線，實際目錄操作使用目前 agent 可用的檔案工具或已確認適用的 shell 指令。
 
 ## 參數說明
 
 | 參數 | 類型 | 必填 | 說明 |
 | --- | --- | --- | --- |
-| `skillName` | string | N | 指定要搜尋的 skill 名稱，支援不分大小寫的部分匹配 |
-
-### 使用範例
-
-```text
-# 列出所有 Claude skills
-find local skill
-
-# 只搜尋特定 skill
-find local skill skill-name
-```
+| `skillName` | string | 否 | 依目錄名稱或 frontmatter `name` 不分大小寫部分匹配 |
 
 ## 執行流程
 
-### 無參數：列出全部
+### 列出技能
 
-1. **解析路徑**：依路徑解析策略取得目前平台的 `~/.claude/skills/` 絕對路徑。
-2. **掃描目錄**：以唯讀方式列出 Claude skills 根目錄下的所有子目錄。
-3. **讀取定義**：只將包含精確 `SKILL.md` 入口的目錄視為 skill。
-4. **提取資訊**：從 frontmatter 取得 `name` 和 `description`；缺少必要欄位時標示異常，不自行補值。
-5. **去重排序**：以正規化完整路徑去重，再依 skill 名稱排序。
-6. **格式化輸出**：以表格呈現名稱、說明與實際來源路徑。
+1. 依目前工具選擇技能目錄；若使用者要求兩邊或工具不明，使用兩個預設目錄並分別標記來源。
+2. 以唯讀方式列出目錄下的子目錄。
+3. 只將包含精確 `SKILL.md` 入口的目錄視為 skill。
+4. 從 frontmatter 讀取 `name` 和 `description`；缺少欄位時標示異常，不自行補值。
+5. 依正規化完整路徑去重，再依工具和技能名稱排序。
 
-### 有參數：篩選搜尋
+### 篩選技能
 
-1. 先依無參數流程解析並掃描 Claude skills 目錄。
+1. 依列出技能流程解析並掃描目錄。
 2. 對目錄名稱與 frontmatter `name` 執行不分大小寫的部分匹配。
-3. 顯示每個匹配 skill 的名稱、說明、實際入口路徑與完整內容。
+3. 顯示匹配技能的來源工具、名稱、說明、入口路徑與完整內容。
 
 ## 輸出格式
 
-```markdown
-## 📋 可用的 Local Claude Skills
+| 工具 | Skill 名稱 | 說明 | 路徑 |
+| --- | --- | --- | --- |
+| Claude Code | `skill-name` | `skill description` | `~/.claude/skills/skill-name/` |
+| Codex | `skill-name` | `skill description` | `~/.codex/skills/skill-name/` |
 
-| Skill 名稱 | 說明 | 路徑 |
-| --- | --- | --- |
-| skill-name | skill description | `~/.claude/skills/skill-name/` |
-```
-
-## 補充資訊
-
-### Skill 結構
+## Skill 結構
 
 每個 skill 資料夾應包含：
 
 ```text
-~/.claude/skills/
+<skills-root>/
 └── <skill-name>/
-    ├── SKILL.md          # 必要：skill 定義與說明
+    ├── SKILL.md
     └── references/       # 可選：補充資源
 ```
-
-### SKILL.md 格式
 
 ```yaml
 ---
@@ -86,6 +65,4 @@ description: skill 的簡短說明
 ---
 
 # Skill 標題
-
-（詳細說明內容）
 ```

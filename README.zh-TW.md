@@ -42,7 +42,6 @@ Ting-s515 維護的個人 AI agent skills 與 workflow instructions。
 | [`remove-nul`](remove-nul/) | 移除 Windows 保留裝置名稱造成的異常檔案。 | `git status` 顯示 `nul`、`con`、`aux` 等一般工具刪不掉的檔案。 |
 | [`req-interview`](req-interview/) | 進行互動式需求或架構訪談。 | 需要討論邊界案例、遺漏情境或技術決策，直到收斂。 |
 | [`search-local-skill`](search-local-skill/) | 搜尋本機 skill 目錄與描述。 | 需要列出、尋找或瀏覽可用的 local skills。 |
-| [`skill-creator-plus`](skill-creator-plus/) | 建立、改善與評測 skills。 | 需要建立新 skill、優化既有 skill，或 benchmark skill 行為。 |
 | [`slim-doc`](slim-doc/) | 壓縮既有 Markdown 規格，移除過多實作細節。 | 需要縮短文件，但保留 API、圖表與核心資料結構。 |
 | [`web-search`](web-search/) | 對時效性問題強制執行最新網路查證。 | 問題涉及目前版本、新聞、價格、政策或近期事實。 |
 | [`writing-blog-post`](writing-blog-post/) | 撰寫結構化 Markdown blog 文章。 | 明確要求撰寫或整理成 blog 文章。 |

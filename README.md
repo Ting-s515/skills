@@ -42,7 +42,6 @@ If you want a more complete and reliable Specification-Driven Development (SDD) 
 | [`remove-nul`](remove-nul/) | Removes Windows reserved-name files that normal tools cannot delete. | `git status` shows files such as `nul`, `con`, or `aux`. |
 | [`req-interview`](req-interview/) | Runs an interactive requirement or architecture interview. | You want edge cases, missing scenarios, or design options discussed to convergence. |
 | [`search-local-skill`](search-local-skill/) | Searches local skill directories and descriptions. | You need to list, find, or browse available local skills. |
-| [`skill-creator-plus`](skill-creator-plus/) | Creates, improves, and evaluates skills. | You want to build a new skill, refine an existing one, or benchmark skill behavior. |
 | [`slim-doc`](slim-doc/) | Compresses existing Markdown specs by removing implementation detail. | You need a shorter document that keeps APIs, diagrams, and key structures. |
 | [`web-search`](web-search/) | Enforces up-to-date web research for time-sensitive questions. | A question involves current versions, news, prices, policies, or recent facts. |
 | [`writing-blog-post`](writing-blog-post/) | Drafts structured Markdown blog posts. | You explicitly want content written or reorganized as a blog article. |

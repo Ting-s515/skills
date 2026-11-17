@@ -69,6 +69,26 @@ class ValidateSkillPortabilityTest(unittest.TestCase):
 
             self.assertEqual([], findings)
 
+    def test_mermaid_regex_capture_group_is_not_a_path(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            skill_root = root / "diagram-design"
+            skill_root.mkdir()
+            (skill_root / "SKILL.md").write_text(
+                "---\nname: diagram-design\n---\n",
+                encoding="utf-8",
+            )
+            script_root = skill_root / "scripts"
+            script_root.mkdir()
+            (script_root / "mermaid_extract.py").write_text(
+                'r"(?:\\s(?P<spaced>.+?)\\s|(?![-=.\\s])(?P<compact>[^\\s|<>]+?))"\n',
+                encoding="utf-8",
+            )
+
+            findings = path_findings(root, discover_skill_entries(root))
+
+            self.assertEqual([], findings)
+
     def test_common_windows_relative_path_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -168,33 +188,33 @@ class ValidateSkillPortabilityTest(unittest.TestCase):
             self.assertEqual(1, len(findings))
             self.assertEqual("Windows drive-letter 絕對路徑", findings[0].message)
 
-    def test_search_local_skill_claude_root_is_allowed(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            skill_root = root / "search-local-skill"
-            skill_root.mkdir()
-            (skill_root / "SKILL.md").write_text(
-                "搜尋 `~/.claude/skills/`，並依作業系統動態解析 home。\n",
-                encoding="utf-8",
-            )
+    def test_search_local_skill_roots_are_allowed(self) -> None:
+        for skill_root_path in ("~/.claude/skills/", "~/.codex/skills/"):
+            with self.subTest(skill_root=skill_root_path):
+                with tempfile.TemporaryDirectory() as directory:
+                    root = Path(directory)
+                    skill_root = root / "search-local-skill"
+                    skill_root.mkdir()
+                    (skill_root / "SKILL.md").write_text(
+                        f"搜尋 `{skill_root_path}`，依目前工具選擇來源。\n",
+                        encoding="utf-8",
+                    )
 
-            findings = path_findings(root, discover_skill_entries(root))
+                    findings = path_findings(root, discover_skill_entries(root))
 
-            self.assertEqual([], findings)
+                    self.assertEqual([], findings)
 
-    def test_search_local_skill_matches_main_branch_contract(self) -> None:
+    def test_search_local_skill_matches_dual_tool_contract(self) -> None:
         repository_root = Path(__file__).resolve().parents[1]
         content = (repository_root / "search-local-skill" / "SKILL.md").read_text(
             encoding="utf-8"
         )
 
         self.assertIn("~/.claude/skills/", content)
-        self.assertNotIn("~/.codex/skills/", content)
-        self.assertIn("環境明確就直接使用；不明確才偵測", content)
-        self.assertIn("**macOS/Linux**", content)
-        self.assertIn("**Windows PowerShell**", content)
-        self.assertIn("**Windows bash**", content)
-        self.assertIn("若環境資訊不明確，先以唯讀方式偵測作業系統", content)
+        self.assertIn("~/.codex/skills/", content)
+        self.assertIn("若作業系統或 home 不明確，先以唯讀方式偵測", content)
+        self.assertIn("| 工具 | macOS/Linux | Windows PowerShell | Windows bash |", content)
+        self.assertIn("目前 agent context 明確指出使用 Claude Code 或 Codex", content)
 
     def test_search_local_skill_exception_does_not_hide_windows_path(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -202,7 +222,7 @@ class ValidateSkillPortabilityTest(unittest.TestCase):
             skill_root = root / "search-local-skill"
             skill_root.mkdir()
             (skill_root / "SKILL.md").write_text(
-                "搜尋 `~/.claude/skills/`，不可使用 `C:\\Users\\someone\\skills`。\n",
+                "搜尋 `~/.claude/skills/` 和 `~/.codex/skills/`，不可使用 `C:\\Users\\someone\\skills`。\n",
                 encoding="utf-8",
             )
 
@@ -211,6 +231,25 @@ class ValidateSkillPortabilityTest(unittest.TestCase):
             self.assertEqual(1, len(findings))
             self.assertEqual("Windows drive-letter 絕對路徑", findings[0].message)
 
+    def test_diagram_onboarding_claude_root_is_allowed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            skill_root = root / "diagram-design"
+            skill_root.mkdir()
+            (skill_root / "SKILL.md").write_text(
+                "---\nname: diagram-design\n---\n",
+                encoding="utf-8",
+            )
+            reference_root = skill_root / "references"
+            reference_root.mkdir()
+            (reference_root / "onboarding.md").write_text(
+                "Claude Code 使用 `~/.claude/skills/<skill-name>/`。\n",
+                encoding="utf-8",
+            )
+
+            findings = path_findings(root, discover_skill_entries(root))
+
+            self.assertEqual([], findings)
 
 if __name__ == "__main__":
     unittest.main()
