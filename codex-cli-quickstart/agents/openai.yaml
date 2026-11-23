@@ -1,0 +1,3 @@
+interface:
+  display_name: "Codex CLI 指令速查"
+  short_description: "完整查詢斜線命令、主命令、Plan Mode 與 YOLO 操作"
