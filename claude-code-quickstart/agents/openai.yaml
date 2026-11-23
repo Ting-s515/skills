@@ -1,0 +1,3 @@
+interface:
+  display_name: "Claude Code CLI 指令速查"
+  short_description: "查詢 Claude Code CLI 指令、啟動旗標與模式切換"
