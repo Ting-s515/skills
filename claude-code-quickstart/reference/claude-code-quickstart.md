@@ -181,7 +181,7 @@
 | **/tui [classic\|fullscreen]** | 切換終端機 UI renderer。 |
 | **/voice [hold\|tap\|off]** | 切換語音輸入；需 Claude.ai 帳戶。 |
 | **/usage**、**/cost**、**/stats** | 查看工作階段成本、方案用量與活動統計。 |
-| **/usage-credits** | 管理額外用量點數；舊名稱為 /extra-usage。 |
+| **/usage-credits** | 在瀏覽器開啟 Settings > Usage，管理額外用量點數並查看「上限重設」（limit reset）次數與到期日；舊名稱為 /extra-usage。CLI／IDE 內沒有「Reset for free」按鈕，需在網頁、Claude Desktop 或手機 App 的 Settings > Usage 重設，重設後額度同步套用到 Claude Code。 |
 | **/rate-limit-options** | 查看遇到用量限制時可用的選項。 |
 | **/privacy-settings** | 查看或更新隱私設定；限符合資格的方案。 |
 | **/passes** | 分享 Claude Code 試用週；限符合資格的帳戶。 |
