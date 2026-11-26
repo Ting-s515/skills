@@ -1,3 +1,0 @@
-interface:
-  display_name: "GitHub CLI 指令速查"
-  short_description: "查詢 gh 登入、Repo、PR、Issue、Actions 與 API 指令"
