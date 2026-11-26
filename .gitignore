@@ -1,3 +1,5 @@
 code-reviewer/eval-repos/
 __pycache__/
 *.pyc
+synced/
+.system/
