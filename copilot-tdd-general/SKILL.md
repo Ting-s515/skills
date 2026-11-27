@@ -12,7 +12,10 @@ Claude Code 不讀 Copilot 的完整輸出，只看腳本回傳的一行 JSON �
 ## 前置條件
 
 - 已安裝 PowerShell 7（`pwsh`）與 GitHub Copilot CLI；`--deny-tool` 行為以 Copilot CLI 1.0.116 實測。
-- 預設模型 `claude-opus-5.5` 須在 Copilot 訂閱中可用，否則以 `-Model` 指定。
+- 預設模型為 `claude-opus-5.5`、推理強度 `medium`；除非使用者特別指定模型或推理強度，否則一律使用預設，
+  不要自行改用 `auto` 或其他模型。
+- 預設模型須在 Copilot 訂閱中可用（需先登入有該模型的方案，例如 Copilot Business；免費方案不可用），
+  否則由使用者決定改用哪個模型，再以 `-Model` 指定。
 - 派工單與 log 放在不進版控的暫存目錄（例如 `.scratch/copilot/`）；先確認該目錄已列入 `.gitignore`。
 
 ## 流程
@@ -46,6 +49,8 @@ Claude Code 不讀 Copilot 的完整輸出，只看腳本回傳的一行 JSON �
    - 在 repo 根目錄以外的位置派工（例如另一個 worktree）時，以 `-WorkDir` 指定 Copilot 的工作目錄。
    - 可選參數：`-Model`（預設 `claude-opus-5.5`）、`-ReasoningEffort`（預設 `medium`，可改 `high`）、`-MaxAiCredits 200`、
      `-ProtectedPaths`（覆寫受保護的測試路徑 glob）。
+   - 模型與推理強度除非使用者明確指定，否則不傳 `-Model`、`-ReasoningEffort`，直接用預設值。
+     使用者指定 `auto` 時要加 `-ReasoningEffort ''`，因為 `auto` 不支援 `--reasoning-effort`。
 
 4. **驗收**（不相信 Copilot 的自述）：
    - `git diff --stat` 確認測試檔沒被改；若被改，還原該檔的 Copilot 修改並視為失敗。
