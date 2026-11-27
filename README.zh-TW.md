@@ -43,6 +43,7 @@ Ting-s515 維護的個人 AI agent skills 與 workflow instructions。
 | [`req-interview`](req-interview/) | 進行互動式需求或架構訪談。 | 需要討論邊界案例、遺漏情境或技術決策，直到收斂。 |
 | [`search-local-skill`](search-local-skill/) | 搜尋本機 skill 目錄與描述。 | 需要列出、尋找或瀏覽可用的 local skills。 |
 | [`slim-doc`](slim-doc/) | 壓縮既有 Markdown 規格，移除過多實作細節。 | 需要縮短文件，但保留 API、圖表與核心資料結構。 |
+| [`tdd-general`](tdd-general/) | 不綁定框架的紅綠 TDD 循環指引，含接縫、好測試與替身準則。 | 想以測試先行開發功能或修 bug，且專案沒有自己的 TDD skill。 |
 | [`web-search`](web-search/) | 對時效性問題強制執行最新網路查證。 | 問題涉及目前版本、新聞、價格、政策或近期事實。 |
 | [`writing-blog-post`](writing-blog-post/) | 撰寫結構化 Markdown blog 文章。 | 明確要求撰寫或整理成 blog 文章。 |
 | [`writing-markdown`](writing-markdown/) | 產出結構化 Markdown 技術文件。 | 需要技術筆記、設計文件、流程說明或圖表化文件。 |
