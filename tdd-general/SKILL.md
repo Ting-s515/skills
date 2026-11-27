@@ -13,7 +13,7 @@ TDD 就是紅 → 綠的循環。這份 skill 是讓循環產出「值得留下�
 
 測試透過公開介面驗證行為，而不是驗證實作細節。程式碼可以整個改掉，測試不該跟著改。好的測試讀起來像規格：「批次刪除項目時，重複的 ID 只刪一次」清楚說明系統具備什麼能力；它在重構後依然成立，因為它不在乎內部結構。
 
-範例見 [tests.md](tests.md)，替身（mock）使用準則見 [mocking.md](mocking.md)。
+範例見 [tests.md](references/tests.md)，替身（mock）使用準則見 [mocking.md](references/mocking.md)。
 
 ## 接縫：測試放在哪裡
 
