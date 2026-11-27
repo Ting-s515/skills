@@ -290,6 +290,21 @@ Copilot CLI 是獨立的 AI coding agent，指令是 copilot；不要與 GitHub 
 
 詢問權限時可選擇：只允許這次、在此 repo 或目錄不再詢問（存於 ~/.copilot/permissions-config.json）、本工作階段都允許，或拒絕並告訴 Copilot 改做什麼。Autopilot 與 -p 模式無法詢問，無人值守時需搭配 --allow-all 或 --allow-tool 規則。
 
+## 自訂指令（Custom Instructions）
+
+本機 1.0.116 的 `copilot help config` 說明，指令來源依序為：repository 根目錄與目前目錄中的 `CLAUDE.md`、`.claude/CLAUDE.md`、`.claude/rules/**/*.md`、`.github/instructions/**/*.instructions.md`、`.github/copilot-instructions.md`；個人層級的 `~/.copilot/copilot-instructions.md` 與 `~/.copilot/instructions/*.instructions.md`；以及 `COPILOT_CUSTOM_INSTRUCTIONS_DIRS` 指定的額外目錄。
+
+| 指令或變數 | 用途 |
+| --- | --- |
+| copilot instruction list | 列出目前會載入的指令來源（本機實測）。 |
+| COPILOT_CUSTOM_INSTRUCTIONS_DIRS | 逗號分隔的額外指令目錄，會與 git root、目前目錄一起搜尋（help 說明）。 |
+| --no-custom-instructions | 本次不載入 AGENTS.md 等自訂指引。 |
+| /instructions | 互動介面中查看與切換指令檔。 |
+
+- 個人指令放在 `~/.copilot/copilot-instructions.md`，不是 `~/.copilot/AGENTS.md`。
+- `COPILOT_CUSTOM_INSTRUCTIONS_DIRS` 是使用者層級環境變數，只影響新開的終端機或 Copilot 工作階段。
+- 尚未驗證：是否會讀取 `~/.copilot/AGENTS.md`，以及設定後 `copilot instruction list` 會多出哪些來源。以本機實測為準。
+
 ## 官方查核來源
 
 - [GitHub Copilot CLI 文件](https://docs.github.com/en/copilot/how-tos/copilot-cli)
