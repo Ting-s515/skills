@@ -41,7 +41,7 @@ Claude Code 不讀 Copilot 的完整輸出，只看腳本回傳的一行 JSON �
 3. **派工**（`run_in_background: true`，等完成通知，不要輪詢 log）：
 
    ```powershell
-   pwsh -NoProfile -File <skill 目錄>/scripts/invoke-copilot.ps1 -PromptFile .scratch/copilot/task.md -TestFiles "src/__tests__/a.test.ts","src/test/java/.../BTest.java"
+   pwsh -NoProfile -File <skill 目錄>/scripts/invoke-copilot.ps1 -PromptFile .scratch/copilot/task.md -TestFiles "src/__tests__/a.test.ts","src/test/java/.../BTest.java" -Model claude-opus-5.5 -ReasoningEffort medium
    ```
 
    - `<skill 目錄>` 為本 skill 所在目錄（載入 skill 時提供）。
@@ -49,8 +49,9 @@ Claude Code 不讀 Copilot 的完整輸出，只看腳本回傳的一行 JSON �
    - 在 repo 根目錄以外的位置派工（例如另一個 worktree）時，以 `-WorkDir` 指定 Copilot 的工作目錄。
    - 可選參數：`-Model`（預設 `claude-opus-5.5`）、`-ReasoningEffort`（預設 `medium`，可改 `high`）、`-MaxAiCredits 200`、
      `-ProtectedPaths`（覆寫受保護的測試路徑 glob）。
-   - 模型與推理強度除非使用者明確指定，否則不傳 `-Model`、`-ReasoningEffort`，直接用預設值。
-     使用者指定 `auto` 時要加 `-ReasoningEffort ''`，因為 `auto` 不支援 `--reasoning-effort`。
+   - 派工時一律明確傳 `-Model claude-opus-5.5 -ReasoningEffort medium`（與腳本預設值相同，明確寫出避免誤判為 `auto`）；
+     只有使用者明確指定其他模型或推理強度時才改值。
+     使用者指定 `auto` 時要把 `-ReasoningEffort` 設為 `''`，因為 `auto` 不支援 `--reasoning-effort`。
 
 4. **驗收**（不相信 Copilot 的自述）：
    - `git diff --stat` 確認測試檔沒被改；若被改，還原該檔的 Copilot 修改並視為失敗。
