@@ -67,6 +67,13 @@ Build 驗證完成後，**必須**使用步驟一產生的 commit message 自動
   - 只有需要並排比較多個欄位時才使用表格
   - 需要使用者複製貼上的內容（如 JSON、指令）放在 code block，或建立檔案於當前 repo 根目錄
 
+## Quickstart 類 Skill 規範
+
+- `*-quickstart` skill（如 `claude-code-quickstart`、`codex-cli-quickstart`、`copilot-cli-quickstart`）都是**快速查詢型**，目的是快速提供指令資訊，不是教學型。
+- 維持「先讀本地速查表、依本地清單回答、不瀏覽網路、不執行會改變狀態的命令」的結構，不加入學習路徑、練習步驟或 know-why 教學流程。
+- 教學型內容請使用 `writing-training-doc` 等教學類 skill。
+- 規範記錄在本 repo，不寫入個人記憶；skill 本身保持通用，不放 repo 專屬規則。
+
 ## 查證與搜尋原則（強制）
 
 以下類型的問題，**絕對禁止**只用模型記憶或訓練資料回答，**必須先查證後才能回答**：
