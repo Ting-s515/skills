@@ -303,7 +303,8 @@ Copilot CLI 是獨立的 AI coding agent，指令是 copilot；不要與 GitHub 
 
 - 個人指令放在 `~/.copilot/copilot-instructions.md`，不是 `~/.copilot/AGENTS.md`。
 - `COPILOT_CUSTOM_INSTRUCTIONS_DIRS` 是使用者層級環境變數，只影響新開的終端機或 Copilot 工作階段。
-- 尚未驗證：是否會讀取 `~/.copilot/AGENTS.md`，以及設定後 `copilot instruction list` 會多出哪些來源。以本機實測為準。
+- 本機實測（1.0.116，單次指令設定環境變數，未寫入永久設定）：未設定時 `copilot instruction list` 不列出 `~/.copilot/AGENTS.md`；設定 `COPILOT_CUSTOM_INSTRUCTIONS_DIRS=~/.copilot` 後，清單多出一筆 `Nested AGENTS.md`；指向空目錄或不存在的目錄時則沒有多出項目。
+- 上述只證明指令來源被發現，尚未確認內容實際注入模型上下文；可在互動介面用 /instructions 或 /context 再確認。
 
 ## 官方查核來源
 
