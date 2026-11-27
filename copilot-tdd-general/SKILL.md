@@ -1,6 +1,6 @@
 ---
-name: copilot-tdd
-description: TDD 分工協作：Claude Code 只寫測試（紅燈），實作派給 GitHub Copilot CLI（--yolo）跑到綠燈，以節省 Claude Code token；Copilot 額度或速率用盡、執行失敗或多輪仍未綠燈時由 Claude Code 接手實作。使用者說「copilot-tdd」「測試我寫、實作交給 copilot」「派給 copilot 實作」時使用。
+name: copilot-tdd-general
+description: TDD 分工協作：Claude Code 只寫測試（紅燈），實作派給 GitHub Copilot CLI（--yolo）跑到綠燈，以節省 Claude Code token；Copilot 額度或速率用盡、執行失敗或多輪仍未綠燈時由 Claude Code 接手實作。使用者說「copilot-tdd-general」「copilot-tdd」「測試我寫、實作交給 copilot」「派給 copilot 實作」時使用。
 ---
 
 # Copilot TDD 分工

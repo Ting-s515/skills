@@ -1,3 +1,3 @@
 interface:
-  display_name: "Copilot TDD"
+  display_name: "Copilot TDD (General)"
   short_description: "測試由 Claude 撰寫、實作派給 Copilot CLI"

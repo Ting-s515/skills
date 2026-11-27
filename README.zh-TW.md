@@ -30,7 +30,7 @@ Ting-s515 維護的個人 AI agent skills 與 workflow instructions。
 | [`bdd-unit-test`](bdd-unit-test/) | 為既有程式碼補上 BDD 風格單元測試。 | 需要針對指定檔案補 Happy Path、Edge Case 與 Error Case 測試。 |
 | [`clarify-flow`](clarify-flow/) | 將混亂的業務流程整理成精確結構化步驟。 | 需求中分支、迴圈或判斷條件混在文字裡，不容易對齊。 |
 | [`code-reviewer`](code-reviewer/) | 對照業務需求審查程式碼變更。 | 需要確認實作是否符合規格、User Story 或流程文件。 |
-| [`copilot-tdd`](copilot-tdd/) | TDD 分工：Claude Code 撰寫紅燈測試，實作派給 GitHub Copilot CLI 跑到綠燈。 | 想先寫測試，並把實作交給 Copilot CLI 以節省 Claude Code token。 |
+| [`copilot-tdd-general`](copilot-tdd-general/) | TDD 分工：Claude Code 撰寫紅燈測試，實作派給 GitHub Copilot CLI 跑到綠燈。 | 想先寫測試，並把實作交給 Copilot CLI 以節省 Claude Code token。 |
 | [`explaining-code`](explaining-code/) | 用結構化說明與圖表解釋程式、工具或架構。 | 需要理解某段邏輯、技術概念或系統流程如何運作。 |
 | [`export-ac`](export-ac/) | 產出 `AC.md` 驗收準則文件。 | 明確要在實作前建立 Acceptance Criteria。 |
 | [`export-conversation`](export-conversation/) | 將目前對話匯出為 Markdown。 | 需要保留脈絡，交給其他模型或下一個對話接續。 |
