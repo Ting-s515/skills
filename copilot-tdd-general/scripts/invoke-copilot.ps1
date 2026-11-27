@@ -29,6 +29,12 @@ param(
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
+# `pwsh -File` 會把 -TestFiles "a","b" 綁成單一字串 "a,b"，hash 比對找不到檔案而靜默失效，
+# 所以這裡把含逗號的字串拆回陣列；從 PowerShell 呼叫時各項前後還會殘留引號，一併去除。
+# ProtectedPaths 的 {a,b} 大括號 glob 內的逗號不可拆
+$TestFiles = @($TestFiles | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim().Trim('"', "'") } | Where-Object { $_ })
+$ProtectedPaths = @($ProtectedPaths | ForEach-Object { $_ -split ',(?![^{]*\})' } | ForEach-Object { $_.Trim().Trim('"', "'") } | Where-Object { $_ })
+
 if (-not (Test-Path -LiteralPath $PromptFile)) {
     throw "找不到 prompt 檔：$PromptFile"
 }
