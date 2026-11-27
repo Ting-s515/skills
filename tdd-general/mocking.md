@@ -17,7 +17,6 @@
 
 - 後端整合測試：外部系統用替身伺服器（WireMock、MSW、nock 等）或測試框架提供的外部依賴模擬機制，不要替換自己的 service。
 - 前端單元測試：替換 HTTP client 這個邊界模組（例如 `vi.mock('<api client 模組>')`），不要替換同一個功能內的 hook 或元件。
-- 外掛／擴充元件：外部相依（DB、SFTP、HTTP）在單元測試用替身，整合測試用容器化的真實服務，並以 tag 區分。
 
 ## 為可替換而設計
 
@@ -29,23 +28,23 @@
 
 ```java
 // 容易替換：以建構子注入介面
-class ConnectionService {
-    private final SecretStore secrets;
+class PaymentService {
+    private final PaymentGateway gateway;
 
-    ConnectionService(SecretStore secrets) {
-        this.secrets = secrets;
+    PaymentService(PaymentGateway gateway) {
+        this.gateway = gateway;
     }
 
-    String password(String secretKey) {
-        return secrets.read(secretKey);
+    String status(String orderId) {
+        return gateway.fetchStatus(orderId);
     }
 }
 
 // 難以替換：在內部自行建立客戶端
-class ConnectionService {
-    String password(String secretKey) {
-        var client = new VaultHttpClient(System.getenv("VAULT_ADDR"));
-        return client.read(secretKey);
+class PaymentService {
+    String status(String orderId) {
+        var client = new HttpPaymentClient(System.getenv("PAYMENT_GATEWAY_URL"));
+        return client.fetchStatus(orderId);
     }
 }
 ```
@@ -56,12 +55,12 @@ class ConnectionService {
 
 ```ts
 // 好：每個函式都能個別替換
-export function listOrders(query: OrderListQuery) {
-  return request<OrderListResponse>(`${apiBase()}/orders?${toSearch(query)}`)
+export function listProducts(query: ProductListQuery) {
+  return request<ProductListResponse>(`${apiBase()}/products?${toSearch(query)}`)
 }
 
-export function deleteOrder(id: string) {
-  return request<void>(`${apiBase()}/orders/${id}`, { method: 'DELETE' })
+export function deleteProduct(id: string) {
+  return request<void>(`${apiBase()}/products/${id}`, { method: 'DELETE' })
 }
 
 // 壞：替身裡必須寫條件邏輯

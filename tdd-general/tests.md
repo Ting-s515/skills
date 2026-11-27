@@ -7,11 +7,11 @@
 ```ts
 // 好：透過 API 驗證可觀察的行為（後端整合測試，以 supertest 為例）
 it('Given重複的ID_When批次刪除_Should每筆只刪一次', async () => {
-  const first = await createItem({ name: 'a' })
-  const second = await createItem({ name: 'b' })
+  const first = await createOrder({ code: 'A-001' })
+  const second = await createOrder({ code: 'A-002' })
 
   const res = await request(app)
-    .post('/items/batch-delete')
+    .post('/orders/batch-delete')
     .send({ ids: [first.id, second.id, first.id] })
 
   expect(res.status).toBe(200)
@@ -22,11 +22,11 @@ it('Given重複的ID_When批次刪除_Should每筆只刪一次', async () => {
 ```ts
 // 好：透過公開函式驗證行為（前端單元測試）
 it('Given前次載入失敗_When再次取得_Should允許重新請求', async () => {
-  const load = vi.fn().mockRejectedValueOnce(new Error('offline')).mockResolvedValue(currentUser)
-  const loader = createCurrentUserLoader(load)
+  const load = vi.fn().mockRejectedValueOnce(new Error('offline')).mockResolvedValue(profile)
+  const loader = createCachedLoader(load)
 
   await expect(loader()).rejects.toThrow('offline')
-  await expect(loader()).resolves.toEqual(currentUser)
+  await expect(loader()).resolves.toEqual(profile)
 })
 ```
 
@@ -45,11 +45,11 @@ it('Given前次載入失敗_When再次取得_Should允許重新請求', async ()
 ```java
 // 壞：測的是實作細節
 @Test
-void delete_disabledItem_callsRepositoryAndTeardown() {
+void delete_archivedOrder_callsRepositoryAndAuditLog() {
     service.delete(id);
 
     verify(repository).deleteById(id);
-    verify(teardownTasks).save(any());
+    verify(auditLog).record(any());
 }
 ```
 
@@ -64,19 +64,19 @@ void delete_disabledItem_callsRepositoryAndTeardown() {
 
 ```ts
 // 壞：繞過介面，直接查資料表驗證
-it('建立項目', async () => {
-  await request(app).post('/items').send({ name: 'timeout', value: '30' })
+it('建立訂單', async () => {
+  await request(app).post('/orders').send({ code: 'A-001', amount: 30 })
 
-  const rows = await db.query("select * from item where name = 'timeout'")
+  const rows = await db.query("select * from orders where code = 'A-001'")
   expect(rows).toHaveLength(1)
 })
 
 // 好：透過介面驗證
-it('建立的項目可以查到明細', async () => {
-  const created = await request(app).post('/items').send({ name: 'timeout', value: '30' })
+it('建立的訂單可以查到明細', async () => {
+  const created = await request(app).post('/orders').send({ code: 'A-001', amount: 30 })
 
-  const detail = await request(app).get(`/items/${created.body.id}`)
-  expect(detail.body).toMatchObject({ name: 'timeout', value: '30' })
+  const detail = await request(app).get(`/orders/${created.body.id}`)
+  expect(detail.body).toMatchObject({ code: 'A-001', amount: 30 })
 })
 ```
 
@@ -91,16 +91,16 @@ it('建立的項目可以查到明細', async () => {
 ```java
 // 壞：用程式碼的同一套算法重算預期值
 @Test
-void totalBytes_twoFiles_sumsSizes() {
-    var files = List.of(new FileEntry("a.csv", 10), new FileEntry("b.csv", 5));
-    long expected = files.stream().mapToLong(FileEntry::size).sum();
-    assertThat(FileSummary.totalBytes(files)).isEqualTo(expected);
+void totalAmount_twoLines_sumsAmounts() {
+    var lines = List.of(new LineItem("a", 10), new LineItem("b", 5));
+    long expected = lines.stream().mapToLong(LineItem::amount).sum();
+    assertThat(OrderSummary.totalAmount(lines)).isEqualTo(expected);
 }
 
 // 好：預期值是獨立、已知的字面值
 @Test
-void totalBytes_twoFiles_sumsSizes() {
-    var files = List.of(new FileEntry("a.csv", 10), new FileEntry("b.csv", 5));
-    assertThat(FileSummary.totalBytes(files)).isEqualTo(15);
+void totalAmount_twoLines_sumsAmounts() {
+    var lines = List.of(new LineItem("a", 10), new LineItem("b", 5));
+    assertThat(OrderSummary.totalAmount(lines)).isEqualTo(15);
 }
 ```
