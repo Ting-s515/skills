@@ -290,6 +290,22 @@ Copilot CLI 是獨立的 AI coding agent，指令是 copilot；不要與 GitHub 
 
 詢問權限時可選擇：只允許這次、在此 repo 或目錄不再詢問（存於 ~/.copilot/permissions-config.json）、本工作階段都允許，或拒絕並告訴 Copilot 改做什麼。Autopilot 與 -p 模式無法詢問，無人值守時需搭配 --allow-all 或 --allow-tool 規則。
 
+## 預設模型設定
+
+本機 1.0.116 實測（`copilot -p ... --usage-output-file` 讀取實際使用的模型）：
+
+| 設定位置 | 寫法 | 作用範圍 |
+| --- | --- | --- |
+| 啟動旗標 | copilot --model claude-sonnet-5.5 | 單次啟動。 |
+| 使用者設定 | copilot config model claude-haiku-5.5 | 寫入 ~/.copilot/settings.json，之後所有工作階段預設。 |
+| 專案設定 | 在 repo 內寫入 .github/copilot/settings.json 的 "model" | 只在該 git repo 內生效（需 git repo 且受信任）。 |
+| 互動介面 | /model（本次）、/config model（預設） | /model 只影響目前工作階段。 |
+
+優先順序（實測）：啟動旗標 > 專案設定 > 使用者設定。
+
+- 模型 ID 必須是帳戶可用的名稱，例如 `claude-haiku-5.5`；`claude-haiku-5-5` 會被拒絕。
+- 未驗證：`/model --global` 在本機 help 找不到，不要使用。
+
 ## 自訂指令（Custom Instructions）
 
 本機 1.0.116 的 `copilot help config` 說明，指令來源依序為：repository 根目錄與目前目錄中的 `CLAUDE.md`、`.claude/CLAUDE.md`、`.claude/rules/**/*.md`、`.github/instructions/**/*.instructions.md`、`.github/copilot-instructions.md`；個人層級的 `~/.copilot/copilot-instructions.md` 與 `~/.copilot/instructions/*.instructions.md`；以及 `COPILOT_CUSTOM_INSTRUCTIONS_DIRS` 指定的額外目錄。
