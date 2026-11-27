@@ -30,6 +30,7 @@ If you want a more complete and reliable Specification-Driven Development (SDD) 
 | [`bdd-unit-test`](bdd-unit-test/) | Adds BDD-style unit tests for existing code. | You need focused happy-path, edge-case, and error-case tests for target files. |
 | [`clarify-flow`](clarify-flow/) | Rewrites messy business flows into precise structured steps. | Requirements contain unclear branches, loops, or mixed decision logic. |
 | [`code-reviewer`](code-reviewer/) | Reviews code changes against business requirements. | You need to verify whether an implementation matches a spec or user story. |
+| [`copilot-tdd`](copilot-tdd/) | Splits TDD work: Claude Code writes failing tests and dispatches implementation to GitHub Copilot CLI until they pass. | You want tests written first and implementation handed to Copilot CLI to save Claude Code tokens. |
 | [`explaining-code`](explaining-code/) | Explains code, tools, or architecture with structured diagrams. | You need a clear walkthrough of how something works. |
 | [`export-ac`](export-ac/) | Produces an `AC.md` acceptance-criteria document. | You explicitly want to create acceptance criteria before implementation. |
 | [`export-conversation`](export-conversation/) | Exports the current conversation into Markdown. | You need to preserve context for another model or session. |
