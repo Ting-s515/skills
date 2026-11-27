@@ -5,7 +5,7 @@ description: 提供 Claude Code CLI 新手指令速查，從本地文件查詢 S
 
 # Claude Code CLI Quickstart
 
-回答 Claude Code CLI 指令問題前，先讀取[本地指令速查表](reference/claude-code-quickstart.md)。預設以繁體中文回答；一般查詢直接依本地清單提供完整或指定指令的用途。
+回答 Claude Code CLI 指令問題前，先讀取[本地指令速查表](references/claude-code-quickstart.md)。預設以繁體中文回答；一般查詢直接依本地清單提供完整或指定指令的用途。
 
 ## 本地查詢規則
 

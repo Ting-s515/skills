@@ -5,7 +5,7 @@ description: 提供 Codex CLI 新手指令速查，從本地參考文件查詢 S
 
 # Codex CLI Quickstart
 
-為新手提供可快速查閱的 Codex CLI 指令參考。回答前讀取[本地指令速查表](reference/codex-cli-quickstart.md)，預設輸出完整清單；若使用者只詢問特定命令，優先回答該命令及必要的相鄰概念。使用繁體中文，將每項用途濃縮為一句話。
+為新手提供可快速查閱的 Codex CLI 指令參考。回答前讀取[本地指令速查表](references/codex-cli-quickstart.md)，預設輸出完整清單；若使用者只詢問特定命令，優先回答該命令及必要的相鄰概念。使用繁體中文，將每項用途濃縮為一句話。
 
 ## 本地查詢規則
 

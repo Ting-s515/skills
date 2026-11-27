@@ -5,7 +5,7 @@ description: 提供 GitHub Copilot CLI 新手指令速查，從本地文件查�
 
 # GitHub Copilot CLI Quickstart
 
-回答 GitHub Copilot CLI 指令問題前，先讀取[本地指令速查表](reference/copilot-cli-quickstart.md)。預設以繁體中文回答；一般查詢直接依本地清單提供完整或指定指令的用途。
+回答 GitHub Copilot CLI 指令問題前，先讀取[本地指令速查表](references/copilot-cli-quickstart.md)。預設以繁體中文回答；一般查詢直接依本地清單提供完整或指定指令的用途。
 
 ## 本地查詢規則
 
