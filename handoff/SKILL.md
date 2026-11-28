@@ -18,7 +18,7 @@ argument-hint: "[輸出檔案路徑]"
 
 ## 內容
 
-用唯讀指令確認事實：`git branch --show-current`、`git status --short`、`git log --oneline -10`。
+用唯讀指令確認事實：`git branch --show-current`、`git status --short`、`git log --oneline -20`（本次對話的 commit 較多時再加大數量）。
 依下列章節撰寫，沒有內容的章節省略：
 
 ```markdown
@@ -40,7 +40,7 @@ argument-hint: "[輸出檔案路徑]"
 
 ## 重要檔案與指令
 - `相對/路徑` — 新增／修改／重要參考，一行說明
-- 測試、建置或驗證指令（放 code block，註明 shell 與目錄）
+- 測試、建置與驗證指令（放 code block，註明 shell 與目錄），含確認目前狀態的 `git status --short`、`git log <hash>..HEAD`
 
 ## 未解事項與陷阱
 - 待使用者決定的事、**未驗證**的假設、已知問題與處理方式
@@ -54,7 +54,7 @@ argument-hint: "[輸出檔案路徑]"
 - 事實要有來源：只寫親眼看到的結果；推測或沒驗證的標註「未驗證」。失敗與沒做完的事如實寫，不可寫成已完成。
 - 使用者偏好必寫，接手者最容易踩到使用者已經說過的規則。
 - 精簡，目標 100 行內；細節用檔案路徑或 commit hash 指過去，不貼大段程式碼。
-- commit 要附 hash、依時間順序列出；提到數量就把項目列全，不用「等」省略。
+- commit 要附 hash、依時間順序列出；提到數量就把項目列全，不用「等」省略；非本次對話產生的 commit 要註明來源。
 - 不放機密（token、密碼、金鑰、電子郵件等個資）。
 - 不寫本 skill 自己的執行過程。
 
