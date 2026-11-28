@@ -13,7 +13,10 @@ argument-hint: "[輸出檔案路徑]"
 
 1. 使用者有指定路徑（`$1`）就寫到該路徑。
 2. 沒指定時寫到 `.scratch/handoff/<yyyyMMdd-HHmm>-handoff.md`（相對於專案根目錄；不在 git 專案內則用目前目錄）。
-   - 先確認 `.scratch/` 已列入 `.gitignore`；沒有就提醒使用者，不要自行修改 `.gitignore`，也不要把交接文件加入 commit。
+   - 先確認 `.scratch/` 已列入 `.gitignore`（`git check-ignore .scratch`）；沒有就自動在 `.gitignore` 結尾追加一行 `.scratch/`
+     （檔案不存在就建立），只追加這一行，不改動其他內容，並在回覆中告知使用者。
+   - 追加 `.gitignore` 後，依專案的 commit 規範單獨提交 `.gitignore`（只 stage 這個檔案）；交接文件本身一律不加入 commit。
+   - 不在 git 專案內時不需處理 `.gitignore`。
 3. 以 UTF-8、LF 寫入，內容以繁體中文撰寫。
 
 ## 蒐集資訊（唯讀）
