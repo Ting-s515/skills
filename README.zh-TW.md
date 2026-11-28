@@ -33,7 +33,6 @@ Ting-s515 維護的個人 AI agent skills 與 workflow instructions。
 | [`copilot-tdd-general`](copilot-tdd-general/) | TDD 分工：Claude Code 撰寫紅燈測試，實作派給 GitHub Copilot CLI 跑到綠燈。 | 想先寫測試，並把實作交給 Copilot CLI 以節省 Claude Code token。 |
 | [`explaining-code`](explaining-code/) | 用結構化說明與圖表解釋程式、工具或架構。 | 需要理解某段邏輯、技術概念或系統流程如何運作。 |
 | [`export-ac`](export-ac/) | 產出 `AC.md` 驗收準則文件。 | 明確要在實作前建立 Acceptance Criteria。 |
-| [`export-conversation`](export-conversation/) | 將目前對話匯出為 Markdown。 | 需要保留脈絡，交給其他模型或下一個對話接續。 |
 | [`export-feature-file`](export-feature-file/) | 將行為規格轉成可執行的 `.feature` 檔。 | 需要給 Cucumber、Behave、Reqnroll 等測試框架使用的 Gherkin。 |
 | [`export-gherkin`](export-gherkin/) | 將需求或邏輯轉成可讀的 Gherkin 規格。 | 需要用 Given/When/Then 與 PM、QA 或客戶對齊，而不是直接產生測試檔。 |
 | [`handoff`](handoff/) | 將目前對話整理成交接文件，讓其他 agent 能接手。 | 需要把工作交給其他 agent 或新的對話視窗，又不想重講背景。 |

@@ -33,7 +33,6 @@ If you want a more complete and reliable Specification-Driven Development (SDD) 
 | [`copilot-tdd-general`](copilot-tdd-general/) | Splits TDD work: Claude Code writes failing tests and dispatches implementation to GitHub Copilot CLI until they pass. | You want tests written first and implementation handed to Copilot CLI to save Claude Code tokens. |
 | [`explaining-code`](explaining-code/) | Explains code, tools, or architecture with structured diagrams. | You need a clear walkthrough of how something works. |
 | [`export-ac`](export-ac/) | Produces an `AC.md` acceptance-criteria document. | You explicitly want to create acceptance criteria before implementation. |
-| [`export-conversation`](export-conversation/) | Exports the current conversation into Markdown. | You need to preserve context for another model or session. |
 | [`export-feature-file`](export-feature-file/) | Converts behavior specs into executable `.feature` files. | You need framework-ready Gherkin for Cucumber, Behave, Reqnroll, or similar tools. |
 | [`export-gherkin`](export-gherkin/) | Converts requirements or logic into human-readable Gherkin. | You need Given/When/Then specs for stakeholder alignment, not executable test files. |
 | [`handoff`](handoff/) | Writes a handoff Markdown of the current conversation so another agent can take over. | You want to hand work to another agent or a new session without replaying the conversation. |
