@@ -27,6 +27,9 @@ Claude Code 不讀 Copilot 的完整輸出，只看腳本回傳的一行 JSON �
 
 2. **寫派工單**：寫到暫存目錄的 `task.md`（例如 `.scratch/copilot/task.md`），內容固定包含：
    - 目標：一句話說明要實作的功能，附規格文件路徑（讓 Copilot 自己讀，不要貼全文）。
+   - 規格、測試規格、feature case 等有多份文件時，在 `task.md` 逐行列出每份的路徑即可，
+     不需要 `--attachment`（只適用圖片與原生文件）；工作目錄外的文件用絕對路徑。
+     實測（Copilot CLI 1.0.117、`--yolo`）：工作目錄內外共三份文件都能讀到。
    - 測試檔路徑與測試指令。指令要能在 Copilot 執行的 shell 直接執行：
      - Windows 上 Copilot 以 PowerShell 執行，含 `-D` 等會被 PowerShell 拆開的參數要整段加引號，
        例如 `mvn test "-Dtest=XxxTest"`；macOS／Linux 以 bash／zsh 執行，依該 shell 的引號規則。
